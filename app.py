@@ -80,11 +80,11 @@ def handle_message(event):
     app.logger.info(f"Received message from {user_id}: {text}")
 
     # 處理特定指令
-    if text == "開始每日問答":
+    if text == "開始":
         try:
             count = get_user_question_count(user_id)
             correct, wrong = get_user_correct_wrong(user_id)
-            welcome_message = f"歡迎來到今天的解剖咬一口～～～\n🌟【{correct} 次】！共累積🔥【{correct} 次】"
+            welcome_message = f"你今天已經挑戰了 🌟【{count} 次】\n目前累積總共 🔥【{correct} 次】解剖出擊！"
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=welcome_message)

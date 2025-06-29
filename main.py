@@ -162,8 +162,8 @@ def create_menu_message():
                             "type": "button",
                             "action": {
                                 "type": "message",
-                                "label": "開始每日問答",
-                                "text": "開始每日問答"
+                                "label": "開始",
+                                "text": "開始"
                             },
                             "style": "primary",
                             "color": "#1DB446"
