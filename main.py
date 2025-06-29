@@ -72,6 +72,14 @@ def create_question_message(question):
                     "margin": "md"
                 },
                 {
+                    "type": "text",
+                    "text": "點選下方選項作答",
+                    "size": "sm",
+                    "align": "center",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
                     "type": "separator",
                     "margin": "md"
                 },
