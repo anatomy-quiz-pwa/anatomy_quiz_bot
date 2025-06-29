@@ -1,5 +1,5 @@
 import os 
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
@@ -14,25 +14,32 @@ app = Flask(__name__)
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-@app.route("/callback", methods=['POST'])
+@app.route("/callback", methods=['GET', 'POST'])
 def callback():
-    # 獲取 X-Line-Signature 標頭值
-    signature = request.headers.get('X-Line-Signature', '')
-
-    # 獲取請求內容
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-
+    if request.method == 'GET':
+        # 處理 LINE 的驗證請求
+        return 'OK'
+    
+    # 處理 POST 請求
     try:
+        # 獲取 X-Line-Signature 標頭值
+        signature = request.headers.get('X-Line-Signature', '')
+        
+        # 獲取請求內容
+        body = request.get_data(as_text=True)
+        app.logger.info("Request body: " + body)
+        
+        # 驗證簽名
         handler.handle(body, signature)
+        
+        return 'OK'
+        
     except InvalidSignatureError:
         app.logger.error("Invalid signature")
-        abort(400)
+        return jsonify({'error': 'Invalid signature'}), 400
     except Exception as e:
         app.logger.error(f"Error handling webhook: {str(e)}")
-        abort(500)
-
-    return 'OK'
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/", methods=['GET'])
 def index():
