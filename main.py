@@ -375,9 +375,98 @@ def send_daily_reminder(user_id):
     except Exception as e:
         print(f"[ERROR] 發送每日提醒失敗: {e}", flush=True)
 
+def create_evening_reminder_message(correct_count):
+    flex_contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "已經晚上九點啦！只要5分鐘！",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center",
+                    "color": "#FF6B6B",
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"目前累積總共 🔥【{correct_count} 次】解剖出擊！",
+                    "wrap": True,
+                    "size": "md",
+                    "align": "center",
+                    "margin": "lg",
+                    "color": "#333333"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "開始今日問答",
+                                "text": "開始"
+                            },
+                            "style": "primary",
+                            "color": "#FF6B6B"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+    return FlexSendMessage(
+        alt_text="已經晚上九點啦！只要5分鐘！",
+        contents=flex_contents
+    )
+
+def check_and_remind_incomplete_users():
+    """檢查並提醒未完成當日問答的用戶"""
+    print(f"[DEBUG] 開始檢查未完成用戶: {datetime.now()}", flush=True)
+    
+    # 這裡需要獲取所有用戶列表
+    # 由於目前設計是單一用戶，我們先檢查 USER_ID
+    if not USER_ID:
+        print("[DEBUG] 沒有設定 USER_ID，跳過檢查", flush=True)
+        return
+    
+    try:
+        user_id = USER_ID
+        daily = get_user_daily(user_id)
+        stats = get_user_stats(user_id)
+        
+        print(f"[DEBUG] 檢查用戶 {user_id}: 今日題數={daily['today_count']}", flush=True)
+        
+        # 如果今日題數少於5題，發送提醒
+        if daily["today_count"] < 5:
+            print(f"[DEBUG] 用戶 {user_id} 未完成今日問答，發送提醒", flush=True)
+            reminder_message = create_evening_reminder_message(stats["correct"])
+            line_bot_api.push_message(
+                user_id,
+                reminder_message
+            )
+            print(f"[DEBUG] 晚上提醒已發送給用戶 {user_id}", flush=True)
+        else:
+            print(f"[DEBUG] 用戶 {user_id} 已完成今日問答", flush=True)
+            
+    except Exception as e:
+        print(f"[ERROR] 檢查未完成用戶失敗: {e}", flush=True)
+
 def main():
     print("Anatomy Quiz Bot 已啟動...")
+    # 早上9點發送每日提醒
     schedule.every().day.at(QUESTION_TIME).do(send_daily_reminder, USER_ID)
+    # 晚上9點檢查未完成用戶並發送提醒
+    schedule.every().day.at("21:00").do(check_and_remind_incomplete_users)
     while True:
         schedule.run_pending()
         time.sleep(60)
