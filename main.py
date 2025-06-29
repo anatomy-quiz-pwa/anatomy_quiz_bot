@@ -97,19 +97,32 @@ def create_question_message(question):
     return FlexSendMessage(alt_text="今日解剖學問題", contents=flex_contents)
 
 def send_question(user_id):
+    print(f"[DEBUG] send_question 開始，user_id={user_id}", flush=True)
     daily = get_user_daily(user_id)
     stats = get_user_stats(user_id)
+    print(f"[DEBUG] daily={daily}, stats={stats}", flush=True)
+    
     if daily["today_count"] >= 5:
+        print(f"[DEBUG] 今日已達上限: {daily['today_count']}", flush=True)
         line_bot_api.push_message(
             user_id,
             TextSendMessage(text="今天已經完成五題，明天再來挑戰吧！")
         )
         return
+    
+    print("[DEBUG] 開始獲取題目", flush=True)
     questions = get_questions()
+    print(f"[DEBUG] 總題目數: {len(questions)}", flush=True)
+    
     available = [q for q in questions if q["qid"] not in stats["correct_qids"]]
+    print(f"[DEBUG] 未答對題目數: {len(available)}", flush=True)
+    
     today_answered = set(daily["today_answered"])
+    print(f"[DEBUG] 今日已回答: {today_answered}", flush=True)
+    
     available = [q for q in available if q["qid"] not in today_answered]
-    print(f"[DEBUG] send_question available={len(available)}", flush=True)
+    print(f"[DEBUG] 最終可用題目數: {len(available)}", flush=True)
+    
     if not available:
         print("[DEBUG] send_question: no available questions", flush=True)
         line_bot_api.push_message(
@@ -117,22 +130,27 @@ def send_question(user_id):
             TextSendMessage(text="今天沒有新題目了，明天再來挑戰吧！")
         )
         return
+    
     import random
     question = random.choice(available)
-    try:
-        app.logger.info(f"[DEBUG] 出題給 user_id={user_id}, qid={question['qid']}, 題目內容={question['question'][:20]}")
-    except Exception as e:
-        print(f"[DEBUG] logger error: {e}")
+    print(f"[DEBUG] 選中題目: qid={question['qid']}, 題目={question['question'][:30]}...", flush=True)
+    
     daily["today_answered"].append(question["qid"])
     user_states[user_id] = {
         'current_question': question,
         'answered': False
     }
-    line_bot_api.push_message(
-        user_id,
-        create_question_message(question)
-    )
-    print(f"問題已發送給用戶 {user_id}: {datetime.now()}")
+    
+    print("[DEBUG] 準備發送題目", flush=True)
+    try:
+        question_message = create_question_message(question)
+        line_bot_api.push_message(
+            user_id,
+            question_message
+        )
+        print(f"[DEBUG] 問題已發送給用戶 {user_id}: {datetime.now()}", flush=True)
+    except Exception as e:
+        print(f"[ERROR] 發送題目失敗: {e}", flush=True)
 
 def handle_answer(user_id, answer_number):
     if user_id not in user_states or user_states[user_id]['answered']:
