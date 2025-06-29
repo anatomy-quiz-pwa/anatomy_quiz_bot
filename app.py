@@ -7,7 +7,7 @@ from linebot.models import (
     PostbackEvent, TemplateSendMessage, ButtonsTemplate
 )
 from dotenv import load_dotenv
-from main import send_question, handle_answer, create_menu_message
+from main import send_question, handle_answer, create_menu_message, get_user_question_count
 
 # 載入環境變量
 load_dotenv()
@@ -79,12 +79,24 @@ def handle_message(event):
     # 處理特定指令
     if text == "開始每日問答":
         try:
-            send_question(user_id)
-            # 回覆確認訊息
+            # 獲取用戶的答題計數
+            count = get_user_question_count(user_id)
+            
+            # 發送歡迎訊息
+            welcome_message = f"歡迎來到今天的解剖咬一口，這是你完成的第{count + 1}個解剖題目！溫馨提醒～本帳號只能進行機器人解剖題目練習，沒有小編回覆您喔！我們開始今天的練習吧！"
+            
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="請點選上方藍色選項回答本日問題")
+                TextSendMessage(text=welcome_message)
             )
+            
+            # 延遲一下再發送問題，避免訊息順序混亂
+            import time
+            time.sleep(1)
+            
+            # 發送問題
+            send_question(user_id)
+            
         except Exception as e:
             app.logger.error(f"Error sending question: {str(e)}")
             line_bot_api.reply_message(

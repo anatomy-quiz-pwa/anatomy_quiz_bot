@@ -21,6 +21,9 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 # 用戶狀態字典
 user_states = {}
 
+# 用戶答題計數字典
+user_question_count = {}
+
 def create_question_message(question):
     """創建問題訊息"""
     buttons = []
@@ -66,6 +69,10 @@ def send_question(user_id):
     except Exception as e:
         print(f"發送問題時出錯: {str(e)}")
 
+def get_user_question_count(user_id):
+    """獲取用戶的答題計數"""
+    return user_question_count.get(user_id, 0)
+
 def handle_answer(user_id, answer_number):
     """處理用戶答案"""
     if user_id not in user_states or user_states[user_id]['answered']:
@@ -77,6 +84,9 @@ def handle_answer(user_id, answer_number):
     
     # 標記用戶已回答
     user_states[user_id]['answered'] = True
+    
+    # 增加用戶答題計數
+    user_question_count[user_id] = user_question_count.get(user_id, 0) + 1
     
     # 準備回覆訊息
     if user_answer == correct_answer:
