@@ -83,7 +83,7 @@ def handle_message(event):
             # 回覆確認訊息
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="正在為您準備問題...")
+                TextSendMessage(text="請點選上方藍色選項回答本日問題")
             )
         except Exception as e:
             app.logger.error(f"Error sending question: {str(e)}")
