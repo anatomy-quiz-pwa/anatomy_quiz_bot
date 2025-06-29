@@ -48,19 +48,23 @@ def get_user_stats(user_id):
                     except Exception:
                         pass  # 忽略非數字內容
             last_update = row[4] if len(row) > 4 else ''
-            return {
+            stats = {
                 'correct': correct,
                 'wrong': wrong,
                 'correct_qids': correct_qids,
                 'last_update': last_update
             }
+            print(f"[DEBUG] get_user_stats for {user_id}: {stats}", flush=True)
+            return stats
     # 沒有找到，回傳預設值
-    return {
+    stats = {
         'correct': 0,
         'wrong': 0,
         'correct_qids': [],
         'last_update': ''
     }
+    print(f"[DEBUG] get_user_stats for {user_id}: {stats}", flush=True)
+    return stats
 
 def update_user_stats(user_id, correct, wrong, correct_qids):
     service = get_service()

@@ -83,7 +83,7 @@ def handle_message(event):
         try:
             count = get_user_question_count(user_id)
             correct, wrong = get_user_correct_wrong(user_id)
-            welcome_message = f"歡迎來到今天的解剖咬一口，這是你完成的第{count + 1}個解剖題目！目前累積正確共{correct}題、錯誤{wrong}題"
+            welcome_message = f"歡迎來到今天的解剖咬一口～～～\n🌟【{correct} 次】！共累積🔥【{correct} 次】"
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=welcome_message)
@@ -103,6 +103,7 @@ def handle_message(event):
             TextSendMessage(text="已停止每日問答。")
         )
     else:
+        # 只要不是答題流程，回覆主選單
         try:
             line_bot_api.reply_message(
                 event.reply_token,
@@ -117,9 +118,21 @@ def handle_message(event):
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
+    print("收到Postback", flush=True)
     app.logger.info(f"[DEBUG] 收到 PostbackEvent: {event}")
     user_id = event.source.user_id
     data = event.postback.data
+
+    if data == "continue_quiz":
+        count = get_user_question_count(user_id)
+        if count < 5:
+            send_question(user_id)
+        else:
+            line_bot_api.push_message(
+                user_id,
+                TextSendMessage(text="今日已經達到上限！明天再來增加解剖力！")
+            )
+        return
 
     if data.startswith("answer_"):
         try:

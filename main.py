@@ -71,11 +71,9 @@ def send_question(user_id):
     available = [q for q in questions if q["qid"] not in stats["correct_qids"]]
     today_answered = set(daily["today_answered"])
     available = [q for q in available if q["qid"] not in today_answered]
-    try:
-        app.logger.info(f"[DEBUG] user_id={user_id}, today_answered={list(today_answered)}, available_qids={[q['qid'] for q in available]}")
-    except Exception as e:
-        print(f"[DEBUG] logger error: {e}")
+    print(f"[DEBUG] send_question available={len(available)}", flush=True)
     if not available:
+        print("[DEBUG] send_question: no available questions", flush=True)
         line_bot_api.push_message(
             user_id,
             TextSendMessage(text="今天沒有新題目了，明天再來挑戰吧！")
@@ -120,9 +118,15 @@ def handle_answer(user_id, answer_number):
         message = f"殘念啊！正確答案是{correct_answer}. {question['options'][correct_answer - 1]}\n\n"
     update_user_stats(user_id, stats["correct"], stats["wrong"], stats["correct_qids"])
     message += f"補充說明：\n{question['explanation']}"
+    # 先推送補充資料
     line_bot_api.push_message(
         user_id,
         TextSendMessage(text=message)
+    )
+    # 再推送繼續每日問答選單
+    line_bot_api.push_message(
+        user_id,
+        create_continue_menu_message(stats["correct"])
     )
 
 def create_menu_message():
@@ -141,6 +145,18 @@ def create_menu_message():
         ]
     )
     return TemplateSendMessage(alt_text="解剖學問答選單", template=template)
+
+def create_continue_menu_message(correct_count):
+    return TemplateSendMessage(
+        alt_text="繼續每日問答",
+        template=ButtonsTemplate(
+            title="每日問答",
+            text=f"繼續每日問答；目前累積的積分是{correct_count}題正確",
+            actions=[
+                PostbackAction(label="繼續每日問答", data="continue_quiz")
+            ]
+        )
+    )
 
 def main():
     print("Anatomy Quiz Bot 已啟動...")

@@ -131,6 +131,7 @@ def get_questions():
             print(f"Added question: {question['question'][:50]}...")
         
         print(f"Successfully loaded {len(questions)} questions from Google Sheets")
+        print(f"[DEBUG] get_questions loaded {len(questions)} questions", flush=True)
         return questions
         
     except Exception as e:
