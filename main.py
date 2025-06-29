@@ -3,8 +3,7 @@ import time
 from datetime import datetime, date
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (
-    TextSendMessage, TemplateSendMessage, ButtonsTemplate,
-    PostbackAction, MessageAction, TextMessage,
+    TextSendMessage, TextMessage,
     FlexSendMessage
 )
 from linebot.exceptions import LineBotApiError
@@ -226,15 +225,57 @@ def create_menu_message():
     )
 
 def create_continue_menu_message(correct_count):
-    return TemplateSendMessage(
-        alt_text="繼續每日問答",
-        template=ButtonsTemplate(
-            title="每日問答",
-            text=f"繼續每日問答；目前累積的積分是{correct_count}題正確",
-            actions=[
-                PostbackAction(label="繼續每日問答", data="continue_quiz")
+    flex_contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "每日問答",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center",
+                    "color": "#1DB446",
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"繼續每日問答；目前累積的積分是{correct_count}題正確",
+                    "wrap": True,
+                    "size": "md",
+                    "align": "center",
+                    "margin": "lg",
+                    "color": "#333333"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "繼續每日問答",
+                                "data": "continue_quiz"
+                            },
+                            "style": "primary",
+                            "color": "#1DB446"
+                        }
+                    ]
+                }
             ]
-        )
+        }
+    }
+    return FlexSendMessage(
+        alt_text="繼續每日問答",
+        contents=flex_contents
     )
 
 def main():

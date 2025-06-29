@@ -4,8 +4,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
-    PostbackEvent, TemplateSendMessage, ButtonsTemplate,
-    FlexSendMessage
+    PostbackEvent, FlexSendMessage
 )
 from dotenv import load_dotenv
 from main import send_question, handle_answer, create_menu_message, get_user_question_count, get_user_correct_wrong
