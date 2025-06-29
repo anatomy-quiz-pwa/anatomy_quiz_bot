@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# anatomy_quiz_bot
-=======
 # Anatomy Quiz Bot
 
 這是一個自動發送解剖學問題的 LINE Bot 專案。
