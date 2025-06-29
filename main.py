@@ -1,7 +1,6 @@
 import schedule
-
 import time
-from datetime import datetime
+from datetime import datetime, date
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (
     TextSendMessage, TemplateSendMessage, ButtonsTemplate,
@@ -9,20 +8,36 @@ from linebot.models import (
 )
 from linebot.exceptions import LineBotApiError
 from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, USER_ID, QUESTION_TIME
-from sheets_handler import get_random_question
-
-
-
+from sheets_handler import get_questions
+from user_stats_handler import get_user_stats, update_user_stats
+from flask import current_app as app
 
 # 初始化 LINE Bot
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# 用戶狀態字典
-user_states = {}
+# 用戶每日狀態（只記錄 today_count, today_answered，跨天可重置）
+user_daily_state = {}  # user_id: {"date": "2024-06-09", "today_count": int, "today_answered": [qid, ...]}
+# 用戶當前題目狀態
+user_states = {}  # user_id: {"current_question": {...}, "answered": bool}
 
-# 用戶答題計數字典
-user_question_count = {}
+def get_today():
+    return date.today().isoformat()
+
+def get_user_daily(user_id):
+    today = get_today()
+    daily = user_daily_state.get(user_id)
+    if not daily or daily["date"] != today:
+        user_daily_state[user_id] = {"date": today, "today_count": 0, "today_answered": []}
+    return user_daily_state[user_id]
+
+def get_user_question_count(user_id):
+    daily = get_user_daily(user_id)
+    return daily["today_count"]
+
+def get_user_correct_wrong(user_id):
+    stats = get_user_stats(user_id)
+    return stats["correct"], stats["wrong"]
 
 def create_question_message(question):
     """創建問題訊息"""
@@ -44,68 +59,73 @@ def create_question_message(question):
     return TemplateSendMessage(alt_text="今日解剖學問題", template=template)
 
 def send_question(user_id):
-    """發送每日問題"""
-    try:
-        question = get_random_question()
-        if not question:
-            line_bot_api.push_message(
-                user_id,
-                TextSendMessage(text="抱歉，目前無法獲取問題。")
-            )
-            return
-        
-        # 保存用戶的當前問題
-        user_states[user_id] = {
-            'current_question': question,
-            'answered': False
-        }
-        
-        # 發送問題
+    daily = get_user_daily(user_id)
+    stats = get_user_stats(user_id)
+    if daily["today_count"] >= 5:
         line_bot_api.push_message(
             user_id,
-            create_question_message(question)
+            TextSendMessage(text="今天已經完成五題，明天再來挑戰吧！")
         )
-        print(f"問題已發送給用戶 {user_id}: {datetime.now()}")
+        return
+    questions = get_questions()
+    available = [q for q in questions if q["qid"] not in stats["correct_qids"]]
+    today_answered = set(daily["today_answered"])
+    available = [q for q in available if q["qid"] not in today_answered]
+    try:
+        app.logger.info(f"[DEBUG] user_id={user_id}, today_answered={list(today_answered)}, available_qids={[q['qid'] for q in available]}")
     except Exception as e:
-        print(f"發送問題時出錯: {str(e)}")
-
-def get_user_question_count(user_id):
-    """獲取用戶的答題計數"""
-    return user_question_count.get(user_id, 0)
+        print(f"[DEBUG] logger error: {e}")
+    if not available:
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text="今天沒有新題目了，明天再來挑戰吧！")
+        )
+        return
+    import random
+    question = random.choice(available)
+    try:
+        app.logger.info(f"[DEBUG] 出題給 user_id={user_id}, qid={question['qid']}, 題目內容={question['question'][:20]}")
+    except Exception as e:
+        print(f"[DEBUG] logger error: {e}")
+    daily["today_answered"].append(question["qid"])
+    user_states[user_id] = {
+        'current_question': question,
+        'answered': False
+    }
+    line_bot_api.push_message(
+        user_id,
+        create_question_message(question)
+    )
+    print(f"問題已發送給用戶 {user_id}: {datetime.now()}")
 
 def handle_answer(user_id, answer_number):
-    """處理用戶答案"""
     if user_id not in user_states or user_states[user_id]['answered']:
         return
-    
     question = user_states[user_id]['current_question']
     correct_answer = int(question['answer'])
     user_answer = answer_number
-    
-    # 標記用戶已回答
     user_states[user_id]['answered'] = True
-    
-    # 增加用戶答題計數
-    user_question_count[user_id] = user_question_count.get(user_id, 0) + 1
-    
-    # 準備回覆訊息
+    daily = get_user_daily(user_id)
+    stats = get_user_stats(user_id)
+    # 增加今日題數
+    daily["today_count"] += 1
+    # 判斷答對/錯
     if user_answer == correct_answer:
+        stats["correct"] += 1
+        if question["qid"] not in stats["correct_qids"]:
+            stats["correct_qids"].append(question["qid"])
         message = "哇窩！你的解剖真好！\n\n"
     else:
-        # 顯示正確答案的選項文字
-        correct_option_text = question['options'][correct_answer - 1]  # 因為選項索引從0開始
-        message = f"殘念啊！正確答案是{correct_answer}. {correct_option_text}\n\n"
-    
+        stats["wrong"] += 1
+        message = f"殘念啊！正確答案是{correct_answer}. {question['options'][correct_answer - 1]}\n\n"
+    update_user_stats(user_id, stats["correct"], stats["wrong"], stats["correct_qids"])
     message += f"補充說明：\n{question['explanation']}"
-    
-    # 發送回覆
     line_bot_api.push_message(
         user_id,
         TextSendMessage(text=message)
     )
 
 def create_menu_message():
-    """創建主選單"""
     template = ButtonsTemplate(
         title="解剖學問答",
         text="請選擇操作：",
@@ -123,13 +143,8 @@ def create_menu_message():
     return TemplateSendMessage(alt_text="解剖學問答選單", template=template)
 
 def main():
-    """主程序"""
     print("Anatomy Quiz Bot 已啟動...")
-    
-    # 設置定時任務
     schedule.every().day.at(QUESTION_TIME).do(send_question, USER_ID)
-    
-    # 運行定時任務
     while True:
         schedule.run_pending()
         time.sleep(60)

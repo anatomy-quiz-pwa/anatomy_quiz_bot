@@ -7,7 +7,7 @@ from linebot.models import (
     PostbackEvent, TemplateSendMessage, ButtonsTemplate
 )
 from dotenv import load_dotenv
-from main import send_question, handle_answer, create_menu_message, get_user_question_count
+from main import send_question, handle_answer, create_menu_message, get_user_question_count, get_user_correct_wrong
 
 # 載入環境變量
 load_dotenv()
@@ -71,6 +71,7 @@ def index():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    app.logger.info(f"[DEBUG] 收到 MessageEvent: {event}")
     text = event.message.text
     user_id = event.source.user_id
 
@@ -79,45 +80,35 @@ def handle_message(event):
     # 處理特定指令
     if text == "開始每日問答":
         try:
-            # 獲取用戶的答題計數
             count = get_user_question_count(user_id)
-            
-            # 發送歡迎訊息
-            welcome_message = f"歡迎來到今天的解剖咬一口，這是你完成的第{count + 1}個解剖題目！溫馨提醒～本帳號只能進行機器人解剖題目練習，沒有小編回覆您喔！我們開始今天的練習吧！"
-            
+            correct, wrong = get_user_correct_wrong(user_id)
+            welcome_message = f"歡迎來到今天的解剖咬一口，這是你完成的第{count + 1}個解剖題目！目前累積正確共{correct}題、錯誤{wrong}題"
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=welcome_message)
             )
-            
-            # 延遲一下再發送問題，避免訊息順序混亂
             import time
             time.sleep(1)
-            
-            # 發送問題
             send_question(user_id)
-            
         except Exception as e:
-            app.logger.error(f"Error sending question: {str(e)}")
+            app.logger.error(f"[ERROR] handle_message: {str(e)}")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="抱歉，目前無法獲取問題。")
             )
     elif text == "停止每日問答":
-        # TODO: 實現停止功能
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="已停止每日問答。")
         )
     else:
-        # 發送主選單
         try:
             line_bot_api.reply_message(
                 event.reply_token,
                 create_menu_message()
             )
         except Exception as e:
-            app.logger.error(f"Error sending menu: {str(e)}")
+            app.logger.error(f"[ERROR] handle_message menu: {str(e)}")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="收到您的訊息！請選擇「開始每日問答」來測試問題。")
@@ -125,12 +116,16 @@ def handle_message(event):
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
+    app.logger.info(f"[DEBUG] 收到 PostbackEvent: {event}")
     user_id = event.source.user_id
     data = event.postback.data
 
     if data.startswith("answer_"):
-        answer_number = int(data.split("_")[1])
-        handle_answer(user_id, answer_number)
+        try:
+            answer_number = int(data.split("_")[1])
+            handle_answer(user_id, answer_number)
+        except Exception as e:
+            app.logger.error(f"[ERROR] handle_postback: {str(e)}")
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))

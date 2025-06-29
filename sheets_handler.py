@@ -120,6 +120,7 @@ def get_questions():
                 continue
             
             question = {
+                'qid': i,  # 新增唯一題目ID
                 'category': row[0] if row[0] else '未分類',      # A列：題目分類
                 'question': row[1].strip(),                      # B列：題目內容
                 'options': options,                              # C-F列：選項1-4
