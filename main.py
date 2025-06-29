@@ -4,7 +4,8 @@ from datetime import datetime, date
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (
     TextSendMessage, TemplateSendMessage, ButtonsTemplate,
-    PostbackAction, MessageAction, TextMessage
+    PostbackAction, MessageAction, TextMessage,
+    FlexSendMessage
 )
 from linebot.exceptions import LineBotApiError
 from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, USER_ID, QUESTION_TIME
@@ -130,21 +131,61 @@ def handle_answer(user_id, answer_number):
     )
 
 def create_menu_message():
-    template = ButtonsTemplate(
-        title="解剖學問答",
-        text="請選擇操作：",
-        actions=[
-            MessageAction(
-                label="開始每日問答",
-                text="開始每日問答"
-            ),
-            MessageAction(
-                label="停止每日問答",
-                text="停止每日問答"
-            )
-        ]
+    flex_contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "解剖學問答",
+                    "weight": "bold",
+                    "size": "xl",
+                    "align": "center",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "請選擇操作：",
+                    "size": "md",
+                    "align": "center",
+                    "margin": "md"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "開始每日問答",
+                                "text": "開始每日問答"
+                            },
+                            "style": "primary",
+                            "color": "#1DB446"
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "停止每日問答",
+                                "text": "停止每日問答"
+                            },
+                            "style": "secondary"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+    return FlexSendMessage(
+        alt_text="解剖學問答選單",
+        contents=flex_contents
     )
-    return TemplateSendMessage(alt_text="解剖學問答選單", template=template)
 
 def create_continue_menu_message(correct_count):
     return TemplateSendMessage(
