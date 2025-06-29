@@ -9,18 +9,49 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 SPREADSHEET_ID = '1mKfdSTLMrqyLu2GW_Km5ErboyPgjcyJ4q9Mqn8DkwCE'
 RANGE_NAME = 'Sheet1!A:F'  # 假設數據在 Sheet1 的 A 到 F 列
 
+def get_test_questions():
+    """返回測試問題（當 Google Sheets 不可用時）"""
+    return [
+        {
+            'question': '人體最大的器官是什麼？',
+            'options': ['心臟', '大腦', '皮膚', '肝臟'],
+            'answer': '3',
+            'explanation': '皮膚是人體最大的器官，佔體重的約16%。'
+        },
+        {
+            'question': '人體有多少塊骨頭？',
+            'options': ['206塊', '186塊', '226塊', '196塊'],
+            'answer': '1',
+            'explanation': '成人人體有206塊骨頭。'
+        },
+        {
+            'question': '心臟位於胸腔的哪個位置？',
+            'options': ['左側', '右側', '中央偏左', '中央偏右'],
+            'answer': '3',
+            'explanation': '心臟位於胸腔中央偏左的位置。'
+        }
+    ]
+
 def get_credentials():
     """獲取 Google Sheets API 憑證"""
     try:
-        # 從環境變數讀取 Google 憑證
+        # 優先使用本地 credentials.json 檔案
+        if os.path.exists('credentials.json'):
+            creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
+            print("Using local credentials.json file")
+            return creds
+        
+        # 如果沒有本地檔案，嘗試從環境變數讀取
         google_credentials = os.getenv('GOOGLE_CREDENTIALS')
         if google_credentials:
             creds_info = json.loads(google_credentials)
-            creds = Credentials.from_service_account_info(creds_info)
+            creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+            print("Using Google credentials from environment variable")
             return creds
-        else:
-            print("Warning: GOOGLE_CREDENTIALS environment variable not found")
-            return None
+        
+        print("No Google credentials found")
+        return None
+        
     except Exception as e:
         print(f"Error loading Google credentials: {str(e)}")
         return None
