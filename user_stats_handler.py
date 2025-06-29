@@ -24,6 +24,12 @@ def get_service():
     service = build('sheets', 'v4', credentials=creds)
     return service
 
+def safe_int(val):
+    try:
+        return int(val)
+    except Exception:
+        return 0
+
 def get_user_stats(user_id):
     service = get_service()
     sheet = service.spreadsheets()
@@ -32,9 +38,15 @@ def get_user_stats(user_id):
     values = result.get('values', [])
     for row in values:
         if row and row[0] == user_id:
-            correct = int(row[1]) if len(row) > 1 and row[1] else 0
-            wrong = int(row[2]) if len(row) > 2 and row[2] else 0
-            correct_qids = [int(q) for q in row[3].split(',')] if len(row) > 3 and row[3] else []
+            correct = safe_int(row[1]) if len(row) > 1 and row[1] else 0
+            wrong = safe_int(row[2]) if len(row) > 2 and row[2] else 0
+            correct_qids = []
+            if len(row) > 3 and row[3]:
+                for q in row[3].split(','):
+                    try:
+                        correct_qids.append(int(q))
+                    except Exception:
+                        pass  # 忽略非數字內容
             last_update = row[4] if len(row) > 4 else ''
             return {
                 'correct': correct,
