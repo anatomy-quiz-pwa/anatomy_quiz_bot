@@ -82,7 +82,9 @@ def handle_answer(user_id, answer_number):
     if user_answer == correct_answer:
         message = "✅ 恭喜你答對了！\n\n"
     else:
-        message = f"❌ 答錯了！正確答案是：{correct_answer}\n\n"
+        # 顯示正確答案的選項文字
+        correct_option_text = question['options'][correct_answer - 1]  # 因為選項索引從0開始
+        message = f"❌ 答錯了！正確答案是：{correct_answer}. {correct_option_text}\n\n"
     
     message += f"補充說明：\n{question['explanation']}"
     

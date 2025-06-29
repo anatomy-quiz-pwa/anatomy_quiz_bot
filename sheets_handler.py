@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 # Google Sheets 配置
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 SPREADSHEET_ID = '1mKfdSTLMrqyLu2GW_Km5ErboyPgjcyJ4q9Mqn8DkwCE'
-RANGE_NAME = 'Sheet1!A:F'  # 假設數據在 Sheet1 的 A 到 F 列
+RANGE_NAME = 'Sheet1!A:H'  # 修改為 A 到 H 列
 
 def get_test_questions():
     """返回測試問題（當 Google Sheets 不可用時）"""
@@ -59,47 +59,67 @@ def get_credentials():
 def get_questions():
     """從 Google Sheets 獲取問題數據"""
     try:
+        print("Starting to get questions from Google Sheets...")
         creds = get_credentials()
         if not creds:
             print("No valid credentials found")
             return []
-            
+        
+        print("Building Google Sheets service...")
         service = build('sheets', 'v4', credentials=creds)
         sheet = service.spreadsheets()
         
+        print(f"Requesting data from spreadsheet {SPREADSHEET_ID}, range {RANGE_NAME}")
         result = sheet.values().get(
             spreadsheetId=SPREADSHEET_ID,
             range=RANGE_NAME
         ).execute()
         
         values = result.get('values', [])
+        print(f"Raw data received: {len(values)} rows")
+        
         if not values:
             print("No data found in spreadsheet")
             return []
         
+        # 顯示前幾行資料來除錯
+        print("First few rows of data:")
+        for i, row in enumerate(values[:3]):
+            print(f"Row {i}: {row}")
+        
         # 跳過標題行，將數據轉換為字典列表
         questions = []
-        for row in values[1:]:  # 跳過標題行
-            if len(row) >= 6:  # 確保有足夠的列
+        for i, row in enumerate(values[1:], 1):  # 跳過標題行
+            print(f"Processing row {i}: {row}")
+            if len(row) >= 8:  # 確保有足夠的列 (A-H = 8列)
                 question = {
-                    'question': row[0],
-                    'options': row[1:5],
-                    'answer': row[4],
-                    'explanation': row[5] if len(row) > 5 else ''
+                    'category': row[0],      # A列：題目分類
+                    'question': row[1],      # B列：題目內容
+                    'options': row[2:6],     # C-F列：選項1-4
+                    'answer': row[6],        # G列：正確答案
+                    'explanation': row[7] if len(row) > 7 else ''  # H列：補充資料
                 }
                 questions.append(question)
+                print(f"Added question: {question['question'][:50]}...")
+            else:
+                print(f"Row {i} has insufficient columns: {len(row)} < 8")
         
-        print(f"Loaded {len(questions)} questions from Google Sheets")
+        print(f"Successfully loaded {len(questions)} questions from Google Sheets")
         return questions
         
     except Exception as e:
         print(f"Error getting questions from Google Sheets: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def get_random_question():
     """隨機獲取一個問題"""
+    print("Getting random question...")
     questions = get_questions()
     if not questions:
         print("No questions available")
         return None
-    return random.choice(questions) 
+    selected = random.choice(questions)
+    print(f"Selected question: {selected['question'][:50]}...")
+    return selected 
