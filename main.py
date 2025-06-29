@@ -161,16 +161,45 @@ def send_question(user_id):
         print(f"[ERROR] 發送題目失敗: {e}", flush=True)
 
 def handle_answer(user_id, answer_number):
-    if user_id not in user_states or user_states[user_id]['answered']:
+    print(f"[DEBUG] handle_answer 開始: user_id={user_id}, answer={answer_number}", flush=True)
+    
+    # 檢查用戶狀態，防止重複回答
+    if user_id not in user_states:
+        print(f"[DEBUG] 用戶 {user_id} 沒有當前題目狀態", flush=True)
         return
+    
+    if user_states[user_id]['answered']:
+        print(f"[DEBUG] 用戶 {user_id} 已經回答過此題", flush=True)
+        # 回覆用戶已經回答過
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text="你已經回答過這題了！請等待下一題。")
+        )
+        return
+    
+    # 立即標記為已回答，防止重複點擊
+    user_states[user_id]['answered'] = True
+    
+    # 立即回覆確認訊息
+    try:
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text="收到你的答案！正在處理中...")
+        )
+    except Exception as e:
+        print(f"[ERROR] 發送確認訊息失敗: {e}", flush=True)
+    
     question = user_states[user_id]['current_question']
     correct_answer = int(question['answer'])
     user_answer = answer_number
-    user_states[user_id]['answered'] = True
+    
+    print(f"[DEBUG] 處理答案: 正確答案={correct_answer}, 用戶答案={user_answer}", flush=True)
+    
     daily = get_user_daily(user_id)
     stats = get_user_stats(user_id)
     # 增加今日題數
     daily["today_count"] += 1
+    
     # 判斷答對/錯
     if user_answer == correct_answer:
         stats["correct"] += 1
@@ -180,18 +209,33 @@ def handle_answer(user_id, answer_number):
     else:
         stats["wrong"] += 1
         message = f"殘念啊！正確答案是{correct_answer}. {question['options'][correct_answer - 1]}\n\n"
+    
     update_user_stats(user_id, stats["correct"], stats["wrong"], stats["correct_qids"])
     message += f"補充說明：\n{question['explanation']}"
-    # 先推送補充資料
-    line_bot_api.push_message(
-        user_id,
-        TextSendMessage(text=message)
-    )
-    # 再推送繼續每日問答選單
-    line_bot_api.push_message(
-        user_id,
-        create_continue_menu_message(stats["correct"])
-    )
+    
+    print(f"[DEBUG] 準備發送答案回饋", flush=True)
+    
+    # 發送答案回饋
+    try:
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text=message)
+        )
+        print(f"[DEBUG] 答案回饋已發送", flush=True)
+    except Exception as e:
+        print(f"[ERROR] 發送答案回饋失敗: {e}", flush=True)
+    
+    # 發送繼續問答選單
+    try:
+        line_bot_api.push_message(
+            user_id,
+            create_continue_menu_message(stats["correct"])
+        )
+        print(f"[DEBUG] 繼續問答選單已發送", flush=True)
+    except Exception as e:
+        print(f"[ERROR] 發送繼續問答選單失敗: {e}", flush=True)
+    
+    print(f"[DEBUG] handle_answer 完成", flush=True)
 
 def create_menu_message():
     flex_contents = {
