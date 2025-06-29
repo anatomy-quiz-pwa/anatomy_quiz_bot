@@ -92,18 +92,42 @@ def get_questions():
         questions = []
         for i, row in enumerate(values[1:], 1):  # 跳過標題行
             print(f"Processing row {i}: {row}")
-            if len(row) >= 8:  # 確保有足夠的列 (A-H = 8列)
-                question = {
-                    'category': row[0],      # A列：題目分類
-                    'question': row[1],      # B列：題目內容
-                    'options': row[2:6],     # C-F列：選項1-4
-                    'answer': row[6],        # G列：正確答案
-                    'explanation': row[7] if len(row) > 7 else ''  # H列：補充資料
-                }
-                questions.append(question)
-                print(f"Added question: {question['question'][:50]}...")
-            else:
+            
+            # 確保有足夠的列
+            if len(row) < 8:
                 print(f"Row {i} has insufficient columns: {len(row)} < 8")
+                continue
+            
+            # 檢查必要欄位是否為空
+            if not row[1] or not row[1].strip():  # 題目內容
+                print(f"Row {i} has empty question content")
+                continue
+            
+            # 檢查選項是否為空
+            options = [opt.strip() for opt in row[2:6] if opt and opt.strip()]
+            if len(options) < 4:
+                print(f"Row {i} has insufficient options: {len(options)} < 4")
+                continue
+            
+            # 檢查答案是否有效
+            try:
+                answer = int(row[6])
+                if answer < 1 or answer > 4:
+                    print(f"Row {i} has invalid answer: {answer}")
+                    continue
+            except (ValueError, TypeError):
+                print(f"Row {i} has non-numeric answer: {row[6]}")
+                continue
+            
+            question = {
+                'category': row[0] if row[0] else '未分類',      # A列：題目分類
+                'question': row[1].strip(),                      # B列：題目內容
+                'options': options,                              # C-F列：選項1-4
+                'answer': str(answer),                           # G列：正確答案
+                'explanation': row[7].strip() if len(row) > 7 and row[7] else ''  # H列：補充資料
+            }
+            questions.append(question)
+            print(f"Added question: {question['question'][:50]}...")
         
         print(f"Successfully loaded {len(questions)} questions from Google Sheets")
         return questions
