@@ -6,16 +6,28 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
     PostbackEvent, TemplateSendMessage, ButtonsTemplate
 )
-from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET
+from dotenv import load_dotenv
 from main import send_question, handle_answer, create_menu_message
 
+# 載入環境變量
+load_dotenv()
+
 app = Flask(__name__)
+
+# 直接從環境變數讀取
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
+LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET')
+
+app.logger.info(f"Token loaded: {LINE_CHANNEL_ACCESS_TOKEN[:20] if LINE_CHANNEL_ACCESS_TOKEN else 'None'}...")
+app.logger.info(f"Secret loaded: {LINE_CHANNEL_SECRET[:10] if LINE_CHANNEL_SECRET else 'None'}...")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 @app.route("/callback", methods=['GET', 'POST'])
 def callback():
+    app.logger.info(f"Received {request.method} request to /callback")
+    
     if request.method == 'GET':
         # 處理 LINE 的驗證請求
         return 'OK'
@@ -24,18 +36,19 @@ def callback():
     try:
         # 獲取 X-Line-Signature 標頭值
         signature = request.headers.get('X-Line-Signature', '')
+        app.logger.info(f"Signature: {signature}")
         
         # 獲取請求內容
         body = request.get_data(as_text=True)
-        app.logger.info("Request body: " + body)
+        app.logger.info(f"Request body: {body}")
         
         # 驗證簽名
         handler.handle(body, signature)
         
         return 'OK'
         
-    except InvalidSignatureError:
-        app.logger.error("Invalid signature")
+    except InvalidSignatureError as e:
+        app.logger.error(f"Invalid signature: {str(e)}")
         return jsonify({'error': 'Invalid signature'}), 400
     except Exception as e:
         app.logger.error(f"Error handling webhook: {str(e)}")
