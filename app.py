@@ -74,31 +74,42 @@ def handle_message(event):
     text = event.message.text
     user_id = event.source.user_id
 
-    # 先加入簡單的測試回覆
-    try:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f"收到訊息：{text}")
-        )
-    except Exception as e:
-        app.logger.error(f"Error replying message: {str(e)}")
-        return
+    app.logger.info(f"Received message from {user_id}: {text}")
 
-    # 原有的邏輯
+    # 處理特定指令
     if text == "開始每日問答":
-        send_question(user_id)
+        try:
+            send_question(user_id)
+            # 回覆確認訊息
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="正在為您準備問題...")
+            )
+        except Exception as e:
+            app.logger.error(f"Error sending question: {str(e)}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="抱歉，目前無法獲取問題。")
+            )
     elif text == "停止每日問答":
         # TODO: 實現停止功能
-        line_bot_api.push_message(
-            user_id,
+        line_bot_api.reply_message(
+            event.reply_token,
             TextSendMessage(text="已停止每日問答。")
         )
     else:
         # 發送主選單
-        line_bot_api.push_message(
-            user_id,
-            create_menu_message()
-        )
+        try:
+            line_bot_api.reply_message(
+                event.reply_token,
+                create_menu_message()
+            )
+        except Exception as e:
+            app.logger.error(f"Error sending menu: {str(e)}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="收到您的訊息！請選擇「開始每日問答」來測試問題。")
+            )
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
