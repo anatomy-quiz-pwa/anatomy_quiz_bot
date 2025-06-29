@@ -143,8 +143,15 @@ def get_random_question():
     print("Getting random question...")
     questions = get_questions()
     if not questions:
-        print("No questions available")
-        return None
+        print("No questions available from Google Sheets, using test question")
+        # 返回測試問題
+        return {
+            'category': '測試',
+            'question': '這是一個測試問題：人體最大的器官是什麼？',
+            'options': ['心臟', '大腦', '皮膚', '肝臟'],
+            'answer': '3',
+            'explanation': '皮膚是人體最大的器官，佔體重的約16%。'
+        }
     selected = random.choice(questions)
     print(f"Selected question: {selected['question'][:50]}...")
     return selected 
