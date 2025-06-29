@@ -225,11 +225,12 @@ def handle_answer(user_id, answer_number):
     except Exception as e:
         print(f"[ERROR] 發送答案回饋失敗: {e}", flush=True)
     
-    # 發送繼續問答選單
+    # 重新取得最新 stats 再顯示繼續問答選單
     try:
+        latest_stats = get_user_stats(user_id)
         line_bot_api.push_message(
             user_id,
-            create_continue_menu_message(stats["correct"])
+            create_continue_menu_message(latest_stats["correct"])
         )
         print(f"[DEBUG] 繼續問答選單已發送", flush=True)
     except Exception as e:
