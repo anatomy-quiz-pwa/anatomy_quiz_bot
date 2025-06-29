@@ -10,10 +10,7 @@ SHEET_NAME = 'user_stats'  # 請確認你的工作表名稱
 
 # 取得 Google Sheets 憑證
 def get_credentials():
-    if os.path.exists('credentials.json'):
-        creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
-        return creds
-    google_credentials = os.getenv('GOOGLE_CREDENTIALS')
+    google_credentials = os.getenv('GOOGLE_CREDENTIALS')  # 或 'GOOGLE_CREDENTIALS_USER'
     if google_credentials:
         creds_info = json.loads(google_credentials)
         creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)

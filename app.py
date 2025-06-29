@@ -71,6 +71,7 @@ def index():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print("收到訊息", flush=True)
     app.logger.info(f"[DEBUG] 收到 MessageEvent: {event}")
     text = event.message.text
     user_id = event.source.user_id
