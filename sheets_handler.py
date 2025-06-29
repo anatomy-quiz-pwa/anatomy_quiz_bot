@@ -7,7 +7,8 @@ from googleapiclient.discovery import build
 # Google Sheets 配置
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 SPREADSHEET_ID = '1mKfdSTLMrqyLu2GW_Km5ErboyPgjcyJ4q9Mqn8DkwCE'
-RANGE_NAME = 'Sheet1!A:H'  # 修改為 A 到 H 列
+SHEET_NAME = '題庫'  # 工作表名稱
+RANGE_NAME = f'{SHEET_NAME}!A:H'  # 範圍：題庫!A:H
 
 def get_test_questions():
     """返回測試問題（當 Google Sheets 不可用時）"""
