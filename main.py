@@ -304,9 +304,80 @@ def create_continue_menu_message(correct_count):
         contents=flex_contents
     )
 
+def create_daily_reminder_message(correct_count):
+    flex_contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "早安！解剖學問答時間",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center",
+                    "color": "#1DB446",
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"目前累積總共 🔥【{correct_count} 次】解剖出擊！",
+                    "wrap": True,
+                    "size": "md",
+                    "align": "center",
+                    "margin": "lg",
+                    "color": "#333333"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "開始今日問答",
+                                "text": "開始"
+                            },
+                            "style": "primary",
+                            "color": "#1DB446"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+    return FlexSendMessage(
+        alt_text="早安！解剖學問答時間",
+        contents=flex_contents
+    )
+
+def send_daily_reminder(user_id):
+    """發送每日提醒訊息"""
+    print(f"[DEBUG] 發送每日提醒給 user_id={user_id}", flush=True)
+    try:
+        stats = get_user_stats(user_id)
+        correct_count = stats["correct"]
+        print(f"[DEBUG] 用戶 {user_id} 累積正確次數: {correct_count}", flush=True)
+        
+        reminder_message = create_daily_reminder_message(correct_count)
+        line_bot_api.push_message(
+            user_id,
+            reminder_message
+        )
+        print(f"[DEBUG] 每日提醒已發送給用戶 {user_id}: {datetime.now()}", flush=True)
+    except Exception as e:
+        print(f"[ERROR] 發送每日提醒失敗: {e}", flush=True)
+
 def main():
     print("Anatomy Quiz Bot 已啟動...")
-    schedule.every().day.at(QUESTION_TIME).do(send_question, USER_ID)
+    schedule.every().day.at(QUESTION_TIME).do(send_daily_reminder, USER_ID)
     while True:
         schedule.run_pending()
         time.sleep(60)
