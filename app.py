@@ -122,12 +122,19 @@ def handle_postback(event):
     app.logger.info(f"[DEBUG] 收到 PostbackEvent: {event}")
     user_id = event.source.user_id
     data = event.postback.data
+    
+    app.logger.info(f"[DEBUG] Postback data: {data}")
+    app.logger.info(f"[DEBUG] User ID: {user_id}")
 
     if data == "continue_quiz":
+        app.logger.info("[DEBUG] 處理 continue_quiz")
         count = get_user_question_count(user_id)
+        app.logger.info(f"[DEBUG] 今日題數: {count}")
         if count < 5:
+            app.logger.info("[DEBUG] 發送下一題")
             send_question(user_id)
         else:
+            app.logger.info("[DEBUG] 今日已達上限")
             line_bot_api.push_message(
                 user_id,
                 TextSendMessage(text="今日已經達到上限！明天再來增加解剖力！")
@@ -135,11 +142,16 @@ def handle_postback(event):
         return
 
     if data.startswith("answer_"):
+        app.logger.info(f"[DEBUG] 處理答案: {data}")
         try:
             answer_number = int(data.split("_")[1])
+            app.logger.info(f"[DEBUG] 答案編號: {answer_number}")
             handle_answer(user_id, answer_number)
         except Exception as e:
             app.logger.error(f"[ERROR] handle_postback: {str(e)}")
+            app.logger.error(f"[ERROR] 完整錯誤: {e}")
+    
+    app.logger.info("[DEBUG] Postback 處理完成")
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
