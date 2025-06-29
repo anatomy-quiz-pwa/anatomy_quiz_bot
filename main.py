@@ -197,6 +197,7 @@ def handle_answer(user_id, answer_number):
     
     daily = get_user_daily(user_id)
     stats = get_user_stats(user_id)
+    print(f"[DEBUG] handle_answer: stats before update: {stats}", flush=True)
     # 增加今日題數
     daily["today_count"] += 1
     
@@ -210,6 +211,7 @@ def handle_answer(user_id, answer_number):
         stats["wrong"] += 1
         message = f"殘念啊！正確答案是{correct_answer}. {question['options'][correct_answer - 1]}\n\n"
     
+    print(f"[DEBUG] update_user_stats: correct={stats['correct']}, wrong={stats['wrong']}, correct_qids={stats['correct_qids']}", flush=True)
     update_user_stats(user_id, stats["correct"], stats["wrong"], stats["correct_qids"])
     message += f"補充說明：\n{question['explanation']}"
     
@@ -225,9 +227,14 @@ def handle_answer(user_id, answer_number):
     except Exception as e:
         print(f"[ERROR] 發送答案回饋失敗: {e}", flush=True)
     
-    # 重新取得最新 stats 再顯示繼續問答選單
+    # 等待 Google Sheets 同步
+    time.sleep(1)
+    print(f"[DEBUG] 等待 1 秒後重新取得最新 stats", flush=True)
+    latest_stats = get_user_stats(user_id)
+    print(f"[DEBUG] handle_answer: stats after update: {latest_stats}", flush=True)
+    
+    # 發送繼續問答選單
     try:
-        latest_stats = get_user_stats(user_id)
         line_bot_api.push_message(
             user_id,
             create_continue_menu_message(latest_stats["correct"])
