@@ -38,6 +38,11 @@ def callback():
         signature = request.headers.get('X-Line-Signature', '')
         app.logger.info(f"Signature: {signature}")
         
+        # 如果沒有簽名，直接返回 OK
+        if not signature:
+            app.logger.warning("No signature provided, returning OK")
+            return 'OK'
+        
         # 獲取請求內容
         body = request.get_data(as_text=True)
         app.logger.info(f"Request body: {body}")
