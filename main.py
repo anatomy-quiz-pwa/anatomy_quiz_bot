@@ -42,22 +42,60 @@ def get_user_correct_wrong(user_id):
 
 def create_question_message(question):
     """創建問題訊息"""
-    buttons = []
+    # 創建選項按鈕
+    option_buttons = []
     for i, option in enumerate(question['options'], 1):
-        buttons.append(
-            PostbackAction(
-                label=f"{i}. {option}",
-                data=f"answer_{i}"
-            )
-        )
+        option_buttons.append({
+            "type": "button",
+            "action": {
+                "type": "postback",
+                "label": f"{i}. {option}",
+                "data": f"answer_{i}"
+            },
+            "style": "primary",
+            "color": "#1DB446",
+            "margin": "sm"
+        })
     
-    template = ButtonsTemplate(
-        title="今日解剖學問題",
-        text=question['question'],
-        actions=buttons
-    )
+    flex_contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "今日解剖學問題",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center",
+                    "color": "#1DB446",
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": question['question'],
+                    "wrap": True,
+                    "size": "md",
+                    "margin": "lg",
+                    "color": "#333333"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "spacing": "sm",
+                    "contents": option_buttons
+                }
+            ]
+        }
+    }
     
-    return TemplateSendMessage(alt_text="今日解剖學問題", template=template)
+    return FlexSendMessage(alt_text="今日解剖學問題", contents=flex_contents)
 
 def send_question(user_id):
     daily = get_user_daily(user_id)
