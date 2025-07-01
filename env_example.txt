@@ -1,0 +1,16 @@
+# LINE Bot 配置
+LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
+LINE_CHANNEL_SECRET=your_line_channel_secret_here
+
+# 用戶配置
+USER_ID=your_user_id_here
+
+# 問題發送時間
+QUESTION_TIME=09:00
+
+# Supabase 配置
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Google Sheets 配置 (用於資料遷移)
+GOOGLE_CREDENTIALS={"type": "service_account", ...} 

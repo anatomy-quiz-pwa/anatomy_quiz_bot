@@ -3,10 +3,17 @@ import json
 from datetime import date
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from supabase import create_client, Client
+from supabase_client import supabase
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SPREADSHEET_ID = '1mKfdSTLMrqyLu2GW_Km5ErboyPgjcyJ4q9Mqn8DkwCE'
 SHEET_NAME = 'user_stats'  # 請確認你的工作表名稱
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # 取得 Google Sheets 憑證
 def get_credentials():
@@ -94,4 +101,8 @@ def update_user_stats(user_id, correct, wrong, correct_qids):
             range=f'{SHEET_NAME}!A:E',
             valueInputOption='RAW',
             body={'values': [[user_id, correct, wrong, correct_qids_str, today]]}
-        ).execute() 
+        ).execute()
+
+# 例如：查詢資料
+data = supabase.table("your_table").select("*").execute()
+print(data) 

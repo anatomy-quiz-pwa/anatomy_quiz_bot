@@ -15,4 +15,8 @@ USER_ID = os.getenv('USER_ID')
 QUESTION_TIME = os.getenv('QUESTION_TIME', '09:00')
 
 # 問題數據庫路徑
-QUESTIONS_DB = 'questions.json' 
+QUESTIONS_DB = 'questions.json'
+
+# Supabase 配置
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY') 
