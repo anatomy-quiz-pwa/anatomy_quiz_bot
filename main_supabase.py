@@ -154,16 +154,15 @@ def send_question(user_id):
     print(f"[DEBUG] 所有題目 ID: {question_ids}", flush=True)
     print(f"[DEBUG] 用戶已答對題目 ID: {stats['correct_qids']}", flush=True)
     
-    # 只排除已經累積答對過的題目
-    available = [q for q in questions if q["qid"] not in stats["correct_qids"]]
-    print(f"[DEBUG] 未答對題目數: {len(available)}", flush=True)
+    # 允許題目重複出現，從所有題目中隨機選擇
+    available = questions
+    print(f"[DEBUG] 可用題目數: {len(available)}", flush=True)
     
     if not available:
-        print("[DEBUG] send_question: no available questions", flush=True)
-        print(f"[DEBUG] 原因：所有題目 ID {question_ids} 都在已答對列表 {stats['correct_qids']} 中", flush=True)
+        print("[DEBUG] send_question: no questions available", flush=True)
         safe_push_message(
             user_id,
-            TextMessage(text="今天沒有新題目了，明天再來挑戰吧！")
+            TextMessage(text="暫時沒有題目，請稍後再試！")
         )
         return
     
@@ -294,11 +293,11 @@ def handle_answer(user_id, answer_number):
         print(f"[ERROR] 發送結果訊息失敗: {e}", flush=True)
     
     # 檢查是否達到每日上限
-    if daily["today_count"] >= 5:
+    if daily["today_count"] >= 100:
         try:
             safe_push_message(
                 user_id,
-                TextMessage(text="🎊 恭喜！你今天已經完成所有題目了！明天再來挑戰吧！")
+                TextMessage(text="🎊 恭喜！你今天已經完成 100 題了！明天再來挑戰吧！")
             )
             print(f"[DEBUG] 完成訊息已發送給用戶 {user_id}", flush=True)
         except Exception as e:
@@ -340,7 +339,7 @@ def create_menu_message(user_id=None):
                 },
                 {
                     "type": "text",
-                    "text": f"每天挑戰 5 題解剖學問題，提升你的醫學知識！\n目前累積：{correct_count} 題正確",
+                    "text": f"每天挑戰 100 題解剖學問題，提升你的醫學知識！\n目前累積：{correct_count} 題正確",
                     "size": "sm",
                     "align": "center",
                     "color": "#666666",

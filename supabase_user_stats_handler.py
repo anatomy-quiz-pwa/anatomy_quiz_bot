@@ -146,13 +146,10 @@ def add_correct_answer(user_id, question_id=None):
         new_wrong = current_stats['wrong']
         new_correct_qids = current_stats['correct_qids'].copy()  # 複製列表避免修改原列表
         
-        # 如果有 question_id，添加到正確題目列表中
-        print(f"[DEBUG] add_correct_answer: 檢查 question_id={question_id}, 當前 correct_qids={new_correct_qids}", flush=True)
-        if question_id is not None and question_id not in new_correct_qids:
-            new_correct_qids.append(question_id)
-            print(f"[DEBUG] add_correct_answer: 已添加 question_id={question_id} 到 correct_qids", flush=True)
-        else:
-            print(f"[DEBUG] add_correct_answer: question_id={question_id} 已存在或為 None，不添加", flush=True)
+        # 允許題目重複出現，不再記錄具體的題目 ID
+        print(f"[DEBUG] add_correct_answer: 題目重複模式，不記錄 question_id={question_id}", flush=True)
+        # 保持 correct_qids 為空列表，只記錄總答對次數
+        new_correct_qids = []
         
         # 更新到資料庫
         success = update_user_stats(user_id, new_correct, new_wrong, new_correct_qids)

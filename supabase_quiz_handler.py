@@ -63,7 +63,7 @@ def get_questions():
                 explanation = " | ".join(explanation_parts) if explanation_parts else ""
                 
                 question = {
-                    'qid': row.get('id', i + 1),  # 使用 Supabase 的 id 或 fallback
+                    'qid': row['id'],  # 直接使用 Supabase 的 id
                     'category': row.get('topic_tag', '未分類'),
                     'question': row.get('question_text', '').strip(),
                     'options': [
