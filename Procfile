@@ -1,1 +1,1 @@
-web: gunicorn app_supabase:app 
+web: uvicorn app_supabase:app --host 0.0.0.0 --port $PORT 
