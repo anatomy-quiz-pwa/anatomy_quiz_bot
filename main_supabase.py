@@ -29,11 +29,16 @@ def safe_push_message(user_id, message):
     else:
         try:
             # 使用 v3 API 的推送訊息方法
-            request = PushMessageRequest(
-                to=user_id,
-                messages=[message]
-            )
-            line_bot_api.push_message(request)
+            from linebot.v3.messaging import ApiClient
+            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+            with ApiClient(configuration) as api_client:
+                messaging_api = MessagingApi(api_client)
+                messaging_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[message]
+                    )
+                )
             return True
         except Exception as e:
             print(f"[ERROR] 推送訊息失敗: {str(e)}")

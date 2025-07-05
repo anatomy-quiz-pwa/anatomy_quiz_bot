@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from main_supabase import send_question, handle_answer, create_menu_message, get_user_question_count, get_user_correct_wrong
 from supabase import create_client, Client
 from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import Configuration, MessagingApi
+from linebot.v3.messaging import Configuration, MessagingApi, ReplyMessageRequest, PushMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks.models import MessageEvent, PostbackEvent, TextMessageContent
 from linebot.v3.messaging import TextMessage, FlexMessage
@@ -58,12 +58,16 @@ def safe_reply_message(reply_token, message):
     else:
         try:
             # 使用 v3 API 的回覆訊息方法
-            from linebot.v3.messaging import ReplyMessageRequest
-            request = ReplyMessageRequest(
-                reply_token=reply_token,
-                messages=[message]
-            )
-            line_bot_api.reply_message(request)
+            from linebot.v3.messaging import ApiClient
+            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+            with ApiClient(configuration) as api_client:
+                messaging_api = MessagingApi(api_client)
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[message]
+                    )
+                )
             return True
         except Exception as e:
             print(f"[ERROR] 發送訊息失敗: {str(e)}")
@@ -80,12 +84,16 @@ def safe_push_message(user_id, message):
         try:
             print(f"🔍 safe_push_message: 使用 LINE Bot API 發送訊息", flush=True)
             # 使用 v3 API 的推送訊息方法
-            from linebot.v3.messaging import PushMessageRequest
-            request = PushMessageRequest(
-                to=user_id,
-                messages=[message]
-            )
-            line_bot_api.push_message(request)
+            from linebot.v3.messaging import ApiClient
+            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+            with ApiClient(configuration) as api_client:
+                messaging_api = MessagingApi(api_client)
+                messaging_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[message]
+                    )
+                )
             print(f"🔍 safe_push_message: 訊息發送成功", flush=True)
             return True
         except Exception as e:
