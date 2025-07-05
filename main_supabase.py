@@ -3,11 +3,11 @@ import schedule
 import time
 from datetime import datetime, date
 from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import Configuration, MessagingApi
-from linebot.v3.messaging.models import TextMessage, FlexMessage, PushMessageRequest
+from linebot.v3.messaging.models import TextMessage, FlexMessage
 from dotenv import load_dotenv
 from supabase_quiz_handler import get_questions
 from supabase_user_stats_handler import get_user_stats, update_user_stats, add_correct_answer, add_wrong_answer
+from line_bot_utils import send_line_message, send_line_flex_message
 
 # 載入環境變數
 load_dotenv()
@@ -28,25 +28,18 @@ def safe_push_message(user_id, message):
         return True
     else:
         try:
-            # 使用 v3 API 的推送訊息方法
-            from linebot.v3.messaging import ApiClient
-            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-            with ApiClient(configuration) as api_client:
-                messaging_api = MessagingApi(api_client)
-                messaging_api.push_message(
-                    PushMessageRequest(
-                        to=user_id,
-                        messages=[message]
-                    )
-                )
-            return True
+            if isinstance(message, TextMessage):
+                return send_line_message(user_id, message.text)
+            elif isinstance(message, FlexMessage):
+                return send_line_flex_message(user_id, message)
+            else:
+                print(f"[ERROR] 不支援的訊息類型: {type(message)}")
+                return False
         except Exception as e:
             print(f"[ERROR] 推送訊息失敗: {str(e)}")
             return False
 
 # 初始化 LINE Bot
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 用戶每日狀態（只記錄 today_count, today_answered，跨天可重置）

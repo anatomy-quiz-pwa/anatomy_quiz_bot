@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from main_supabase import send_question, handle_answer, create_menu_message, get_user_question_count, get_user_correct_wrong
 from supabase import create_client, Client
 from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import Configuration, MessagingApi, ReplyMessageRequest, PushMessageRequest
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks.models import MessageEvent, PostbackEvent, TextMessageContent
 from linebot.v3.messaging import TextMessage, FlexMessage
+from line_bot_utils import send_line_message, send_line_flex_message, reply_line_message, reply_line_flex_message
 
 # 載入環境變量
 load_dotenv()
@@ -28,8 +28,6 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET')
 print(f"Token loaded: {LINE_CHANNEL_ACCESS_TOKEN[:20] if LINE_CHANNEL_ACCESS_TOKEN else 'None'}...")
 print(f"Secret loaded: {LINE_CHANNEL_SECRET[:10] if LINE_CHANNEL_SECRET else 'None'}...")
 
-configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 def log_user_answer(supabase, user_id, question, chosen_option):
@@ -57,18 +55,13 @@ def safe_reply_message(reply_token, message):
         return True
     else:
         try:
-            # 使用 v3 API 的回覆訊息方法
-            from linebot.v3.messaging import ApiClient
-            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-            with ApiClient(configuration) as api_client:
-                messaging_api = MessagingApi(api_client)
-                messaging_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=[message]
-                    )
-                )
-            return True
+            if isinstance(message, TextMessage):
+                return reply_line_message(reply_token, message.text)
+            elif isinstance(message, FlexMessage):
+                return reply_line_flex_message(reply_token, message)
+            else:
+                print(f"[ERROR] 不支援的訊息類型: {type(message)}")
+                return False
         except Exception as e:
             print(f"[ERROR] 發送訊息失敗: {str(e)}")
             return False
@@ -83,19 +76,13 @@ def safe_push_message(user_id, message):
     else:
         try:
             print(f"🔍 safe_push_message: 使用 LINE Bot API 發送訊息", flush=True)
-            # 使用 v3 API 的推送訊息方法
-            from linebot.v3.messaging import ApiClient
-            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-            with ApiClient(configuration) as api_client:
-                messaging_api = MessagingApi(api_client)
-                messaging_api.push_message(
-                    PushMessageRequest(
-                        to=user_id,
-                        messages=[message]
-                    )
-                )
-            print(f"🔍 safe_push_message: 訊息發送成功", flush=True)
-            return True
+            if isinstance(message, TextMessage):
+                return send_line_message(user_id, message.text)
+            elif isinstance(message, FlexMessage):
+                return send_line_flex_message(user_id, message)
+            else:
+                print(f"[ERROR] 不支援的訊息類型: {type(message)}")
+                return False
         except Exception as e:
             print(f"🛑 safe_push_message: 推送訊息失敗: {str(e)}", flush=True)
             print(f"[ERROR] 推送訊息失敗: {str(e)}")
