@@ -48,7 +48,12 @@ def get_user_stats(user_id):
             correct_qids = []
             correct_qids_str = user_row.get('correct_qids', '')
             print(f"🔍 get_user_stats: correct_qids_str = '{correct_qids_str}'", flush=True)
-            if correct_qids_str:
+            
+            # 防呆：若錯誤為字串型態（如 "EMPTY"），強制轉為空陣列
+            if isinstance(correct_qids_str, str) and correct_qids_str.strip().upper() in ['EMPTY', 'NULL', 'NONE', '']:
+                correct_qids = []
+                print(f"🔍 get_user_stats: 檢測到特殊字串 '{correct_qids_str}'，強制轉為空陣列", flush=True)
+            elif correct_qids_str:
                 for qid in correct_qids_str.split(','):
                     try:
                         correct_qids.append(int(qid.strip()))
