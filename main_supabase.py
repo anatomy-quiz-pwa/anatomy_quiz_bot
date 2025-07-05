@@ -88,6 +88,7 @@ def create_question_message(question, user_id=None):
             "margin": "sm"
         })
     
+    # 使用更簡潔的 Flex Message 格式
     flex_contents = {
         "type": "bubble",
         "body": {
@@ -106,14 +107,6 @@ def create_question_message(question, user_id=None):
                 {
                     "type": "text",
                     "text": f"目前累積：{correct_count} 題正確",
-                    "size": "sm",
-                    "align": "center",
-                    "color": "#666666",
-                    "margin": "sm"
-                },
-                {
-                    "type": "text",
-                    "text": "點選下方選項作答",
                     "size": "sm",
                     "align": "center",
                     "color": "#666666",
@@ -142,7 +135,10 @@ def create_question_message(question, user_id=None):
         }
     }
     
-    return FlexMessage(alt_text="今日解剖學問題", contents=flex_contents)
+    # 確保 alt_text 不為空
+    alt_text = f"解剖學問題：{question['question'][:50]}..." if len(question['question']) > 50 else question['question']
+    
+    return FlexMessage(alt_text=alt_text, contents=flex_contents)
 
 def send_question(user_id):
     print(f"🔍 進入 send_question function - user_id: {user_id}", flush=True)
