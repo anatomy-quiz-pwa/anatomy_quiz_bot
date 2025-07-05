@@ -17,36 +17,43 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def get_questions():
     """從 Supabase 獲取所有題目"""
+    print(f"🔍 進入 get_questions function", flush=True)
     try:
-        print("Starting to get questions from Supabase...")
+        print(f"🔍 get_questions: 開始從 Supabase 獲取題目", flush=True)
         
         # 查詢所有題目
+        print(f"🔍 get_questions: 執行 supabase.table('questions').select('*').execute()", flush=True)
         response = supabase.table("questions").select("*").execute()
+        print(f"🔍 get_questions: Supabase 查詢完成，response 類型: {type(response)}", flush=True)
         
         if hasattr(response, 'data'):
             questions_data = response.data
+            print(f"🔍 get_questions: 使用 response.data，長度: {len(questions_data) if questions_data else 0}", flush=True)
         else:
             questions_data = response
-        
-        print(f"Raw data received: {len(questions_data)} questions")
+            print(f"🔍 get_questions: 直接使用 response，長度: {len(questions_data) if questions_data else 0}", flush=True)
         
         if not questions_data:
-            print("No data found in Supabase questions table")
+            print(f"🔍 get_questions: Supabase questions 表格中沒有資料", flush=True)
             return []
+        
+        print(f"🔍 get_questions: 原始資料接收: {len(questions_data)} 題", flush=True)
         
         # 轉換為與原 Google Sheets 格式相容的格式
         questions = []
         for i, row in enumerate(questions_data):
             try:
+                print(f"🔍 get_questions: 處理第 {i} 行資料", flush=True)
+                
                 # 檢查必要欄位
                 if not row.get('question_text') or not row.get('option1') or not row.get('option2') or not row.get('option3') or not row.get('option4'):
-                    print(f"Row {i} has missing required fields")
+                    print(f"🔍 get_questions: 第 {i} 行缺少必要欄位", flush=True)
                     continue
                 
                 # 檢查正確答案是否有效
                 correct_answer = row.get('correct_answer')
                 if not isinstance(correct_answer, int) or correct_answer < 1 or correct_answer > 4:
-                    print(f"Row {i} has invalid correct_answer: {correct_answer}")
+                    print(f"🔍 get_questions: 第 {i} 行正確答案無效: {correct_answer}", flush=True)
                     continue
                 
                 # 構建解釋文字，包含新的欄位資訊
@@ -92,17 +99,17 @@ def get_questions():
                     'exam_source': row.get('exam_source')
                 }
                 questions.append(question)
-                print(f"Added question: {question['question'][:50]}...")
+                print(f"🔍 get_questions: 已添加題目: {question['question'][:50]}...", flush=True)
                 
             except Exception as e:
-                print(f"Error processing row {i}: {e}")
+                print(f"🛑 get_questions: 處理第 {i} 行時發生錯誤: {e}", flush=True)
                 continue
         
-        print(f"Successfully loaded {len(questions)} questions from Supabase")
+        print(f"🔍 get_questions: 成功從 Supabase 載入 {len(questions)} 題", flush=True)
         return questions
         
     except Exception as e:
-        print(f"Error getting questions from Supabase: {str(e)}")
+        print(f"🛑 get_questions 發生錯誤: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
         return []

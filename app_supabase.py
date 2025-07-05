@@ -236,22 +236,7 @@ def handle_message(event):
             correct, wrong = get_user_correct_wrong(user_id)
             total = correct + wrong
             
-            # 獲取今日挑戰次數（從內存，可能不準確）
-            today_count = get_user_question_count(user_id)
-            
-            print(f"[DEBUG] 開始指令 - user_id: {user_id}, today_count: {today_count}, correct: {correct}, wrong: {wrong}, total: {total}")
-            
-            # 如果今日挑戰次數為 0 但累積總次數 > 0，說明應用重啟過
-            # 但我們不應該用累積總次數作為今日計數，而是重置今日計數
-            if today_count == 0 and total > 0:
-                print(f"[DEBUG] 應用重啟後，重置今日計數，總次數: {total}")
-                # 重置今日計數，讓用戶可以重新開始今天的挑戰
-                from main_supabase import user_daily_state
-                today = get_today()
-                user_daily_state[user_id] = {"date": today, "today_count": 0, "today_answered": []}
-                today_count = 0
-            
-            welcome_message = f"你今天已經挑戰了 🌟【{today_count} 次】\n目前累積總共 🔥【{total} 次】解剖出擊！\n\n每日上限：100 題"
+            welcome_message = f"目前累積總共 🔥【{total} 次】解剖出擊！"
             safe_reply_message(
                 event.reply_token,
                 TextMessage(text=welcome_message)

@@ -5,10 +5,18 @@ from datetime import datetime, date
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.messaging import Configuration, MessagingApi
 from linebot.v3.messaging.models import TextMessage, FlexMessage, PushMessageRequest
-from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, USER_ID, QUESTION_TIME
+from dotenv import load_dotenv
 from supabase_quiz_handler import get_questions
 from supabase_user_stats_handler import get_user_stats, update_user_stats, add_correct_answer, add_wrong_answer
-from flask import current_app as app
+
+# 載入環境變數
+load_dotenv()
+
+# 從環境變數讀取設定
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
+LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET')
+USER_ID = os.getenv('USER_ID')
+QUESTION_TIME = os.getenv('QUESTION_TIME', '09:00')
 
 # 本地測試模式
 LOCAL_TEST_MODE = os.getenv('LOCAL_TEST_MODE', 'false').lower() == 'true'
@@ -139,64 +147,65 @@ def create_question_message(question, user_id=None):
     return FlexMessage(alt_text="今日解剖學問題", contents=flex_contents)
 
 def send_question(user_id):
-    print(f"[DEBUG] send_question 開始，user_id={user_id}", flush=True)
-    # 只依據資料庫紀錄
-    stats = get_user_stats(user_id)
-    print(f"[DEBUG] stats={stats}", flush=True)
-    
-    # 取得所有題目
-    print("[DEBUG] 開始獲取題目", flush=True)
-    questions = get_questions()
-    print(f"[DEBUG] 總題目數: {len(questions)}", flush=True)
-    
-    # 顯示所有題目的 ID
-    question_ids = [q["qid"] for q in questions]
-    print(f"[DEBUG] 所有題目 ID: {question_ids}", flush=True)
-    print(f"[DEBUG] 用戶已答對題目 ID: {stats['correct_qids']}", flush=True)
-    
-    # 允許題目重複出現，從所有題目中隨機選擇
-    available = questions
-    print(f"[DEBUG] 可用題目數: {len(available)}", flush=True)
-    
-    if not available:
-        print("[DEBUG] send_question: no questions available", flush=True)
-        safe_push_message(
-            user_id,
-            TextMessage(text="暫時沒有題目，請稍後再試！")
-        )
-        return
-    
-    import random
-    question = random.choice(available)
-    print(f"[DEBUG] 選中題目: qid={question['qid']}, 題目={question['question'][:30]}...", flush=True)
-    
-    # 不再記錄 daily['today_answered']
-    user_states[user_id] = {
-        'current_question': question,
-        'answered': False
-    }
-    
-    print("[DEBUG] 準備發送題目", flush=True)
+    print(f"🔍 進入 send_question function - user_id: {user_id}", flush=True)
     try:
+        # 取得所有題目
+        print(f"🔍 send_question: 開始獲取題目", flush=True)
+        questions = get_questions()
+        print(f"🔍 send_question: 總題目數: {len(questions)}", flush=True)
+        
+        if not questions:
+            print(f"🔍 send_question: 沒有題目可用", flush=True)
+            safe_push_message(
+                user_id,
+                TextMessage(text="暫時沒有題目，請稍後再試！")
+            )
+            return
+        
+        # 允許題目重複出現，從所有題目中隨機選擇
+        import random
+        question = random.choice(questions)
+        print(f"🔍 send_question: 選中題目: qid={question['qid']}, 題目={question['question'][:30]}...", flush=True)
+        
+        user_states[user_id] = {
+            'current_question': question,
+            'answered': False
+        }
+        print(f"🔍 send_question: 已設置用戶狀態", flush=True)
+        
+        print(f"🔍 send_question: 準備發送題目", flush=True)
         question_message = create_question_message(question, user_id)
+        print(f"🔍 send_question: 題目訊息已創建", flush=True)
+        
         safe_push_message(
             user_id,
             question_message
         )
-        print(f"[DEBUG] 問題已發送給用戶 {user_id}: {datetime.now()}", flush=True)
+        print(f"🔍 send_question: 問題已發送給用戶 {user_id}: {datetime.now()}", flush=True)
+        
     except Exception as e:
-        print(f"[ERROR] 發送題目失敗: {e}", flush=True)
+        print(f"🛑 send_question 發生錯誤: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        # 發送錯誤訊息給用戶
+        try:
+            safe_push_message(
+                user_id,
+                TextMessage(text="抱歉，發送題目時發生錯誤，請稍後再試！")
+            )
+        except Exception as push_error:
+            print(f"🛑 send_question: 發送錯誤訊息也失敗: {push_error}", flush=True)
 
 def handle_answer(user_id, answer_number):
-    print(f"[DEBUG] handle_answer 開始: user_id={user_id}, answer={answer_number}", flush=True)
+    print(f"🔍 進入 handle_answer function - user_id: {user_id}, answer: {answer_number}", flush=True)
     
     # 檢查用戶狀態，防止重複回答
     if user_id not in user_states:
-        print(f"[DEBUG] 用戶 {user_id} 沒有當前題目狀態", flush=True)
+        print(f"🔍 handle_answer: 用戶 {user_id} 沒有當前題目狀態", flush=True)
         return
     
     if user_states[user_id]['answered']:
-        print(f"[DEBUG] 用戶 {user_id} 已經回答過此題", flush=True)
+        print(f"🔍 handle_answer: 用戶 {user_id} 已經回答過此題", flush=True)
         # 回覆用戶已經回答過
         safe_push_message(
             user_id,
@@ -206,51 +215,59 @@ def handle_answer(user_id, answer_number):
     
     # 立即標記為已回答，防止重複點擊
     user_states[user_id]['answered'] = True
+    print(f"🔍 handle_answer: 已標記用戶 {user_id} 為已回答", flush=True)
     
     # 立即回覆確認訊息
     try:
+        print(f"🔍 handle_answer: 準備發送確認訊息", flush=True)
         safe_push_message(
             user_id,
             TextMessage(text="收到你的答案！正在處理中...")
         )
+        print(f"🔍 handle_answer: 確認訊息已發送", flush=True)
     except Exception as e:
-        print(f"[ERROR] 發送確認訊息失敗: {e}", flush=True)
+        print(f"🛑 handle_answer: 發送確認訊息失敗: {e}", flush=True)
     
     question = user_states[user_id]['current_question']
     correct_answer = int(question['answer'])
     user_answer = answer_number
     
-    print(f"[DEBUG] 處理答案: 正確答案={correct_answer}, 用戶答案={user_answer}", flush=True)
-    print(f"[DEBUG] handle_answer: question['qid'] = {question['qid']}", flush=True)
-    print(f"[DEBUG] handle_answer: question 完整資料 = {question}", flush=True)
+    print(f"🔍 handle_answer: 處理答案 - 正確答案={correct_answer}, 用戶答案={user_answer}", flush=True)
+    print(f"🔍 handle_answer: question['qid'] = {question['qid']}", flush=True)
+    print(f"🔍 handle_answer: question 完整資料 = {question}", flush=True)
     
+    print(f"🔍 handle_answer: 準備獲取用戶每日狀態", flush=True)
     daily = get_user_daily(user_id)
+    print(f"🔍 handle_answer: 每日狀態 = {daily}", flush=True)
+    
+    print(f"🔍 handle_answer: 準備獲取用戶統計資料", flush=True)
     stats = get_user_stats(user_id)
-    print(f"[DEBUG] handle_answer: stats before update: {stats}", flush=True)
+    print(f"🔍 handle_answer: 統計資料更新前 = {stats}", flush=True)
     
     # 檢查答案是否正確
     is_correct = (user_answer == correct_answer)
+    print(f"🔍 handle_answer: 答案檢查結果 - is_correct = {is_correct}", flush=True)
     
     # 更新統計到 Supabase
     if is_correct:
         # 使用 Supabase 函數更新正確答案
-        print(f"[DEBUG] handle_answer: 準備呼叫 add_correct_answer(user_id={user_id}, question_id={question['qid']})", flush=True)
+        print(f"🔍 handle_answer: 準備呼叫 add_correct_answer(user_id={user_id}, question_id={question['qid']})", flush=True)
         success = add_correct_answer(user_id, question['qid'])
-        print(f"[DEBUG] handle_answer: add_correct_answer 結果 = {success}", flush=True)
+        print(f"🔍 handle_answer: add_correct_answer 結果 = {success}", flush=True)
         if not success:
-            print(f"[ERROR] Failed to add correct answer for user {user_id}")
+            print(f"🛑 handle_answer: Failed to add correct answer for user {user_id}", flush=True)
     else:
         # 使用 Supabase 函數更新錯誤答案
+        print(f"🔍 handle_answer: 準備呼叫 add_wrong_answer(user_id={user_id})", flush=True)
         success = add_wrong_answer(user_id)
+        print(f"🔍 handle_answer: add_wrong_answer 結果 = {success}", flush=True)
         if not success:
-            print(f"[ERROR] Failed to add wrong answer for user {user_id}")
-    
-    # 更新每日計數
-    daily["today_count"] += 1
+            print(f"🛑 handle_answer: Failed to add wrong answer for user {user_id}", flush=True)
     
     # 重新查詢最新 stats（確保顯示最新積分）
+    print(f"🔍 handle_answer: 準備重新查詢最新統計資料", flush=True)
     latest_stats = get_user_stats(user_id)
-    print(f"[DEBUG] handle_answer: latest_stats after update: {latest_stats}", flush=True)
+    print(f"🔍 handle_answer: 更新後統計資料 = {latest_stats}", flush=True)
 
     # 創建結果訊息
     if is_correct:
@@ -284,37 +301,14 @@ def handle_answer(user_id, answer_number):
     
     # 發送結果訊息
     try:
+        print(f"🔍 handle_answer: 準備發送結果訊息", flush=True)
         safe_push_message(
             user_id,
             TextMessage(text=result_text)
         )
-        print(f"[DEBUG] 結果訊息已發送給用戶 {user_id}", flush=True)
+        print(f"🔍 handle_answer: 結果訊息已發送給用戶 {user_id}", flush=True)
     except Exception as e:
-        print(f"[ERROR] 發送結果訊息失敗: {e}", flush=True)
-    
-    # 檢查是否達到每日上限
-    if daily["today_count"] >= 100:
-        try:
-            safe_push_message(
-                user_id,
-                TextMessage(text="🎊 恭喜！你今天已經完成 100 題了！明天再來挑戰吧！")
-            )
-            print(f"[DEBUG] 完成訊息已發送給用戶 {user_id}", flush=True)
-        except Exception as e:
-            print(f"[ERROR] 發送完成訊息失敗: {e}", flush=True)
-    else:
-        # 發送繼續選單
-        try:
-            import time
-            time.sleep(1)  # 稍微延遲，讓用戶先看到結果
-            continue_menu = create_continue_menu_message(user_id)
-            safe_push_message(
-                user_id,
-                continue_menu
-            )
-            print(f"[DEBUG] 繼續選單已發送給用戶 {user_id}", flush=True)
-        except Exception as e:
-            print(f"[ERROR] 發送繼續選單失敗: {e}", flush=True)
+        print(f"🛑 handle_answer: 發送結果訊息失敗: {e}", flush=True)
 
 def create_menu_message(user_id=None):
     """創建主選單訊息，會自動查詢最新積分"""

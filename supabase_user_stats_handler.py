@@ -24,23 +24,30 @@ def safe_int(val):
 
 def get_user_stats(user_id):
     """從 Supabase 獲取用戶統計資料"""
+    print(f"🔍 進入 get_user_stats function - user_id: {user_id}", flush=True)
     try:
-        print(f"Getting user stats for {user_id} from Supabase...")
+        print(f"🔍 get_user_stats: 開始查詢 Supabase...", flush=True)
         
         # 查詢用戶統計資料
+        print(f"🔍 get_user_stats: 執行 supabase.table('user_stats').select('*').eq('user_id', {user_id}).execute()", flush=True)
         response = supabase.table("user_stats").select("*").eq("user_id", user_id).execute()
+        print(f"🔍 get_user_stats: Supabase 查詢完成，response 類型: {type(response)}", flush=True)
         
         if hasattr(response, 'data'):
             user_data = response.data
+            print(f"🔍 get_user_stats: 使用 response.data，長度: {len(user_data) if user_data else 0}", flush=True)
         else:
             user_data = response
+            print(f"🔍 get_user_stats: 直接使用 response，長度: {len(user_data) if user_data else 0}", flush=True)
         
         if user_data and len(user_data) > 0:
             user_row = user_data[0]
+            print(f"🔍 get_user_stats: 找到用戶資料: {user_row}", flush=True)
             
             # 解析正確題目ID列表
             correct_qids = []
             correct_qids_str = user_row.get('correct_qids', '')
+            print(f"🔍 get_user_stats: correct_qids_str = '{correct_qids_str}'", flush=True)
             if correct_qids_str:
                 for qid in correct_qids_str.split(','):
                     try:
@@ -54,7 +61,7 @@ def get_user_stats(user_id):
                 'correct_qids': correct_qids,
                 'last_update': user_row.get('last_update', '')
             }
-            print(f"[DEBUG] get_user_stats for {user_id}: {stats}", flush=True)
+            print(f"🔍 get_user_stats: 成功返回統計資料: {stats}", flush=True)
             return stats
         else:
             # 沒有找到用戶資料，回傳預設值
@@ -64,11 +71,11 @@ def get_user_stats(user_id):
                 'correct_qids': [],
                 'last_update': ''
             }
-            print(f"[DEBUG] get_user_stats for {user_id}: {stats} (new user)", flush=True)
+            print(f"🔍 get_user_stats: 新用戶，返回預設統計資料: {stats}", flush=True)
             return stats
             
     except Exception as e:
-        print(f"Error getting user stats from Supabase: {str(e)}")
+        print(f"🛑 get_user_stats 發生錯誤: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
         # 回傳預設值
@@ -78,25 +85,32 @@ def get_user_stats(user_id):
             'correct_qids': [],
             'last_update': ''
         }
+        print(f"🔍 get_user_stats: 錯誤後返回預設統計資料: {stats}", flush=True)
         return stats
 
 def update_user_stats(user_id, correct, wrong, correct_qids):
     """更新用戶統計資料到 Supabase"""
+    print(f"🔍 進入 update_user_stats function - user_id: {user_id}, correct: {correct}, wrong: {wrong}", flush=True)
     try:
-        print(f"Updating user stats for {user_id} in Supabase...")
-        print(f"[DEBUG] update_user_stats: correct_qids = {correct_qids}", flush=True)
+        print(f"🔍 update_user_stats: 開始更新用戶統計", flush=True)
+        print(f"🔍 update_user_stats: correct_qids = {correct_qids}", flush=True)
         
         # 準備資料
         correct_qids_str = ','.join(str(q) for q in correct_qids)
         today = date.today().isoformat()
+        print(f"🔍 update_user_stats: correct_qids_str = '{correct_qids_str}', today = '{today}'", flush=True)
         
         # 檢查用戶是否已存在
+        print(f"🔍 update_user_stats: 檢查用戶是否存在", flush=True)
         response = supabase.table("user_stats").select("id").eq("user_id", user_id).execute()
+        print(f"🔍 update_user_stats: 查詢用戶存在性完成，response 類型: {type(response)}", flush=True)
         
         if hasattr(response, 'data'):
             existing_data = response.data
+            print(f"🔍 update_user_stats: 使用 response.data，長度: {len(existing_data) if existing_data else 0}", flush=True)
         else:
             existing_data = response
+            print(f"🔍 update_user_stats: 直接使用 response，長度: {len(existing_data) if existing_data else 0}", flush=True)
         
         if existing_data and len(existing_data) > 0:
             # 更新現有用戶資料
@@ -107,9 +121,10 @@ def update_user_stats(user_id, correct, wrong, correct_qids):
                 'correct_qids': correct_qids_str,
                 'last_update': today
             }
+            print(f"🔍 update_user_stats: 更新現有用戶資料，id={user_id_in_db}, data={update_data}", flush=True)
             
             response = supabase.table("user_stats").update(update_data).eq("id", user_id_in_db).execute()
-            print(f"Updated existing user stats for {user_id}")
+            print(f"🔍 update_user_stats: 成功更新現有用戶統計 {user_id}", flush=True)
             
         else:
             # 新增用戶資料
@@ -120,78 +135,90 @@ def update_user_stats(user_id, correct, wrong, correct_qids):
                 'correct_qids': correct_qids_str,
                 'last_update': today
             }
+            print(f"🔍 update_user_stats: 新增用戶資料: {new_data}", flush=True)
             
             response = supabase.table("user_stats").insert(new_data).execute()
-            print(f"Created new user stats for {user_id}")
+            print(f"🔍 update_user_stats: 成功創建新用戶統計 {user_id}", flush=True)
         
         return True
         
     except Exception as e:
-        print(f"Error updating user stats in Supabase: {str(e)}")
+        print(f"🛑 update_user_stats 發生錯誤: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
         return False
 
 def add_correct_answer(user_id, question_id=None):
     """為用戶添加一個正確答案"""
+    print(f"🔍 進入 add_correct_answer function - user_id: {user_id}, question_id: {question_id}", flush=True)
     try:
-        print(f"Adding correct answer for user {user_id}, question_id: {question_id}")
-        print(f"[DEBUG] add_correct_answer: question_id = {question_id}", flush=True)
+        print(f"🔍 add_correct_answer: 開始處理正確答案", flush=True)
         
         # 獲取當前用戶統計
+        print(f"🔍 add_correct_answer: 準備獲取當前用戶統計", flush=True)
         current_stats = get_user_stats(user_id)
+        print(f"🔍 add_correct_answer: 當前統計 = {current_stats}", flush=True)
         
         # 更新統計資料
         new_correct = current_stats['correct'] + 1
         new_wrong = current_stats['wrong']
         new_correct_qids = current_stats['correct_qids'].copy()  # 複製列表避免修改原列表
         
+        print(f"🔍 add_correct_answer: 更新統計 - new_correct={new_correct}, new_wrong={new_wrong}", flush=True)
+        
         # 允許題目重複出現，不再記錄具體的題目 ID
-        print(f"[DEBUG] add_correct_answer: 題目重複模式，不記錄 question_id={question_id}", flush=True)
+        print(f"🔍 add_correct_answer: 題目重複模式，不記錄 question_id={question_id}", flush=True)
         # 保持 correct_qids 為空列表，只記錄總答對次數
         new_correct_qids = []
         
         # 更新到資料庫
+        print(f"🔍 add_correct_answer: 準備更新資料庫", flush=True)
         success = update_user_stats(user_id, new_correct, new_wrong, new_correct_qids)
         
         if success:
-            print(f"Successfully added correct answer for user {user_id}")
+            print(f"🔍 add_correct_answer: 成功添加正確答案給用戶 {user_id}", flush=True)
         else:
-            print(f"Failed to add correct answer for user {user_id}")
+            print(f"🛑 add_correct_answer: 添加正確答案失敗，用戶 {user_id}", flush=True)
             
         return success
         
     except Exception as e:
-        print(f"🛑 add_correct_answer 發生錯誤：{e}")
+        print(f"🛑 add_correct_answer 發生錯誤：{e}", flush=True)
         import traceback
         traceback.print_exc()
         return False
 
 def add_wrong_answer(user_id):
     """為用戶添加一個錯誤答案"""
+    print(f"🔍 進入 add_wrong_answer function - user_id: {user_id}", flush=True)
     try:
-        print(f"Adding wrong answer for user {user_id}")
+        print(f"🔍 add_wrong_answer: 開始處理錯誤答案", flush=True)
         
         # 獲取當前用戶統計
+        print(f"🔍 add_wrong_answer: 準備獲取當前用戶統計", flush=True)
         current_stats = get_user_stats(user_id)
+        print(f"🔍 add_wrong_answer: 當前統計 = {current_stats}", flush=True)
         
         # 更新統計資料
         new_correct = current_stats['correct']
         new_wrong = current_stats['wrong'] + 1
         new_correct_qids = current_stats['correct_qids']  # 保持不變
         
+        print(f"🔍 add_wrong_answer: 更新統計 - new_correct={new_correct}, new_wrong={new_wrong}", flush=True)
+        
         # 更新到資料庫
+        print(f"🔍 add_wrong_answer: 準備更新資料庫", flush=True)
         success = update_user_stats(user_id, new_correct, new_wrong, new_correct_qids)
         
         if success:
-            print(f"Successfully added wrong answer for user {user_id}")
+            print(f"🔍 add_wrong_answer: 成功添加錯誤答案給用戶 {user_id}", flush=True)
         else:
-            print(f"Failed to add wrong answer for user {user_id}")
+            print(f"🛑 add_wrong_answer: 添加錯誤答案失敗，用戶 {user_id}", flush=True)
             
         return success
         
     except Exception as e:
-        print(f"🛑 add_wrong_answer 發生錯誤：{e}")
+        print(f"🛑 add_wrong_answer 發生錯誤：{e}", flush=True)
         import traceback
         traceback.print_exc()
         return False
