@@ -7,8 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 初始化 Supabase 客戶端
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
+
+# 防呆驗證
+print(f"[DEBUG] Render 實際讀到的 URL: {repr(SUPABASE_URL)}")
+print(f"[DEBUG] Render 實際讀到的 KEY: {repr(SUPABASE_ANON_KEY[:20] if SUPABASE_ANON_KEY else 'None')}...")
+
+if any(c in SUPABASE_URL for c in ["\n", "\r", " ", "\t"]):
+    raise ValueError(f"❌ SUPABASE_URL 含有非法字元：{repr(SUPABASE_URL)}")
+
+if any(c in SUPABASE_ANON_KEY for c in ["\n", "\r", " ", "\t"]):
+    raise ValueError(f"❌ SUPABASE_ANON_KEY 含有非法字元：{repr(SUPABASE_ANON_KEY[:20])}...")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise ValueError("SUPABASE_URL 和 SUPABASE_ANON_KEY 必須在 .env 檔案中設定")
@@ -18,6 +28,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 def get_questions():
     """從 Supabase 獲取所有題目"""
     print(f"🔍 進入 get_questions function", flush=True)
+    print(f"[DEBUG] 使用 SUPABASE_URL: {repr(SUPABASE_URL)}", flush=True)
     try:
         print(f"🔍 get_questions: 開始從 Supabase 獲取題目", flush=True)
         
