@@ -73,23 +73,8 @@ def create_question_message(question, user_id=None):
         stats = get_user_stats(user_id)
         correct_count = stats['correct']
     
-    # 創建選項按鈕
-    option_buttons = []
-    for i, option in enumerate(question['options'], 1):
-        option_buttons.append({
-            "type": "button",
-            "action": {
-                "type": "postback",
-                "label": f"{i}. {option}",
-                "data": f"answer_{i}"
-            },
-            "style": "primary",
-            "color": "#1DB446",
-            "margin": "sm"
-        })
-    
     # 使用更簡潔的 Flex Message 格式
-    flex_contents = {
+    bubble = {
         "type": "bubble",
         "body": {
             "type": "box",
@@ -120,25 +105,30 @@ def create_question_message(question, user_id=None):
                     "type": "text",
                     "text": question['question'],
                     "wrap": True,
+                    "weight": "bold",
                     "size": "md",
                     "margin": "lg",
                     "color": "#333333"
-                },
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "margin": "lg",
-                    "spacing": "sm",
-                    "contents": option_buttons
                 }
+            ] + [
+                {
+                    "type": "button",
+                    "style": "secondary",
+                    "action": {
+                        "type": "postback",
+                        "label": f"{i+1}. {option}",
+                        "data": f"answer_{i+1}"
+                    },
+                    "margin": "md"
+                } for i, option in enumerate(question['options'])
             ]
         }
     }
     
-    # 確保 alt_text 不為空
+    # 確保 alt_text 不為空且有意義
     alt_text = f"解剖學問題：{question['question'][:50]}..." if len(question['question']) > 50 else question['question']
     
-    return FlexMessage(alt_text=alt_text, contents=flex_contents)
+    return FlexMessage(alt_text=alt_text, contents=bubble)
 
 def send_question(user_id):
     print(f"🔍 進入 send_question function - user_id: {user_id}", flush=True)
