@@ -374,6 +374,311 @@ def get_leaderboard_data():
         
         return []
 
+def create_question_flex_message(question, is_admin=False):
+    """創建題目的 Flex Message"""
+    try:
+        # 設定標題和顏色主題
+        if is_admin:
+            title = "🔑 管理員模式題目"
+            header_color = "#8B0000"  # 深紅色
+            bg_color = "#FFE4E1"      # 淺紅色
+        else:
+            title = f"📚 等級 {question.get('level', 1)} 題目"
+            header_color = "#2E8B57"  # 海洋綠
+            bg_color = "#F0FFF0"      # 蜜露綠
+        
+        # 創建選項按鈕
+        option_actions = []
+        option_emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"]
+        
+        for i, option in enumerate(question.get('options', []), 1):
+            option_actions.append({
+                "type": "button",
+                "action": {
+                    "type": "message",
+                    "label": f"{option_emojis[i-1]} {option[:30]}{'...' if len(option) > 30 else ''}",
+                    "text": str(i)
+                },
+                "style": "secondary",
+                "height": "sm"
+            })
+        
+        flex_message = {
+            "type": "flex",
+            "altText": f"{title} - {question.get('question', '')[:50]}...",
+            "contents": {
+                "type": "bubble",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": title,
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#FFFFFF",
+                            "align": "center"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"📖 {question.get('category', '解剖學')}",
+                            "size": "sm",
+                            "color": "#FFFFFF",
+                            "align": "center",
+                            "margin": "sm"
+                        }
+                    ],
+                    "backgroundColor": header_color,
+                    "paddingAll": "lg",
+                    "cornerRadius": "10px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "❓ 題目",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#333333",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": question.get('question', ''),
+                            "wrap": True,
+                            "size": "md",
+                            "color": "#444444",
+                            "margin": "sm",
+                            "flex": 0
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": "💡 請選擇答案",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#333333",
+                            "margin": "lg"
+                        }
+                    ],
+                    "backgroundColor": bg_color,
+                    "paddingAll": "lg",
+                    "spacing": "sm"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": option_actions,
+                    "spacing": "sm",
+                    "paddingAll": "lg"
+                }
+            }
+        }
+        
+        return flex_message
+        
+    except Exception as e:
+        logger.error(f"❌ 創建題目 Flex Message 失敗: {e}")
+        return None
+
+def create_score_flex_message(user_stats, nickname):
+    """創建積分的 Flex Message"""
+    try:
+        correct_answers = user_stats.get('correct', 0)
+        wrong_answers = user_stats.get('wrong', 0)
+        level = user_stats.get('level', 1)
+        correct_in_level = user_stats.get('correct_in_level', 0)
+        
+        # 計算總題數和準確率
+        total_questions = correct_answers + wrong_answers
+        accuracy = round((correct_answers / max(total_questions, 1)) * 100, 1)
+        
+        # 根據等級設定顏色主題
+        if level >= 10:
+            header_color = "#FFD700"  # 金色
+            bg_color = "#FFFACD"      # 淺金色
+            level_emoji = "👑"
+        elif level >= 5:
+            header_color = "#4169E1"  # 皇家藍
+            bg_color = "#F0F8FF"      # 愛麗絲藍
+            level_emoji = "⭐"
+        else:
+            header_color = "#32CD32"  # 萊姆綠
+            bg_color = "#F0FFF0"      # 蜜露綠
+            level_emoji = "🌟"
+        
+        # 創建進度條
+        progress_percentage = min((correct_in_level / max(level * 5, 1)) * 100, 100)  # 假設每級需要5題
+        progress_bar = "█" * int(progress_percentage / 10) + "░" * (10 - int(progress_percentage / 10))
+        
+        flex_message = {
+            "type": "flex",
+            "altText": f"📊 {nickname} 的學習成績",
+            "contents": {
+                "type": "bubble",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"📊 {nickname} 的成績",
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#FFFFFF",
+                            "align": "center"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{level_emoji} 等級 {level} 學習者",
+                            "size": "sm",
+                            "color": "#FFFFFF",
+                            "align": "center",
+                            "margin": "sm"
+                        }
+                    ],
+                    "backgroundColor": header_color,
+                    "paddingAll": "lg",
+                    "cornerRadius": "10px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "✅ 答對題數",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"{correct_answers} 題",
+                                    "weight": "bold",
+                                    "size": "sm",
+                                    "color": "#28a745",
+                                    "align": "end",
+                                    "flex": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "❌ 答錯題數",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"{wrong_answers} 題",
+                                    "weight": "bold",
+                                    "size": "sm",
+                                    "color": "#dc3545",
+                                    "align": "end",
+                                    "flex": 1
+                                }
+                            ],
+                            "margin": "md"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "🎯 準確率",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"{accuracy}%",
+                                    "weight": "bold",
+                                    "size": "sm",
+                                    "color": "#17a2b8",
+                                    "align": "end",
+                                    "flex": 1
+                                }
+                            ],
+                            "margin": "md"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"📈 本級進度：{correct_in_level} 題",
+                            "size": "sm",
+                            "color": "#333333",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": progress_bar,
+                            "size": "xs",
+                            "color": "#666666",
+                            "margin": "sm",
+                            "family": "monospace"
+                        }
+                    ],
+                    "backgroundColor": bg_color,
+                    "paddingAll": "lg",
+                    "spacing": "sm"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "🚀 繼續挑戰",
+                                "text": "開始"
+                            },
+                            "style": "primary",
+                            "color": header_color
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "🏆 查看排行榜",
+                                "text": "排行榜"
+                            },
+                            "style": "secondary"
+                        }
+                    ],
+                    "spacing": "sm",
+                    "paddingAll": "lg"
+                }
+            }
+        }
+        
+        return flex_message
+        
+    except Exception as e:
+        logger.error(f"❌ 創建積分 Flex Message 失敗: {e}")
+        return None
+
 def send_leaderboard_message(user_id):
     """發送排行榜 Flex Message"""
     try:
@@ -403,7 +708,7 @@ def send_leaderboard_message(user_id):
         send_message(user_id, {"text": "抱歉，發送排行榜時發生錯誤，請稍後再試。"})
 
 def send_score_message(user_id):
-    """發送用戶積分信息"""
+    """發送用戶積分信息 Flex Message"""
     try:
         logger.info(f"📊 正在為用戶 {user_id} 準備積分信息...")
         
@@ -418,14 +723,19 @@ def send_score_message(user_id):
         # 獲取用戶暱稱
         nickname = get_user_nickname(user_id)
         
-        # 計算積分（使用正確答案數）
-        correct_answers = user_stats.get('correct', 0)
-        wrong_answers = user_stats.get('wrong', 0)
-        level = user_stats.get('level', 1)
-        correct_in_level = user_stats.get('correct_in_level', 0)
+        # 發送積分 Flex Message
+        flex_message = create_score_flex_message(user_stats, nickname)
         
-        # 構建積分訊息
-        score_text = f"""📊 {nickname} 的學習成績
+        if flex_message:
+            send_message(user_id, flex_message)
+        else:
+            # 備用方案：發送純文字
+            correct_answers = user_stats.get('correct', 0)
+            wrong_answers = user_stats.get('wrong', 0)
+            level = user_stats.get('level', 1)
+            correct_in_level = user_stats.get('correct_in_level', 0)
+            
+            score_text = f"""📊 {nickname} 的學習成績
 
 🏆 當前等級：第 {level} 級
 ✅ 答對題數：{correct_answers} 題
@@ -434,8 +744,8 @@ def send_score_message(user_id):
 
 💡 提示：繼續答題可以獲得更多積分並升級！
 輸入「開始」繼續挑戰，輸入「排行榜」查看排名。"""
-        
-        send_message(user_id, {"text": score_text})
+            
+            send_message(user_id, {"text": score_text})
         
         logger.info(f"✅ 成功發送積分信息給用戶 {user_id}")
         
@@ -1177,8 +1487,14 @@ def send_admin_quiz_question(sender_id):
         }
         set_user_session(sender_id, session_data)
         
-        # 發送題目
-        question_text = f"""🔑 管理員模式 - 隨機題目
+        # 發送題目 Flex Message
+        flex_message = create_question_flex_message(question, is_admin=True)
+        
+        if flex_message:
+            send_message(sender_id, flex_message)
+        else:
+            # 備用方案：發送純文字
+            question_text = f"""🔑 管理員模式 - 隨機題目
 
 📚 題目：{question['question']}
 🎯 等級：{question['level']}
@@ -1191,8 +1507,8 @@ def send_admin_quiz_question(sender_id):
 4️⃣ {question['options'][3]}
 
 請輸入答案編號 (1-4) 或字母 (A-D)"""
-        
-        send_message(sender_id, {"text": question_text})
+            
+            send_message(sender_id, {"text": question_text})
         
     except Exception as e:
         logger.error(f"❌ 發送管理員題目失敗: {e}")
@@ -1220,8 +1536,14 @@ def send_normal_quiz_question(sender_id, level):
         }
         set_user_session(sender_id, session_data)
         
-        # 發送題目
-        question_text = f"""📚 等級 {level} 題目
+        # 發送題目 Flex Message
+        flex_message = create_question_flex_message(question, is_admin=False)
+        
+        if flex_message:
+            send_message(sender_id, flex_message)
+        else:
+            # 備用方案：發送純文字
+            question_text = f"""📚 等級 {level} 題目
 
 題目：{question['question']}
 類別：{question['category']}
@@ -1233,8 +1555,8 @@ def send_normal_quiz_question(sender_id, level):
 4️⃣ {question['options'][3]}
 
 請輸入答案編號 (1-4) 或字母 (A-D)"""
-        
-        send_message(sender_id, {"text": question_text})
+            
+            send_message(sender_id, {"text": question_text})
         
     except Exception as e:
         logger.error(f"❌ 發送普通題目失敗: {e}")
