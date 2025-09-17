@@ -6,8 +6,36 @@ import logging
 from supabase import create_client, Client
 from typing import Optional
 import datetime
+import re
 
 app = Flask(__name__)
+
+# 暱稱處理規則和工具
+NICK_PATTERN = r'^(?:我的?暱稱是|暱稱[:： ]?|name is|my name is)\s*([A-Za-z0-9\u4e00-\u9fa5]{2,10})$'
+RAW_NICK_PATTERN = r'^([A-Za-z0-9\u4e00-\u9fa5]{2,10})$'  # 在等待暱稱狀態時，直接輸入也吃
+
+# 用戶狀態管理（簡化版本，使用記憶體存儲）
+user_states = {}  # { user_id: {"awaiting_nickname": bool, ...} }
+
+def set_awaiting_nickname(user_id, val=True):
+    """設置用戶等待暱稱狀態"""
+    user_states.setdefault(user_id, {})["awaiting_nickname"] = val
+
+def is_awaiting_nickname(user_id):
+    """檢查用戶是否在等待暱稱狀態"""
+    return user_states.get(user_id, {}).get("awaiting_nickname", False)
+
+def extract_nickname(text: str, awaiting: bool=False):
+    """抽取暱稱的小工具"""
+    text = (text or '').strip()
+    m = re.match(NICK_PATTERN, text, flags=re.IGNORECASE)
+    if m:
+        return m.group(1)
+    if awaiting:
+        m2 = re.match(RAW_NICK_PATTERN, text)
+        if m2:
+            return m2.group(1)
+    return None
 
 # 健康檢查端點
 @app.route("/__health", methods=["GET"])
@@ -181,6 +209,106 @@ def is_admin_user(user_id):
     except Exception as e:
         logger.error(f"❌ 檢查用戶 {user_id} 是否為管理員失敗: {e}")
         return False
+
+def handle_nickname_input(user_id, text):
+    """處理暱稱輸入"""
+    try:
+        awaiting = is_awaiting_nickname(user_id)
+        nickname = extract_nickname(text, awaiting=awaiting)
+        
+        if nickname:
+            # 驗證暱稱長度
+            if not (2 <= len(nickname) <= 10):
+                send_message(user_id, {
+                    "text": "暱稱需為 2–10 個中英數字，請再試一次。\n\n範例：\n• 小醫生\n• Brain\n• 醫學生001"
+                })
+                return True
+            
+            # 寫入/更新 Supabase
+            try:
+                # 使用 users 表格的 game_nickname 欄位
+                result = supabase.table('users').upsert({
+                    'line_user_id': user_id,
+                    'game_nickname': nickname,
+                    'created_at': datetime.datetime.now().isoformat()
+                }).execute()
+                
+                if result.data:
+                    logger.info(f"✅ 用戶 {user_id} 暱稱設置成功: {nickname}")
+                    
+                    # 清除等待狀態
+                    set_awaiting_nickname(user_id, False)
+                    
+                    # 發送確認訊息
+                    send_message(user_id, {
+                        "text": f"🎉 好的，之後就叫你「{nickname}」！\n\n現在你可以：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n\n準備好開始你的解剖學學習之旅了嗎？"
+                    })
+                    return True
+                else:
+                    logger.error(f"❌ 更新用戶 {user_id} 暱稱失敗")
+                    send_message(user_id, {"text": "❌ 暱稱設置失敗，請稍後再試。"})
+                    return True
+                    
+            except Exception as e:
+                logger.error(f"❌ 數據庫更新失敗: {e}")
+                send_message(user_id, {"text": "❌ 暱稱設置失敗，請稍後再試。"})
+                return True
+        
+        # 若還在等待暱稱，但沒有抓到格式 → 清楚提醒
+        if awaiting:
+            send_message(user_id, {
+                "text": "請直接輸入你的暱稱（2–10 個中英數字）\n\n範例：\n• 小醫生\n• Brain\n• 醫學生001\n\n或者輸入：\n• 我的暱稱是 小醫生\n• 暱稱：Brain"
+            })
+            return True
+        
+        return False
+        
+    except Exception as e:
+        logger.error(f"❌ 處理暱稱輸入失敗: {e}")
+        return False
+
+def activate_admin_mode(user_id):
+    """激活用戶的管理員模式"""
+    try:
+        logger.info(f"🔑 正在為用戶 {user_id} 激活管理員模式...")
+        
+        # 檢查用戶是否已存在
+        existing_user = supabase.table('users').select('*').eq('line_user_id', user_id).execute()
+        
+        admin_data = {
+            'line_user_id': user_id,
+            'is_admin': True,
+            'test_mode': True,
+            'admin_levels': list(range(1, 21)),  # 1-20級權限
+            'admin_permissions': {
+                'max_level': 20,
+                'test_mode_enabled': True,
+                'can_view_admin_panel': True,
+                'can_access_all_levels': True,
+                'can_test_all_questions': True,
+                'can_bypass_restrictions': True
+            }
+        }
+        
+        if existing_user.data:
+            # 更新現有用戶
+            result = supabase.table('users').update(admin_data).eq('line_user_id', user_id).execute()
+            logger.info(f"✅ 更新用戶 {user_id} 管理員權限成功")
+        else:
+            # 創建新用戶
+            result = supabase.table('users').insert(admin_data).execute()
+            logger.info(f"✅ 創建管理員用戶 {user_id} 成功")
+        
+        # 發送激活成功消息
+        send_message(user_id, {
+            "text": f"🔑 管理員模式已成功激活！\n\n歡迎使用管理員功能：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您現在有權限訪問所有等級的題目！"
+        })
+        
+        logger.info(f"🎉 用戶 {user_id} 管理員模式激活完成")
+        
+    except Exception as e:
+        logger.error(f"❌ 激活用戶 {user_id} 管理員模式失敗: {e}")
+        send_message(user_id, {"text": "❌ 管理員模式激活失敗，請稍後再試。"})
 
 def get_real_students_data():
     """獲取真實的 Supabase 數據並轉換為標準格式"""
@@ -815,7 +943,7 @@ def send_score_message(user_id):
 ❌ 答錯題數：{wrong_answers} 題
 📈 本級答對：{correct_in_level} 題
 
-💡 提示：繼續答題可以獲得更多積分並升級！
+💡 提示：每答對 3 題即可升級到下一等級！
 輸入「開始」繼續挑戰，輸入「排行榜」查看排名。"""
             
             send_message(user_id, {"text": score_text})
@@ -1107,49 +1235,25 @@ def send_level_up_celebration(user_id, old_level, new_level):
             send_message(user_id, {"text": fallback_text})
 
 def send_completion_celebration(user_id, final_level):
-    """發送通關完成慶祝訊息"""
+    """發送通關完成慶祝訊息 - LINE Flex Message版本"""
     try:
         # 獲取用戶暱稱
         nickname = get_user_nickname(user_id)
         
-        # 方案1: 使用 Hero 模板發送通關完成訊息
+        # 方案1: 使用 LINE Flex Message 發送通關完成訊息
         try:
-            completion_message = {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "generic",
-                        "elements": [
-                            {
-                                "title": "🏆 恭喜通關完成！",
-                                "image_url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/levelup.png",
-                                "subtitle": f"🎉 {nickname} 已成功完成所有等級挑戰！",
-                                "buttons": [
-                                    {
-                                        "type": "postback",
-                                        "title": "查看排行榜",
-                                        "payload": "VIEW_LEADERBOARD"
-                                    },
-                                    {
-                                        "type": "postback",
-                                        "title": "重新挑戰",
-                                        "payload": "RESTART_CHALLENGE"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            }
-            
-            # 發送通關完成訊息
-            send_message(user_id, completion_message)
-            
+            completion_flex = create_completion_celebration_flex(nickname, final_level)
+            if completion_flex:
+                send_message(user_id, completion_flex)
+                logger.info(f"✅ 成功發送通關慶祝 Flex Message 給用戶 {user_id}")
+            else:
+                raise Exception("Flex Message 創建失敗")
+                
         except Exception as e:
-            print(f"通關完成 Hero 模板發送失敗: {e}")
-        
-        # 發送詳細的通關完成文字訊息
-        completion_text = f"""🏆 恭喜 {nickname} 通關完成！
+            logger.error(f"❌ 通關完成 Flex Message 發送失敗: {e}")
+            
+            # 備用方案：發送詳細的通關完成文字訊息
+            completion_text = f"""🏆 恭喜 {nickname} 通關完成！
 
 🎉 你已經成功完成了所有 {final_level} 個等級的挑戰！
 🌟 你現在是真正的解剖學大師！
@@ -1166,9 +1270,9 @@ def send_completion_celebration(user_id, final_level):
 • 等待新的挑戰內容更新
 
 感謝你的堅持學習，繼續保持這份熱情！"""
-        
-        text_message = {"text": completion_text}
-        send_message(user_id, text_message)
+            
+            text_message = {"text": completion_text}
+            send_message(user_id, text_message)
         
         # 發送特殊成就徽章訊息
         badge_message = {
@@ -1177,11 +1281,156 @@ def send_completion_celebration(user_id, final_level):
         send_message(user_id, badge_message)
         
     except Exception as e:
-        print(f"通關完成慶祝訊息發送失敗: {e}")
+        logger.error(f"❌ 通關完成慶祝訊息發送失敗: {e}")
         
-        # 備用方案：只發送簡單文字
+        # 最終備用方案：只發送簡單文字
         fallback_text = f"🏆 恭喜 {nickname}！你已經完成了所有等級的挑戰，成為了終極解剖師！"
         send_message(user_id, {"text": fallback_text})
+
+def create_completion_celebration_flex(nickname, final_level):
+    """創建通關慶祝的 LINE Flex Message"""
+    try:
+        return {
+            "type": "flex",
+            "altText": f"🏆 恭喜 {nickname} 通關完成！",
+            "contents": {
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "image",
+                            "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/completion_trophy.png",
+                            "size": "full",
+                            "aspectMode": "cover",
+                            "aspectRatio": "20:13"
+                        }
+                    ],
+                    "paddingAll": "0px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "🏆 通關完成！",
+                            "weight": "bold",
+                            "size": "xl",
+                            "color": "#FFD700",
+                            "align": "center",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"恭喜 {nickname}",
+                            "size": "lg",
+                            "color": "#333333",
+                            "align": "center",
+                            "weight": "bold",
+                            "margin": "sm"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "🎉 終極解剖師成就解鎖！",
+                                    "size": "md",
+                                    "color": "#FF6B35",
+                                    "weight": "bold",
+                                    "align": "center",
+                                    "margin": "md"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"✅ 完成所有 {final_level} 個等級挑戰",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "align": "center",
+                                    "margin": "sm"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "🌟 掌握完整解剖學知識體系",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "align": "center",
+                                    "margin": "xs"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "🏅 獲得終極解剖師徽章",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "align": "center",
+                                    "margin": "xs"
+                                }
+                            ],
+                            "margin": "lg"
+                        }
+                    ]
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "height": "sm",
+                            "color": "#FFD700",
+                            "action": {
+                                "type": "message",
+                                "label": "🏆 查看排行榜",
+                                "text": "排行榜"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "style": "secondary",
+                            "height": "sm",
+                            "action": {
+                                "type": "message",
+                                "label": "🔄 重新挑戰",
+                                "text": "開始"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "感謝你的堅持學習！繼續保持這份熱情！",
+                            "size": "xs",
+                            "color": "#999999",
+                            "align": "center",
+                            "margin": "md",
+                            "wrap": True
+                        }
+                    ]
+                },
+                "styles": {
+                    "header": {
+                        "backgroundColor": "#FFD700"
+                    },
+                    "body": {
+                        "backgroundColor": "#FFFEF7"
+                    },
+                    "footer": {
+                        "backgroundColor": "#FFF8DC"
+                    }
+                }
+            }
+        }
+    except Exception as e:
+        logger.error(f"❌ 創建通關慶祝 Flex Message 失敗: {e}")
+        return None
 
 def get_user_stats(user_id: str) -> Optional[dict]:
     """獲取用戶統計資料"""
@@ -1208,6 +1457,8 @@ def create_initial_user_stats(user_id: str) -> Optional[dict]:
             'wrong': 0,
             'level': 1,
             'correct_in_level': 0,
+            'daily_questions_answered': 0,
+            'last_question_date': datetime.date.today().isoformat(),
             'last_update': datetime.datetime.now().isoformat()
         }
         
@@ -1235,6 +1486,137 @@ def update_user_level(user_id: str, new_level: int) -> bool:
         return True
     except Exception as e:
         print(f"更新用戶等級失敗: {e}")
+        return False
+
+def check_daily_question_limit(user_id: str) -> dict:
+    """檢查用戶每日答題限制
+    
+    Returns:
+        dict: {
+            'can_answer': bool,  # 是否可以答題
+            'questions_answered': int,  # 今日已答題數
+            'remaining': int,  # 剩餘答題次數
+            'reset_time': str  # 重置時間說明
+        }
+    """
+    try:
+        if supabase is None:
+            logger.error("❌ Supabase 未連接，無法檢查每日限制")
+            return {
+                'can_answer': True,  # 連接失敗時允許答題，避免阻擋用戶
+                'questions_answered': 0,
+                'remaining': 3,
+                'reset_time': '明天 00:00'
+            }
+        
+        # 獲取用戶統計資料
+        user_stats = get_user_stats(user_id)
+        
+        if not user_stats:
+            # 新用戶，創建初始記錄
+            logger.info(f"🆕 為新用戶 {user_id} 創建初始統計")
+            user_stats = create_initial_user_stats(user_id)
+            if not user_stats:
+                logger.error(f"❌ 創建用戶 {user_id} 初始統計失敗")
+                return {
+                    'can_answer': True,
+                    'questions_answered': 0,
+                    'remaining': 3,
+                    'reset_time': '明天 00:00'
+                }
+        
+        # 獲取今日答題數據
+        today = datetime.date.today()
+        last_question_date_str = user_stats.get('last_question_date')
+        daily_questions_answered = user_stats.get('daily_questions_answered', 0)
+        
+        # 解析最後答題日期
+        if last_question_date_str:
+            try:
+                if isinstance(last_question_date_str, str):
+                    last_question_date = datetime.datetime.fromisoformat(last_question_date_str).date()
+                else:
+                    last_question_date = last_question_date_str
+            except (ValueError, TypeError):
+                logger.warning(f"⚠️ 無法解析日期格式: {last_question_date_str}")
+                last_question_date = today
+        else:
+            last_question_date = today
+        
+        # 檢查是否需要重置每日計數
+        if last_question_date < today:
+            logger.info(f"🔄 重置用戶 {user_id} 的每日答題計數")
+            daily_questions_answered = 0
+            # 更新資料庫
+            try:
+                supabase.table('user_stats').upsert({
+                    'user_id': user_id,
+                    'daily_questions_answered': 0,
+                    'last_question_date': today.isoformat()
+                }).execute()
+            except Exception as e:
+                logger.error(f"❌ 重置每日計數失敗: {e}")
+        
+        # 計算剩餘答題次數
+        daily_limit = 3
+        remaining = max(0, daily_limit - daily_questions_answered)
+        can_answer = remaining > 0
+        
+        logger.info(f"📊 用戶 {user_id} 每日答題狀態: 已答{daily_questions_answered}題, 剩餘{remaining}題")
+        
+        return {
+            'can_answer': can_answer,
+            'questions_answered': daily_questions_answered,
+            'remaining': remaining,
+            'reset_time': '明天 00:00'
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 檢查每日限制失敗: {e}")
+        # 發生錯誤時允許答題，避免阻擋用戶
+        return {
+            'can_answer': True,
+            'questions_answered': 0,
+            'remaining': 3,
+            'reset_time': '明天 00:00'
+        }
+
+def update_daily_question_count(user_id: str) -> bool:
+    """更新用戶每日答題計數"""
+    try:
+        if supabase is None:
+            logger.error("❌ Supabase 未連接，無法更新每日計數")
+            return False
+        
+        # 獲取當前統計
+        user_stats = get_user_stats(user_id)
+        if not user_stats:
+            logger.error(f"❌ 無法獲取用戶 {user_id} 統計資料")
+            return False
+        
+        # 獲取今日答題數
+        today = datetime.date.today()
+        daily_questions_answered = user_stats.get('daily_questions_answered', 0)
+        
+        # 增加答題計數
+        new_count = daily_questions_answered + 1
+        
+        # 更新資料庫
+        result = supabase.table('user_stats').upsert({
+            'user_id': user_id,
+            'daily_questions_answered': new_count,
+            'last_question_date': today.isoformat()
+        }).execute()
+        
+        if result.data:
+            logger.info(f"✅ 用戶 {user_id} 每日答題計數已更新為 {new_count}")
+            return True
+        else:
+            logger.error(f"❌ 更新用戶 {user_id} 每日計數失敗")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ 更新每日答題計數失敗: {e}")
         return False
 
 @app.route('/webhook', methods=['GET'])
@@ -1301,7 +1683,7 @@ def handle_follow_event(sender_id):
         logger.info(f"🎉 新用戶關注: {sender_id}")
         
         # 初始化用戶數據
-        get_or_create_user_stats(sender_id)
+        create_initial_user_stats(sender_id)
         
         # 發送歡迎訊息
         send_welcome_message(sender_id)
@@ -1319,149 +1701,92 @@ def send_welcome_message(sender_id):
         welcome_flex = create_welcome_flex_message(nickname)
         
         # 發送訊息
-        send_flex_message(sender_id, "歡迎加入解剖學測驗！", welcome_flex)
-        logger.info(f"✅ 已發送歡迎訊息給用戶: {sender_id}")
+        flex_message = {
+            "type": "flex",
+            "altText": "歡迎加入解剖學測驗！",
+            "contents": welcome_flex
+        }
+        send_message(sender_id, flex_message)
+        
+        # 設置用戶等待暱稱狀態
+        set_awaiting_nickname(sender_id, True)
+        
+        logger.info(f"✅ 已發送歡迎訊息給用戶: {sender_id}，並設置等待暱稱狀態")
         
     except Exception as e:
         logger.error(f"❌ 發送歡迎訊息失敗 {sender_id}: {e}")
 
 def create_welcome_flex_message(nickname):
-    """創建完整的歡迎 flex 訊息模板 - 根據截圖重新設計"""
+    """創建優化排版的歡迎 flex 訊息模板"""
     return {
         "type": "bubble",
-        "size": "kilo",
+        "hero": {
+            "type": "image",
+            "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover"
+        },
         "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-                # Hero 圖片
-                {
-                    "type": "image",
-                    "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
-                    "size": "full",
-                    "aspectMode": "cover",
-                    "aspectRatio": "16:9",
-                    "margin": "none"
-                },
-                # 標題區域
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "歡迎來到解剖咬一口 Beta測試版",
-                            "weight": "bold",
-                            "size": "xl",
-                            "color": "#4CAF50",
-                            "align": "center",
-                            "margin": "lg"
-                        },
-                        {
-                            "type": "text",
-                            "text": "每天來一點解剖!",
-                            "size": "md",
-                            "color": "#666666",
-                            "align": "center",
-                            "margin": "sm"
-                        },
-                        {
-                            "type": "text",
-                            "text": "準備好進入人體不可思議了嗎?",
-                            "size": "sm",
-                            "color": "#666666",
-                            "align": "center",
-                            "margin": "sm"
-                        },
-                        {
-                            "type": "text",
-                            "text": "輸入你的暱稱開始遊戲!",
-                            "size": "sm",
-                            "color": "#666666",
-                            "align": "center",
-                            "margin": "md"
-                        }
-                    ],
-                    "paddingAll": "20px"
-                },
-                # 暱稱要求區塊
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "📝 暱稱要求:",
-                            "weight": "bold",
-                            "size": "sm",
-                            "color": "#333333",
-                            "margin": "md"
-                        },
-                        {
-                            "type": "text",
-                            "text": "• 長度: 2-10 個字符",
-                            "size": "xs",
-                            "color": "#666666",
-                            "margin": "xs"
-                        },
-                        {
-                            "type": "text",
-                            "text": "• 內容: 中文、英文、數字",
-                            "size": "xs",
-                            "color": "#666666",
-                            "margin": "xs"
-                        },
-                        {
-                            "type": "text",
-                            "text": "• 不能包含特殊符號",
-                            "size": "xs",
-                            "color": "#666666",
-                            "margin": "xs"
-                        }
-                    ],
-                    "backgroundColor": "#f5f5f5",
-                    "paddingAll": "15px",
-                    "margin": "md",
-                    "cornerRadius": "sm"
-                },
-                # 範例暱稱區塊
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "💡 範例暱稱:",
-                            "weight": "bold",
-                            "size": "sm",
-                            "color": "#333333",
-                            "margin": "md"
-                        },
-                        {
-                            "type": "text",
-                            "text": "解剖大師、Brain、醫學生001、小醫生",
-                            "size": "xs",
-                            "color": "#666666",
-                            "margin": "xs",
-                            "wrap": True
-                        }
-                    ],
-                    "backgroundColor": "#f5f5f5",
-                    "paddingAll": "15px",
-                    "margin": "sm",
-                    "cornerRadius": "sm"
-                },
-                # 輸入提示
                 {
                     "type": "text",
-                    "text": "請直接輸入你想要的暱稱:",
+                    "text": "🎉 歡迎來到《解剖咬一口》！",
+                    "weight": "bold",
+                    "size": "lg",
+                    "wrap": True
+                },
+                {
+                    "type": "text",
+                    "text": "每天一口小小解剖，探索人體奧秘！\n\n👉 第一步：請輸入你的「暱稱」開始挑戰！",
+                    "size": "md",
+                    "margin": "md",
+                    "wrap": True
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "✏️ 暱稱規則：\n- 2–10 個字\n- 中文 / 英文 / 數字\n- 不能包含特殊符號",
                     "size": "sm",
-                    "color": "#333333",
-                    "align": "center",
-                    "margin": "lg"
+                    "margin": "md",
+                    "wrap": True,
+                    "color": "#555555"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "💡 範例暱稱：\n解剖大師、Brain、醫學生001、小醫生",
+                    "size": "sm",
+                    "margin": "md",
+                    "wrap": True,
+                    "color": "#333333"
                 }
-            ],
-            "paddingAll": "0px"
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#B5651D",
+                    "action": {
+                        "type": "message",
+                        "label": "⚡️ 輸入暱稱開始挑戰",
+                        "text": "我的暱稱是___"
+                    }
+                }
+            ]
         }
     }
 
@@ -1470,6 +1795,11 @@ def handle_text_message(sender_id, message):
     try:
         message_text = message.get('text', '').strip()
         logger.info(f"📨 收到來自用戶 {sender_id} 的訊息: {message_text}")
+        
+        # 首先檢查是否為暱稱輸入
+        if handle_nickname_input(sender_id, message_text):
+            logger.info(f"✅ 用戶 {sender_id} 輸入已作為暱稱處理")
+            return
         
         # 檢查是否為管理員用戶
         if is_admin_user(sender_id):
@@ -1705,6 +2035,35 @@ def handle_normal_quiz(sender_id, message_text):
         current_level = user_stats.get('level', 1) if user_stats else 1
         
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
+            # 檢查每日答題限制
+            daily_limit_status = check_daily_question_limit(sender_id)
+            
+            if not daily_limit_status['can_answer']:
+                # 已達到每日限制，發送提醒訊息
+                questions_answered = daily_limit_status['questions_answered']
+                reset_time = daily_limit_status['reset_time']
+                
+                limit_message = f"""⏰ 每日答題次數已達上限
+                
+🎯 今日已完成：{questions_answered}/3 題
+📚 您已經很努力學習了！
+
+💡 溫馨提醒：
+• 每天最多可以答 3 題
+• 這樣可以讓您更好地消化學習內容
+• 明天 00:00 重置答題次數
+
+🌟 您可以：
+• 輸入「排行榜」查看您的排名
+• 輸入「積分」查看學習成果
+• 明天再來繼續學習新知識
+
+感謝您的堅持學習！🎉"""
+                
+                send_message(sender_id, {"text": limit_message})
+                return
+            
+            # 可以答題，發送題目
             send_normal_quiz_question(sender_id, current_level)
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_normal_help_message(sender_id, current_level)
@@ -1915,7 +2274,7 @@ def send_normal_help_message(sender_id, level):
 💡 提示：
 • 輸入答案時可以使用數字 (1-4) 或字母 (A-D)
 • 答對題目可以獲得積分
-• 累積足夠積分可以升級到下一等級
+• 答對 3 題即可升級到下一等級
 
 開始學習吧！"""
     
@@ -2000,8 +2359,12 @@ def handle_normal_answer(sender_id, answer, level):
         # 更新用戶統計
         update_user_stats_after_answer(sender_id, is_correct)
         
-        # 檢查是否需要升級
-        check_and_handle_level_up(sender_id, level, is_correct)
+        # 檢查是否需要升級並發送進度反饋
+        upgraded = check_and_handle_level_up(sender_id, level, is_correct)
+        
+        # 發送進度反饋訊息（如果沒有升級的話）
+        if is_correct and not upgraded:
+            send_progress_feedback(sender_id, level)
         
         # 清除當前會話
         clear_user_session(sender_id)
@@ -2196,11 +2559,15 @@ def update_user_stats_after_answer(user_id, is_correct):
             }
         else:
             # 創建新統計資料
+            today = datetime.date.today()
             update_data = {
                 'user_id': user_id,
                 'correct': 1 if is_correct else 0,
                 'wrong': 0 if is_correct else 1,
                 'level': 1,
+                'correct_in_level': 0,  # 初始化當前等級答對數
+                'daily_questions_answered': 0,  # 將在後續更新
+                'last_question_date': today.isoformat(),
                 'last_update': datetime.datetime.now().isoformat()
             }
         
@@ -2209,6 +2576,9 @@ def update_user_stats_after_answer(user_id, is_correct):
         
         if result.data:
             logger.info(f"✅ 成功更新用戶 {user_id} 統計資料")
+            
+            # 更新每日答題計數
+            update_daily_question_count(user_id)
         else:
             logger.warning(f"⚠️ 更新用戶 {user_id} 統計資料失敗")
             
@@ -2216,29 +2586,79 @@ def update_user_stats_after_answer(user_id, is_correct):
         logger.error(f"❌ 更新用戶統計資料失敗: {e}")
 
 def check_and_handle_level_up(user_id, current_level, is_correct):
-    """檢查並處理等級提升"""
+    """檢查並處理等級提升 - 統一使用3題升級邏輯"""
     try:
         if not is_correct:
-            return  # 只有答對才可能升級
+            return False  # 只有答對才可能升級，返回False表示沒有升級
         
         # 獲取用戶統計資料
         stats = get_user_stats(user_id)
         if not stats:
-            return
+            return False
         
-        correct_answers = stats.get('correct', 0)
+        # 獲取當前等級答對題數
+        current_level_correct = stats.get('correct_in_level', 0) + 1  # 加上這次答對的題目
         
-        # 計算應該的等級（每10題正確答案升一級）
-        expected_level = min(14, (correct_answers // 10) + 1)
-        
-        if expected_level > current_level:
-            # 等級提升
-            update_user_level(user_id, expected_level)
-            send_level_up_celebration(user_id, current_level, expected_level)
-            logger.info(f"🎉 用戶 {user_id} 從等級 {current_level} 提升到 {expected_level}")
+        # 檢查是否需要升級（每3題升級）
+        if current_level_correct >= 3:
+            # 計算升級數量和剩餘答對題數
+            levels_to_upgrade = current_level_correct // 3  # 可以升多少級
+            remaining_correct = current_level_correct % 3   # 升級後剩餘的答對題數
+            
+            new_level = min(14, current_level + levels_to_upgrade)  # 最高等級14
+            
+            # 更新用戶等級和當前等級答對數
+            update_data = {
+                'user_id': user_id,
+                'level': new_level,
+                'correct_in_level': remaining_correct  # 保留剩餘的答對題數
+            }
+            
+            # 更新數據庫
+            supabase.table('user_stats').upsert(update_data).execute()
+            
+            # 發送升級慶祝訊息
+            send_level_up_celebration(user_id, current_level, new_level)
+            logger.info(f"🎉 用戶 {user_id} 從等級 {current_level} 提升到 {new_level} (答對{current_level_correct}題)")
+            return True  # 返回True表示升級了
+        else:
+            # 未達到升級條件，只更新當前等級答對數
+            supabase.table('user_stats').upsert({
+                'user_id': user_id,
+                'correct_in_level': current_level_correct
+            }).execute()
+            logger.info(f"📈 用戶 {user_id} 等級 {current_level} 進度：{current_level_correct}/3")
+            return False  # 返回False表示沒有升級
             
     except Exception as e:
         logger.error(f"❌ 檢查等級提升失敗: {e}")
+        return False
+
+def send_progress_feedback(user_id, current_level):
+    """發送進度反饋訊息"""
+    try:
+        # 獲取用戶當前統計
+        stats = get_user_stats(user_id)
+        if not stats:
+            return
+        
+        current_progress = stats.get('correct_in_level', 0)
+        remaining = 3 - current_progress
+        
+        if remaining > 0:
+            feedback_message = {
+                "text": f"✅ 答對了！\n\n📈 等級 {current_level} 進度：{current_progress}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
+            }
+            send_message(user_id, feedback_message)
+        else:
+            # 如果進度已滿，但沒有升級（理論上不應該發生）
+            feedback_message = {
+                "text": f"✅ 答對了！準備升級中..."
+            }
+            send_message(user_id, feedback_message)
+            
+    except Exception as e:
+        logger.error(f"❌ 發送進度反饋失敗: {e}")
 
 def handle_postback(sender_id, postback):
     """處理按鈕點擊"""
