@@ -387,9 +387,8 @@ def create_question_flex_message(question, is_admin=False):
             header_color = "#2E8B57"  # 海洋綠
             bg_color = "#F0FFF0"      # 蜜露綠
         
-        # 獲取等級海報圖片
-        level = question.get('level', 1)
-        hero_image_url = get_question_hero_image_url(level)
+        # 獲取題目 Hero 圖片（優先使用題目特定圖片）
+        hero_image_url = get_question_hero_image_url_with_fallback(question)
         
         # 創建選項按鈕
         option_actions = []
@@ -490,8 +489,48 @@ def create_question_flex_message(question, is_admin=False):
         logger.error(f"❌ 創建題目 Hero Flex Message 失敗: {e}")
         return None
 
+def get_question_hero_image_url_with_fallback(question):
+    """獲取題目的 Hero 圖片 URL（優先使用題目特定圖片，備用等級海報）"""
+    try:
+        import requests
+        
+        # 優先順序1: 使用題目特定的圖片 URL
+        question_image_url = question.get('qimage_url') or question.get('image_url')
+        
+        if question_image_url:
+            try:
+                # 檢查題目特定圖片是否存在
+                response = requests.head(question_image_url, timeout=5)
+                if response.status_code == 200:
+                    logger.info(f"✅ 使用題目特定圖片: {question_image_url}")
+                    return question_image_url
+            except Exception as e:
+                logger.warning(f"⚠️ 題目特定圖片檢查失敗: {e}")
+        
+        # 優先順序2: 使用等級海報圖片
+        level = question.get('level', 1)
+        level_poster_url = get_question_hero_image_url(level)
+        
+        try:
+            response = requests.head(level_poster_url, timeout=5)
+            if response.status_code == 200:
+                logger.info(f"✅ 使用等級 {level} 海報圖片: {level_poster_url}")
+                return level_poster_url
+        except Exception as e:
+            logger.warning(f"⚠️ 等級海報圖片檢查失敗: {e}")
+        
+        # 優先順序3: 使用預設圖片
+        default_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_question.png"
+        logger.info(f"⚠️ 使用預設圖片: {default_url}")
+        return default_url
+        
+    except Exception as e:
+        logger.error(f"❌ 獲取題目 Hero 圖片失敗: {e}")
+        # 返回預設圖片
+        return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_question.png"
+
 def get_question_hero_image_url(level):
-    """獲取題目的 Hero 圖片 URL"""
+    """獲取等級海報圖片 URL"""
     try:
         # 根據等級使用對應的海報圖片
         base_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot"
@@ -510,22 +549,10 @@ def get_question_hero_image_url(level):
             level = 5
             
         poster_url = level_posters.get(level, level_posters[1])
-        
-        # 檢查圖片是否存在
-        import requests
-        try:
-            response = requests.head(poster_url, timeout=5)
-            if response.status_code == 200:
-                return poster_url
-        except:
-            pass
-        
-        # 如果特定等級圖片不存在，使用預設圖片
-        default_url = f"{base_url}/default_question.png"
-        return default_url
+        return poster_url
         
     except Exception as e:
-        logger.error(f"❌ 獲取題目 Hero 圖片失敗: {e}")
+        logger.error(f"❌ 獲取等級海報失敗: {e}")
         # 返回預設圖片
         return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_question.png"
 
@@ -3051,7 +3078,7 @@ def score_manager():
                     return;
                 }
                 
-                if (!newScore || newScore < 0) {
+                if (newScore === '' || newScore === null || newScore === undefined || parseInt(newScore) < 0) {
                     showMessage('請輸入有效的積分', 'error');
                     return;
                 }
