@@ -754,7 +754,7 @@ def send_score_message(user_id):
         send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
 
 def create_leaderboard_flex_message(top_10, all_students, user_id):
-    """創建排行榜 Flex Message"""
+    """創建排行榜 Flex Message - 只顯示前三名加用戶排名"""
     try:
         # 找到用戶的排名
         user_rank = None
@@ -765,10 +765,13 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                 user_student = student
                 break
         
+        # 只取前三名
+        top_3 = top_10[:3]
+        
         # 創建 Flex Message 內容
         flex_content = {
             "type": "flex",
-            "altText": "🏆 排行榜 - 前10名",
+            "altText": "🏆 排行榜 - 前三名",
             "contents": {
                 "type": "bubble",
                 "header": {
@@ -785,7 +788,7 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                         },
                         {
                             "type": "text",
-                            "text": "前10名",
+                            "text": "前三名",
                             "size": "sm",
                             "color": "#8b4513",
                             "align": "center",
@@ -799,29 +802,12 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                     "type": "box",
                     "layout": "vertical",
                     "contents": []
-                },
-                "footer": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {
-                                "type": "postback",
-                                "label": "🔄 重新挑戰",
-                                "data": "RESTART_CHALLENGE"
-                            },
-                            "style": "primary",
-                            "color": "#8b4513"
-                        }
-                    ],
-                    "spacing": "sm"
                 }
             }
         }
         
-        # 添加排行榜項目
-        for i, student in enumerate(top_10, 1):
+        # 添加前三名排行榜項目
+        for i, student in enumerate(top_3, 1):
             # 獲取排名圖示和顏色
             if i == 1:
                 rank_icon = "🥇"
@@ -891,8 +877,8 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
             
             flex_content["contents"]["body"]["contents"].append(rank_item)
         
-        # 添加用戶自己的排名信息（如果不在前10名）
-        if user_rank and user_rank > 10 and user_student:
+        # 添加用戶自己的排名信息（如果不在前三名）
+        if user_rank and user_rank > 3 and user_student:
             user_nickname = user_student.get('nickname', '您')
             user_correct = user_student.get('correct', 0)
             user_level = user_student.get('level', 1)
