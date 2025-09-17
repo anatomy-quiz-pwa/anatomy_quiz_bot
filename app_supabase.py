@@ -610,7 +610,7 @@ def get_user_rank_info(user_id):
         logger.error(f"❌ 查詢用戶排名失敗: {e}")
         return None
 
-def create_question_flex_message(question, is_admin=False):
+def create_question_flex_message(question, is_admin=False, user_level=None):
     """創建題目的 Hero Flex Message"""
     try:
         # 設定標題和顏色主題
@@ -623,8 +623,8 @@ def create_question_flex_message(question, is_admin=False):
             header_color = "#2E8B57"  # 海洋綠
             bg_color = "#F0FFF0"      # 蜜露綠
         
-        # 獲取題目 Hero 圖片（優先使用題目特定圖片）
-        hero_image_url = get_question_hero_image_url_with_fallback(question)
+        # 獲取題目 Hero 圖片（優先使用題目特定圖片，備用用戶當前等級海報）
+        hero_image_url = get_question_hero_image_url_with_fallback(question, user_level)
         
         # 創建選項按鈕
         option_actions = []
@@ -725,8 +725,8 @@ def create_question_flex_message(question, is_admin=False):
         logger.error(f"❌ 創建題目 Hero Flex Message 失敗: {e}")
         return None
 
-def get_question_hero_image_url_with_fallback(question):
-    """獲取題目的 Hero 圖片 URL（優先使用題目特定圖片，備用等級海報）"""
+def get_question_hero_image_url_with_fallback(question, user_level=None):
+    """獲取題目的 Hero 圖片 URL（優先使用題目特定圖片，備用用戶當前等級海報）"""
     try:
         import requests
         
@@ -743,9 +743,11 @@ def get_question_hero_image_url_with_fallback(question):
             except Exception as e:
                 logger.warning(f"⚠️ 題目特定圖片檢查失敗: {e}")
         
-        # 優先順序2: 使用等級海報圖片
-        level = question.get('level', 1)
+        # 優先順序2: 使用用戶當前等級海報圖片（如果提供），否則使用題目等級
+        level = user_level if user_level is not None else question.get('level', 1)
         level_poster_url = get_question_hero_image_url(level)
+        
+        logger.info(f"🎯 使用等級 {level} 海報 (用戶等級: {user_level}, 題目等級: {question.get('level', 1)})")
         
         try:
             response = requests.head(level_poster_url, timeout=5)
@@ -2643,7 +2645,7 @@ def send_normal_quiz_question(sender_id, level):
         set_user_session(sender_id, session_data)
         
         # 發送題目 Flex Message
-        flex_message = create_question_flex_message(question, is_admin=False)
+        flex_message = create_question_flex_message(question, is_admin=False, user_level=level)
         
         if flex_message:
             send_message(sender_id, flex_message)
