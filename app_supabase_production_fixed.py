@@ -9,18 +9,6 @@ import datetime
 
 app = Flask(__name__)
 
-# 健康檢查端點
-@app.route("/__health", methods=["GET"])
-def __health():
-    build_id = "not_found"
-    try:
-        if os.path.exists(".build_id"):
-            with open(".build_id", "r") as f:
-                build_id = f.read().strip()
-    except Exception:
-        pass
-    return jsonify({"ok": True, "buildId": build_id})
-
 # 設置日誌
 logging.basicConfig(
     level=logging.INFO,
@@ -2568,17 +2556,5 @@ def api_questions():
         logger.error(f"❌ API: 獲取題目列表失敗: {e}")
         return jsonify({"error": "獲取題目列表失敗"}), 500
 
-# --- ASGI 兼容：把 Flask(WGSI) 包成 ASGI，給 Render 目前的 `uvicorn app_supabase:app` 使用 ---
-try:
-    from uvicorn.middleware.wsgi import WSGIMiddleware
-    _flask_app = app            # 先保留原本的 Flask app（路由都掛在這上面）
-    app = WSGIMiddleware(_flask_app)  # 將 `app` 變數改指向 ASGI wrapper（給 uvicorn 匯入）
-    flask_app = _flask_app      # 仍保留 flask_app 供本地開發啟動
-except Exception:
-    # 若未裝 uvicorn 或其他例外，至少不要壞掉本地啟動
-    flask_app = app
-
-if __name__ == "__main__":
-    # 本地開發時仍用 Flask 內建伺服器（不要用 uvicorn）
-    port = int(os.environ.get("PORT", 5001))
-    flask_app.run(host="0.0.0.0", port=port, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5002)))

@@ -9,18 +9,6 @@ import datetime
 
 app = Flask(__name__)
 
-# 健康檢查端點
-@app.route("/__health", methods=["GET"])
-def __health():
-    build_id = "not_found"
-    try:
-        if os.path.exists(".build_id"):
-            with open(".build_id", "r") as f:
-                build_id = f.read().strip()
-    except Exception:
-        pass
-    return jsonify({"ok": True, "buildId": build_id})
-
 # 設置日誌
 logging.basicConfig(
     level=logging.INFO,
@@ -170,13 +158,17 @@ def check_admin_access(user_id, required_level=None):
         return False
 
 def is_admin_user(user_id):
-    """檢查用戶是否為管理員"""
+    """檢查用戶是否為管理員 - 簡化版本"""
     try:
         admin_info = get_user_admin_permissions(user_id)
         if not admin_info:
             return False
         
-        return admin_info.get('is_admin', False) and admin_info.get('test_mode', False)
+        # 簡化權限檢查：只要是管理員就可以，不需要額外的 test_mode 檢查
+        is_admin = admin_info.get('is_admin', False)
+        
+        logger.info(f"🔑 用戶 {user_id} 管理員檢查結果: {is_admin}")
+        return is_admin
         
     except Exception as e:
         logger.error(f"❌ 檢查用戶 {user_id} 是否為管理員失敗: {e}")
@@ -279,6 +271,13 @@ def send_line_message(user_id, message_data):
     try:
         response = requests.post(url, headers=headers, data=json.dumps(data))
         logger.info(f"📤 LINE 訊息發送結果: {response.status_code}")
+        
+        # 記錄詳細的響應信息
+        if response.status_code != 200:
+            logger.error(f"❌ LINE 訊息發送失敗 - 狀態碼: {response.status_code}")
+            logger.error(f"❌ 響應內容: {response.text}")
+            logger.error(f"❌ 請求數據: {json.dumps(data, ensure_ascii=False, indent=2)}")
+        
         return response.json()
     except Exception as e:
         logger.error(f"❌ LINE 訊息發送失敗: {e}")
@@ -289,12 +288,42 @@ def get_leaderboard_data():
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
-        # 使用 Supabase 查詢獲取排行榜數據
-        response = supabase.table('user_stats').select('*').order('score', desc=True).limit(10).execute()
+        # 使用 Supabase 查詢獲取排行榜數據，按正確答案數量排序
+        response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
         
         if response.data:
             logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
-            return response.data
+            
+            # 轉換數據格式以符合 Flex Message 需求
+            formatted_data = []
+            for record in response.data:
+                correct_answers = record.get('correct', 0)
+                wrong_answers = record.get('wrong', 0)
+                total_questions = correct_answers + wrong_answers
+                
+                # 獲取用戶暱稱
+                user_id = record.get('user_id')
+                nickname = "未知用戶"
+                if user_id:
+                    try:
+                        user_response = supabase.table('users').select('nickname').eq('line_user_id', user_id).execute()
+                        if user_response.data and user_response.data[0].get('nickname'):
+                            nickname = user_response.data[0]['nickname']
+                    except:
+                        pass
+                
+                formatted_record = {
+                    "user_id": user_id,
+                    "name": nickname,
+                    "level": record.get('level', 1),
+                    "score": correct_answers * 10,  # 假設每題10分
+                    "questions_answered": total_questions,
+                    "correct_answers": correct_answers,
+                    "last_active": record.get('last_update', record.get('last_updated', '未知'))
+                }
+                formatted_data.append(formatted_record)
+            
+            return formatted_data
         else:
             logger.warning("⚠️ 沒有獲取到排行榜數據")
             return []
@@ -330,6 +359,51 @@ def send_leaderboard_message(user_id):
     except Exception as e:
         logger.error(f"❌ 發送排行榜 Flex Message 失敗: {e}")
         send_message(user_id, {"text": "抱歉，發送排行榜時發生錯誤，請稍後再試。"})
+
+def create_welcome_flex_message():
+    """創建歡迎訊息 Flex Message"""
+    try:
+        logger.info("🎨 正在創建歡迎訊息 Flex Message...")
+        
+        welcome_message = {
+            "type": "flex",
+            "altText": "歡迎來到每日咬一口。封測Beta 體驗版",
+            "contents": {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "md",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "歡迎來到每日咬一口",
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#0066CC",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": "封測Beta 體驗版",
+                            "size": "sm",
+                            "color": "#666666",
+                            "wrap": True
+                        }
+                    ]
+                }
+            }
+        }
+        
+        logger.info("✅ 成功創建歡迎訊息 Flex Message")
+        return welcome_message
+        
+    except Exception as e:
+        logger.error(f"❌ 創建歡迎訊息 Flex Message 失敗: {e}")
+        return {
+            "text": "歡迎來到每日咬一口。封測Beta 體驗版"
+        }
 
 def create_leaderboard_flex_message(top_10, all_students, user_id):
     """創建排行榜 Flex Message"""
@@ -700,7 +774,11 @@ def get_user_stats(user_id: str) -> Optional[dict]:
     try:
         response = supabase.table('user_stats').select('*').eq('user_id', user_id).execute()
         if response.data:
-            return response.data[0]
+            stats = response.data[0]
+            # 確保有 correct_in_level 欄位（數據庫中的實際字段名）
+            if 'correct_in_level' not in stats:
+                stats['correct_in_level'] = 0
+            return stats
         return None
     except Exception as e:
         print(f"獲取用戶統計失敗: {e}")
@@ -711,7 +789,8 @@ def update_user_level(user_id: str, new_level: int) -> bool:
     try:
         supabase.table('user_stats').upsert({
             'user_id': user_id,
-            'level': new_level
+            'level': new_level,
+            'correct_in_level': 0  # 升級時重置當前等級答對數
         }).execute()
         return True
     except Exception as e:
@@ -801,7 +880,8 @@ def handle_admin_message(sender_id, message_text):
             handle_level_command(sender_id, message_text)
         else:
             # 普通訊息處理，但具有管理員權限
-            handle_regular_message(sender_id, message_text)
+            # 直接調用管理員問答邏輯，而不是普通用戶邏輯
+            handle_admin_quiz(sender_id, message_text)
             
     except Exception as e:
         logger.error(f"❌ 處理管理員訊息失敗: {e}")
@@ -991,6 +1071,11 @@ def handle_admin_quiz(sender_id, message_text):
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
                 handle_admin_answer(sender_id, message_text)
             else:
+                # 發送新的歡迎訊息 Flex Message
+                welcome_message = create_welcome_flex_message()
+                send_message(sender_id, welcome_message)
+                
+                # 發送管理員專用訊息
                 send_message(sender_id, {
                     "text": f"🔑 管理員模式已啟用！\n\n您可以使用以下指令：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您有權限訪問所有等級的題目！"
                 })
@@ -1005,6 +1090,8 @@ def handle_normal_quiz(sender_id, message_text):
         # 獲取用戶當前等級
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
+        current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
+        remaining = 3 - current_progress
         
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
             send_normal_quiz_question(sender_id, current_level)
@@ -1019,8 +1106,13 @@ def handle_normal_quiz(sender_id, message_text):
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
                 handle_normal_answer(sender_id, message_text, current_level)
             else:
+                # 發送新的歡迎訊息 Flex Message
+                welcome_message = create_welcome_flex_message()
+                send_message(sender_id, welcome_message)
+                
+                # 發送詳細資訊文字訊息
                 send_message(sender_id, {
-                    "text": f"您好！我收到了您的訊息：{message_text}\n\n這是一個解剖學問答機器人，請輸入「開始」開始學習！\n\n您當前等級：{current_level}\n\n💡 您也可以輸入「排行榜」查看排名！"
+                    "text": f"🎯 您當前等級：{current_level}\n📈 升級進度：{current_progress}/3 題\n🎯 還需要答對 {remaining} 題即可升級！\n\n💡 請輸入「開始」開始學習，或輸入「排行榜」查看排名！"
                 })
         
     except Exception as e:
@@ -1028,25 +1120,33 @@ def handle_normal_quiz(sender_id, message_text):
         send_message(sender_id, {"text": "抱歉，處理您的訊息時發生錯誤，請稍後再試。"})
 
 def send_admin_quiz_question(sender_id):
-    """發送管理員問答題目（所有等級）"""
+    """發送管理員問答題目（按當前等級）- 修復版本"""
     try:
         import random
         
-        # 管理員可以訪問所有等級的題目
-        all_questions = get_all_questions()
+        # 獲取管理員用戶的當前等級
+        user_stats = get_user_stats(sender_id)
+        current_level = user_stats.get('level', 1) if user_stats else 1
+        current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
         
-        if not all_questions:
-            send_message(sender_id, {"text": "❌ 目前沒有可用的題目，請稍後再試。"})
+        # 獲取當前等級的題目
+        level_questions = get_questions_by_level(current_level)
+        
+        if not level_questions:
+            send_message(sender_id, {"text": f"❌ 等級 {current_level} 目前沒有可用的題目，請稍後再試。"})
             return
         
-        # 隨機選擇一道題目
-        question = random.choice(all_questions)
+        # 從當前等級隨機選擇一道題目
+        question = random.choice(level_questions)
+        
+        logger.info(f"🔑 管理員 {sender_id} 獲得等級 {current_level} 題目，進度：{current_progress}/3")
         
         # 發送題目
-        question_text = f"""🔑 管理員模式 - 隨機題目
+        question_text = f"""🔑 管理員模式 - 等級 {question['level']} 題目
+進度：{current_progress}/3
 
 📚 題目：{question['question']}
-🎯 等級：{question['level']}
+🎯 等級：{question['level']} (管理員模式)
 📖 類別：{question['category']}
 
 選項：
@@ -1055,7 +1155,9 @@ def send_admin_quiz_question(sender_id):
 3️⃣ {question['options'][2]}
 4️⃣ {question['options'][3]}
 
-請輸入答案編號 (1-4) 或字母 (A-D)"""
+請輸入答案編號 (1-4) 或字母 (A-D)
+
+💡 管理員提示：您可以訪問所有等級的題目！"""
         
         send_message(sender_id, {"text": question_text})
         
@@ -1150,10 +1252,20 @@ def get_questions_by_level(level):
 
 def send_admin_help_message(sender_id):
     """發送管理員幫助訊息"""
-    help_text = """🔑 管理員指令幫助
+    # 獲取管理員當前等級和進度
+    user_stats = get_user_stats(sender_id)
+    current_level = user_stats.get('level', 1) if user_stats else 1
+    current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
+    remaining = 3 - current_progress
+    
+    help_text = f"""🔑 管理員指令幫助
+
+🎯 當前等級：{current_level}
+📈 升級進度：{current_progress}/3 題
+🎯 還需要答對 {remaining} 題即可升級！
 
 📚 問答指令：
-• 開始 / start - 開始隨機答題（所有等級）
+• 開始 / start - 開始答題（等級 {current_level}）
 • 幫助 / help - 顯示此幫助訊息
 
 🔧 管理員指令：
@@ -1166,9 +1278,10 @@ def send_admin_help_message(sender_id):
 • /level check - 檢查當前等級
 
 🎯 特殊功能：
-• 您有權限訪問所有等級的題目
+• 管理員模式：按當前等級答題
 • 可以測試任何等級的內容
 • 可以查看系統統計數據
+• 答對3題升級到下一等級
 
 開始答題吧！"""
     
@@ -1176,9 +1289,16 @@ def send_admin_help_message(sender_id):
 
 def send_normal_help_message(sender_id, level):
     """發送普通用戶幫助訊息"""
+    # 獲取用戶當前進度
+    user_stats = get_user_stats(sender_id)
+    current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
+    remaining = 3 - current_progress
+    
     help_text = f"""📚 問答指令幫助
 
 🎯 當前等級：{level}
+📈 升級進度：{current_progress}/3 題
+🎯 還需要答對 {remaining} 題即可升級！
 
 📚 問答指令：
 • 開始 / start - 開始答題（等級 {level}）
@@ -1187,43 +1307,183 @@ def send_normal_help_message(sender_id, level):
 💡 提示：
 • 輸入答案時可以使用數字 (1-4) 或字母 (A-D)
 • 答對題目可以獲得積分
-• 累積足夠積分可以升級到下一等級
+• 答對 3 題即可升級到下一等級
+• 答錯題目不會影響升級進度
 
 開始學習吧！"""
     
     send_message(sender_id, {"text": help_text})
 
 def handle_admin_answer(sender_id, answer):
-    """處理管理員答案"""
+    """處理管理員答案 - 使用普通用戶升級邏輯"""
     try:
-        # 簡化的答案處理邏輯
-        # 在實際應用中，應該從會話中獲取當前題目
+        # 獲取管理員用戶的當前等級
+        user_stats = get_user_stats(sender_id)
+        if not user_stats:
+            # 如果用戶不存在，創建新用戶
+            user_stats = {
+                'user_id': sender_id,
+                'correct': 0,
+                'wrong': 0,
+                'level': 1,
+                'correct_in_level': 0  # 當前等級答對題數
+            }
         
-        # 模擬答案處理
-        if answer in ['1', 'A']:
-            send_message(sender_id, {
-                "text": "✅ 答對了！\n\n🔑 管理員模式：您有權限訪問所有等級的題目。\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
-            })
+        current_level = user_stats.get('level', 1)
+        
+        # 模擬答案處理（這裡應該根據實際題目來判斷，暫時用簡單邏輯）
+        # 在實際應用中，應該從會話中獲取當前題目的正確答案
+        is_correct = answer in ['1', 'A']  # 簡化處理
+        
+        if is_correct:
+            # 答對了
+            new_correct = user_stats.get('correct', 0) + 1
+            new_level_correct = user_stats.get('correct_in_level', 0) + 1
+            
+            # 更新統計數據
+            update_data = {
+                'user_id': sender_id,
+                'correct': new_correct,
+                'correct_in_level': new_level_correct,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+            
+            # 檢查是否需要升級（答對3題升級）
+            if new_level_correct >= 3:
+                new_level = current_level + 1
+                update_data['level'] = new_level
+                update_data['correct_in_level'] = 0  # 重置當前等級答對數
+                
+                # 更新數據庫
+                supabase.table('user_stats').upsert(update_data).execute()
+                
+                send_message(sender_id, {
+                    "text": f"✅ 答對了！\n\n🎉 管理員升級！\n📈 從等級 {current_level} 晉升為等級 {new_level}！\n\n🔑 管理員模式：您現在可以挑戰等級 {new_level} 的題目。\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
+                })
+                
+                logger.info(f"🎉 管理員 {sender_id} 從等級 {current_level} 升級到等級 {new_level}")
+                
+            else:
+                # 更新數據庫但不升級
+                supabase.table('user_stats').upsert(update_data).execute()
+                
+                remaining = 3 - new_level_correct
+                send_message(sender_id, {
+                    "text": f"✅ 答對了！\n\n🔑 管理員模式 - 等級 {current_level} 進度：{new_level_correct}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
+                })
+                
+                logger.info(f"✅ 管理員 {sender_id} 答對，進度：{new_level_correct}/3")
         else:
+            # 答錯了
+            new_wrong = user_stats.get('wrong', 0) + 1
+            current_level_correct = user_stats.get('correct_in_level', 0)
+            remaining = 3 - current_level_correct
+            
+            # 更新統計數據
+            update_data = {
+                'user_id': sender_id,
+                'wrong': new_wrong,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+            supabase.table('user_stats').upsert(update_data).execute()
+            
             send_message(sender_id, {
-                "text": "❌ 答錯了！\n\n🔑 管理員模式：您有權限訪問所有等級的題目。\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
+                "text": f"❌ 答錯了！\n\n🔑 管理員模式 - 等級 {current_level} 需要更多練習\n📈 當前進度：{current_level_correct}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
             })
+            
+            logger.info(f"❌ 管理員 {sender_id} 答錯，當前進度：{current_level_correct}/3")
         
     except Exception as e:
         logger.error(f"❌ 處理管理員答案失敗: {e}")
         send_message(sender_id, {"text": "❌ 處理答案時發生錯誤，請稍後再試。"})
 
 def handle_normal_answer(sender_id, answer, level):
-    """處理普通用戶答案"""
+    """處理普通用戶答案 - 修復版本：答對三題升級"""
     try:
-        # 簡化的答案處理邏輯
-        if answer in ['1', 'A']:
-            send_message(sender_id, {
-                "text": f"✅ 答對了！\n\n📈 等級 {level} 進度更新\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
-            })
+        # 獲取用戶當前統計數據
+        user_stats = get_user_stats(sender_id)
+        if not user_stats:
+            # 如果用戶不存在，創建新用戶
+            user_stats = {
+                'user_id': sender_id,
+                'correct': 0,
+                'wrong': 0,
+                'level': 1,
+                'correct_in_level': 0  # 當前等級答對題數
+            }
+            # 創建用戶記錄
+            supabase.table('user_stats').upsert(user_stats).execute()
+        
+        # 簡化的答案驗證（實際應該從會話中獲取正確答案）
+        # 這裡假設答案1或A是正確的，實際應用中應該從題目數據中獲取
+        is_correct = answer in ['1', 'A']
+        
+        if is_correct:
+            # 答對了
+            new_correct = user_stats.get('correct', 0) + 1
+            new_total = user_stats.get('correct', 0) + user_stats.get('wrong', 0) + 1
+            new_level_correct = user_stats.get('correct_in_level', 0) + 1
+            
+            # 更新統計數據
+            update_data = {
+                'user_id': sender_id,
+                'correct': new_correct,
+                'correct_in_level': new_level_correct,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+            
+            # 檢查是否需要升級（答對3題升級）
+            if new_level_correct >= 3:
+                # 計算升級數量和剩餘答對題數
+                levels_to_upgrade = new_level_correct // 3  # 可以升多少級
+                remaining_correct = new_level_correct % 3   # 升級後剩餘的答對題數
+                
+                new_level = level + levels_to_upgrade
+                update_data['level'] = new_level
+                update_data['correct_in_level'] = remaining_correct  # 保留剩餘的答對題數
+                
+                # 更新數據庫
+                supabase.table('user_stats').upsert(update_data).execute()
+                
+                # 發送升級慶祝訊息
+                send_level_up_celebration(sender_id, level, new_level)
+                
+                # 發送升級後的訊息
+                if levels_to_upgrade == 1:
+                    upgrade_text = f"從等級 {level} 晉升為等級 {new_level}！"
+                else:
+                    upgrade_text = f"連續升級！從等級 {level} 直接晉升為等級 {new_level}！（升了 {levels_to_upgrade} 級）"
+                
+                progress_text = f"當前進度：{remaining_correct}/3" if remaining_correct > 0 else "準備挑戰下一級！"
+                
+                send_message(sender_id, {
+                    "text": f"🎉 恭喜升級！\n\n✅ 答對了！\n📈 {upgrade_text}\n\n你已經掌握了等級 {new_level} 的知識！\n📊 {progress_text}\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
+                })
+            else:
+                # 還未達到升級條件
+                remaining = 3 - new_level_correct
+                supabase.table('user_stats').upsert(update_data).execute()
+                
+                send_message(sender_id, {
+                    "text": f"✅ 答對了！\n\n📈 等級 {level} 進度：{new_level_correct}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
+                })
         else:
+            # 答錯了
+            new_wrong = user_stats.get('wrong', 0) + 1
+            new_total = user_stats.get('correct', 0) + user_stats.get('wrong', 0) + 1
+            current_level_correct = user_stats.get('correct_in_level', 0)
+            remaining = 3 - current_level_correct
+            
+            # 更新統計數據
+            update_data = {
+                'user_id': sender_id,
+                'wrong': new_wrong,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+            supabase.table('user_stats').upsert(update_data).execute()
+            
             send_message(sender_id, {
-                "text": f"❌ 答錯了！\n\n📚 等級 {level} 需要更多練習\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
+                "text": f"❌ 答錯了！\n\n📚 等級 {level} 需要更多練習\n📈 當前進度：{current_level_correct}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
             })
         
     except Exception as e:
@@ -2568,17 +2828,5 @@ def api_questions():
         logger.error(f"❌ API: 獲取題目列表失敗: {e}")
         return jsonify({"error": "獲取題目列表失敗"}), 500
 
-# --- ASGI 兼容：把 Flask(WGSI) 包成 ASGI，給 Render 目前的 `uvicorn app_supabase:app` 使用 ---
-try:
-    from uvicorn.middleware.wsgi import WSGIMiddleware
-    _flask_app = app            # 先保留原本的 Flask app（路由都掛在這上面）
-    app = WSGIMiddleware(_flask_app)  # 將 `app` 變數改指向 ASGI wrapper（給 uvicorn 匯入）
-    flask_app = _flask_app      # 仍保留 flask_app 供本地開發啟動
-except Exception:
-    # 若未裝 uvicorn 或其他例外，至少不要壞掉本地啟動
-    flask_app = app
-
-if __name__ == "__main__":
-    # 本地開發時仍用 Flask 內建伺服器（不要用 uvicorn）
-    port = int(os.environ.get("PORT", 5001))
-    flask_app.run(host="0.0.0.0", port=port, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5002)))

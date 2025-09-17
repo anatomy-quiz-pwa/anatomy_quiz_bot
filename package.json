@@ -1,0 +1,16 @@
+{
+  "name": "anatomy_admin_panel",
+  "version": "1.0.0",
+  "description": "Next.js Admin Panel",
+  "scripts": {
+    "dev": "next dev",
+    "build": "node vercel-build.js",
+    "start": "next start",
+    "vercel-build": "node vercel-build.js"
+  },
+  "dependencies": {
+    "next": "^15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

@@ -1,0 +1,512 @@
+{
+  "type": "flex",
+  "altText": "🏆 排行榜 - 前10名",
+  "contents": {
+    "type": "bubble",
+    "header": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "text",
+          "text": "🏆 排行榜",
+          "weight": "bold",
+          "size": "xl",
+          "color": "#2c1810",
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "前10名",
+          "size": "sm",
+          "color": "#8b4513",
+          "align": "center",
+          "margin": "sm"
+        }
+      ],
+      "backgroundColor": "#d2b48c",
+      "paddingAll": "lg"
+    },
+    "body": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "🥇",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 440 | 等級: 14",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 48 | 正確: 44 (91.7%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#ffffff",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "🥈",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 260 | 等級: 1",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 60 | 正確: 26 (43.3%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#f5f5dc",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "🥉",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 200 | 等級: 4",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 20 | 正確: 20 (100.0%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#ffffff",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "4",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 190 | 等級: 1",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 30 | 正確: 19 (63.3%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#f5f5dc",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "5",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 150 | 等級: 1",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 15 | 正確: 15 (100.0%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#ffffff",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "6",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 100 | 等級: 2",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 10 | 正確: 10 (100.0%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#f5f5dc",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "7",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 80 | 等級: 2",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 18 | 正確: 8 (44.4%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#ffffff",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "8",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 40 | 等級: 2",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 6 | 正確: 4 (66.7%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#f5f5dc",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "9",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 40 | 等級: 2",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 6 | 正確: 4 (66.7%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#ffffff",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "10",
+              "size": "lg",
+              "flex": 0,
+              "margin": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "未知用戶",
+                  "weight": "bold",
+                  "size": "sm",
+                  "color": "#2c1810"
+                },
+                {
+                  "type": "text",
+                  "text": "分數: 30 | 等級: 2",
+                  "size": "xs",
+                  "color": "#8b4513",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "答題: 3 | 正確: 3 (100.0%)",
+                  "size": "xs",
+                  "color": "#8b4513"
+                }
+              ],
+              "flex": 1,
+              "margin": "sm"
+            }
+          ],
+          "backgroundColor": "#f5f5dc",
+          "paddingAll": "sm",
+          "margin": "xs",
+          "cornerRadius": "sm"
+        },
+        {
+          "type": "text",
+          "text": "💡 繼續挑戰，提升你的排名！",
+          "size": "sm",
+          "color": "#8b4513",
+          "align": "center",
+          "margin": "md"
+        }
+      ]
+    },
+    "footer": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "button",
+          "action": {
+            "type": "postback",
+            "label": "🔄 重新挑戰",
+            "data": "RESTART_CHALLENGE"
+          },
+          "style": "primary",
+          "color": "#8b4513"
+        }
+      ],
+      "spacing": "sm"
+    }
+  }
+}

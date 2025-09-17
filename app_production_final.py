@@ -9,18 +9,6 @@ import datetime
 
 app = Flask(__name__)
 
-# 健康檢查端點
-@app.route("/__health", methods=["GET"])
-def __health():
-    build_id = "not_found"
-    try:
-        if os.path.exists(".build_id"):
-            with open(".build_id", "r") as f:
-                build_id = f.read().strip()
-    except Exception:
-        pass
-    return jsonify({"ok": True, "buildId": build_id})
-
 # 設置日誌
 logging.basicConfig(
     level=logging.INFO,
@@ -105,6 +93,196 @@ def generate_default_nickname(user_id):
     else:
         # 其他用戶ID
         return f"用戶_{user_id}"
+
+def check_user_has_custom_nickname(user_id):
+    """檢查用戶是否設置了自定義暱稱（非默認暱稱）"""
+    try:
+        if supabase is None:
+            logger.error("❌ Supabase 未連接，無法檢查暱稱")
+            return False
+        
+        # 查詢 users 表格中的 game_nickname
+        response = supabase.table('users').select('game_nickname').eq('line_user_id', user_id).execute()
+        
+        if response.data and len(response.data) > 0:
+            nickname = response.data[0].get('game_nickname')
+            if nickname:
+                # 檢查是否為默認暱稱
+                default_nickname = generate_default_nickname(user_id)
+                has_custom = nickname != default_nickname
+                logger.info(f"🔍 用戶 {user_id} 暱稱檢查: {nickname} (自定義: {has_custom})")
+                return has_custom
+        
+        # 如果沒有找到暱稱記錄，表示沒有設置自定義暱稱
+        logger.info(f"⚠️ 用戶 {user_id} 沒有暱稱記錄")
+        return False
+        
+    except Exception as e:
+        logger.error(f"❌ 檢查用戶 {user_id} 暱稱失敗: {e}")
+        return False
+
+def create_nickname_reminder_flex_message():
+    """創建暱稱提醒的 Flex Message"""
+    try:
+        logger.info("🎨 正在創建暱稱提醒 Flex Message...")
+        
+        flex_message = {
+            "type": "flex",
+            "altText": "🎮 請先設置暱稱才能開始遊戲",
+            "contents": {
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "🎮 遊戲開始前",
+                            "weight": "bold",
+                            "size": "xl",
+                            "color": "#FF6B6B"
+                        },
+                        {
+                            "type": "text",
+                            "text": "請先設置您的暱稱",
+                            "size": "sm",
+                            "color": "#666666"
+                        }
+                    ]
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "為了讓您在排行榜中顯示個人化的暱稱，請先設置一個專屬於您的遊戲暱稱！",
+                            "size": "sm",
+                            "color": "#333333",
+                            "wrap": True
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "margin": "md",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "📝 如何設置暱稱：",
+                                    "weight": "bold",
+                                    "size": "sm",
+                                    "color": "#0066CC"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "1. 輸入「設置暱稱」",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "margin": "sm"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "2. 輸入您想要的暱稱",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "margin": "sm"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "3. 設置完成後即可開始遊戲！",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "margin": "sm"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "設置暱稱",
+                                "data": "action=set_nickname"
+                            },
+                            "style": "primary",
+                            "color": "#FF6B6B"
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "稍後設置",
+                                "data": "action=skip_nickname"
+                            },
+                            "style": "secondary",
+                            "color": "#CCCCCC"
+                        }
+                    ]
+                }
+            }
+        }
+        
+        logger.info("✅ 暱稱提醒 Flex Message 創建成功")
+        return flex_message
+        
+    except Exception as e:
+        logger.error(f"❌ 創建暱稱提醒 Flex Message 失敗: {e}")
+        return None
+
+def set_user_nickname(user_id, nickname):
+    """設置用戶暱稱"""
+    try:
+        if supabase is None:
+            logger.error("❌ Supabase 未連接，無法設置暱稱")
+            send_message(user_id, {"text": "❌ 系統暫時無法設置暱稱，請稍後再試。"})
+            return False
+        
+        # 驗證暱稱長度
+        if len(nickname) > 10:
+            send_message(user_id, {"text": "❌ 暱稱太長了！請輸入不超過10個字符的暱稱。"})
+            return False
+        
+        if len(nickname) < 1:
+            send_message(user_id, {"text": "❌ 暱稱不能為空！請輸入一個有效的暱稱。"})
+            return False
+        
+        # 檢查暱稱是否包含不當內容（簡單檢查）
+        if any(char in nickname for char in ['<', '>', '&', '"', "'", '\\', '/']):
+            send_message(user_id, {"text": "❌ 暱稱包含不當字符！請使用正常的文字。"})
+            return False
+        
+        # 更新或插入用戶暱稱
+        response = supabase.table('users').upsert({
+            'line_user_id': user_id,
+            'game_nickname': nickname,
+            'updated_at': datetime.datetime.now().isoformat()
+        }).execute()
+        
+        if response.data:
+            logger.info(f"✅ 成功設置用戶 {user_id} 的暱稱為: {nickname}")
+            send_message(user_id, {
+                "text": f"✅ 暱稱設置成功！\n\n您的遊戲暱稱已設置為：{nickname}\n\n現在您可以開始遊戲了！輸入「開始」開始挑戰！"
+            })
+            return True
+        else:
+            logger.error(f"❌ 設置用戶 {user_id} 暱稱失敗")
+            send_message(user_id, {"text": "❌ 設置暱稱失敗，請稍後再試。"})
+            return False
+        
+    except Exception as e:
+        logger.error(f"❌ 設置用戶 {user_id} 暱稱失敗: {e}")
+        send_message(user_id, {"text": "❌ 設置暱稱時發生錯誤，請稍後再試。"})
+        return False
 
 def get_user_admin_permissions(user_id):
     """獲取用戶管理員權限"""
@@ -289,8 +467,8 @@ def get_leaderboard_data():
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
-        # 使用 Supabase 查詢獲取排行榜數據
-        response = supabase.table('user_stats').select('*').order('score', desc=True).limit(10).execute()
+        # 使用 Supabase 查詢獲取排行榜數據，按正確答案數量排序
+        response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
         
         if response.data:
             logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
@@ -980,6 +1158,10 @@ def handle_admin_quiz(sender_id, message_text):
         # 管理員可以訪問所有等級的題目
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
             send_admin_quiz_question(sender_id)
+        elif message_text.lower() in ['設置暱稱', 'set_nickname', '暱稱設置']:
+            send_message(sender_id, {
+                "text": "📝 暱稱設置\n\n請輸入您想要的暱稱（最多10個字符）：\n\n例如：小明、解剖學家、醫學達人等\n\n輸入完成後，您就可以開始遊戲了！"
+            })
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_admin_help_message(sender_id)
         elif message_text.lower() in ['排行榜', 'leaderboard', '排名', '排行']:
@@ -987,6 +1169,12 @@ def handle_admin_quiz(sender_id, message_text):
             logger.info(f"📊 管理員用戶 {sender_id} 請求查看排行榜")
             send_leaderboard_message(sender_id)
         else:
+            # 檢查是否為暱稱設置（非指令的普通文字）
+            if len(message_text.strip()) <= 10 and not message_text.lower() in ['1', '2', '3', '4', 'a', 'b', 'c', 'd']:
+                # 可能是暱稱設置
+                set_user_nickname(sender_id, message_text.strip())
+                return
+            
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
                 handle_admin_answer(sender_id, message_text)
@@ -1008,6 +1196,10 @@ def handle_normal_quiz(sender_id, message_text):
         
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
             send_normal_quiz_question(sender_id, current_level)
+        elif message_text.lower() in ['設置暱稱', 'set_nickname', '暱稱設置']:
+            send_message(sender_id, {
+                "text": "📝 暱稱設置\n\n請輸入您想要的暱稱（最多10個字符）：\n\n例如：小明、解剖學家、醫學達人等\n\n輸入完成後，您就可以開始遊戲了！"
+            })
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_normal_help_message(sender_id, current_level)
         elif message_text.lower() in ['排行榜', 'leaderboard', '排名', '排行']:
@@ -1015,6 +1207,12 @@ def handle_normal_quiz(sender_id, message_text):
             logger.info(f"📊 普通用戶 {sender_id} 請求查看排行榜")
             send_leaderboard_message(sender_id)
         else:
+            # 檢查是否為暱稱設置（非指令的普通文字）
+            if len(message_text.strip()) <= 10 and not message_text.lower() in ['1', '2', '3', '4', 'a', 'b', 'c', 'd']:
+                # 可能是暱稱設置
+                set_user_nickname(sender_id, message_text.strip())
+                return
+            
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
                 handle_normal_answer(sender_id, message_text, current_level)
@@ -1030,6 +1228,19 @@ def handle_normal_quiz(sender_id, message_text):
 def send_admin_quiz_question(sender_id):
     """發送管理員問答題目（所有等級）"""
     try:
+        # 檢查用戶是否設置了自定義暱稱
+        if not check_user_has_custom_nickname(sender_id):
+            logger.info(f"⚠️ 管理員用戶 {sender_id} 沒有設置自定義暱稱，發送暱稱提醒")
+            nickname_reminder = create_nickname_reminder_flex_message()
+            if nickname_reminder:
+                send_message(sender_id, nickname_reminder)
+            else:
+                # 如果 Flex Message 創建失敗，發送文字提醒
+                send_message(sender_id, {
+                    "text": "🎮 遊戲開始前提醒\n\n為了讓您在排行榜中顯示個人化的暱稱，請先設置一個專屬於您的遊戲暱稱！\n\n📝 如何設置暱稱：\n1. 輸入「設置暱稱」\n2. 輸入您想要的暱稱\n3. 設置完成後即可開始遊戲！"
+                })
+            return
+        
         import random
         
         # 管理員可以訪問所有等級的題目
@@ -1069,6 +1280,19 @@ def send_admin_quiz_question(sender_id):
 def send_normal_quiz_question(sender_id, level):
     """發送普通用戶問答題目（當前等級）"""
     try:
+        # 檢查用戶是否設置了自定義暱稱
+        if not check_user_has_custom_nickname(sender_id):
+            logger.info(f"⚠️ 用戶 {sender_id} 沒有設置自定義暱稱，發送暱稱提醒")
+            nickname_reminder = create_nickname_reminder_flex_message()
+            if nickname_reminder:
+                send_message(sender_id, nickname_reminder)
+            else:
+                # 如果 Flex Message 創建失敗，發送文字提醒
+                send_message(sender_id, {
+                    "text": "🎮 遊戲開始前提醒\n\n為了讓您在排行榜中顯示個人化的暱稱，請先設置一個專屬於您的遊戲暱稱！\n\n📝 如何設置暱稱：\n1. 輸入「設置暱稱」\n2. 輸入您想要的暱稱\n3. 設置完成後即可開始遊戲！"
+                })
+            return
+        
         # 獲取指定等級的題目
         level_questions = get_questions_by_level(level)
         
@@ -2568,17 +2792,5 @@ def api_questions():
         logger.error(f"❌ API: 獲取題目列表失敗: {e}")
         return jsonify({"error": "獲取題目列表失敗"}), 500
 
-# --- ASGI 兼容：把 Flask(WGSI) 包成 ASGI，給 Render 目前的 `uvicorn app_supabase:app` 使用 ---
-try:
-    from uvicorn.middleware.wsgi import WSGIMiddleware
-    _flask_app = app            # 先保留原本的 Flask app（路由都掛在這上面）
-    app = WSGIMiddleware(_flask_app)  # 將 `app` 變數改指向 ASGI wrapper（給 uvicorn 匯入）
-    flask_app = _flask_app      # 仍保留 flask_app 供本地開發啟動
-except Exception:
-    # 若未裝 uvicorn 或其他例外，至少不要壞掉本地啟動
-    flask_app = app
-
-if __name__ == "__main__":
-    # 本地開發時仍用 Flask 內建伺服器（不要用 uvicorn）
-    port = int(os.environ.get("PORT", 5001))
-    flask_app.run(host="0.0.0.0", port=port, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5002)))
