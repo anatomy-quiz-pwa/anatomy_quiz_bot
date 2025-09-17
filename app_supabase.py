@@ -301,22 +301,77 @@ def send_line_message(user_id, message_data):
         return {"error": str(e)}
 
 def get_leaderboard_data():
-    """獲取排行榜數據"""
+    """獲取排行榜數據，包含用戶暱稱"""
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
-        # 使用 Supabase 查詢獲取排行榜數據 - 修復：使用 correct 欄位而不是 score
-        response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
+        # 使用 JOIN 查詢同時獲取用戶統計和暱稱資料
+        response = supabase.table('user_stats').select('''
+            *,
+            users!inner(game_nickname)
+        ''').order('correct', desc=True).limit(10).execute()
         
         if response.data:
             logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
-            return response.data
+            
+            # 處理資料格式，確保每個項目都有暱稱
+            processed_data = []
+            for item in response.data:
+                # 獲取暱稱，如果沒有則生成預設暱稱
+                nickname = None
+                if 'users' in item and item['users'] and item['users'].get('game_nickname'):
+                    nickname = item['users']['game_nickname']
+                else:
+                    nickname = generate_default_nickname(item['user_id'])
+                
+                # 創建標準化的資料結構
+                processed_item = {
+                    'user_id': item['user_id'],
+                    'nickname': nickname,
+                    'correct': item.get('correct', 0),
+                    'wrong': item.get('wrong', 0),
+                    'level': item.get('level', 1),
+                    'correct_in_level': item.get('correct_in_level', 0),
+                    'total_questions': item.get('correct', 0) + item.get('wrong', 0),
+                    'accuracy': round((item.get('correct', 0) / max(item.get('correct', 0) + item.get('wrong', 0), 1)) * 100, 1)
+                }
+                processed_data.append(processed_item)
+            
+            return processed_data
         else:
             logger.warning("⚠️ 沒有獲取到排行榜數據")
             return []
             
     except Exception as e:
         logger.error(f"❌ 獲取排行榜數據失敗: {e}")
+        logger.info("🔄 嘗試使用備用查詢方法...")
+        
+        # 備用方法：分別查詢用戶統計和暱稱
+        try:
+            stats_response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
+            
+            if stats_response.data:
+                processed_data = []
+                for item in stats_response.data:
+                    nickname = get_user_nickname(item['user_id'])
+                    processed_item = {
+                        'user_id': item['user_id'],
+                        'nickname': nickname,
+                        'correct': item.get('correct', 0),
+                        'wrong': item.get('wrong', 0),
+                        'level': item.get('level', 1),
+                        'correct_in_level': item.get('correct_in_level', 0),
+                        'total_questions': item.get('correct', 0) + item.get('wrong', 0),
+                        'accuracy': round((item.get('correct', 0) / max(item.get('correct', 0) + item.get('wrong', 0), 1)) * 100, 1)
+                    }
+                    processed_data.append(processed_item)
+                
+                logger.info(f"✅ 備用方法成功獲取 {len(processed_data)} 條數據")
+                return processed_data
+            
+        except Exception as e2:
+            logger.error(f"❌ 備用查詢也失敗: {e2}")
+        
         return []
 
 def send_leaderboard_message(user_id):
@@ -471,8 +526,11 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                 rank_icon = f"{i}"
                 rank_color = "#8b4513"
             
-            # 計算準確率
-            accuracy = (student["correct_answers"] / student["questions_answered"] * 100) if student["questions_answered"] > 0 else 0
+            # 獲取學生資訊
+            nickname = student.get('nickname', '未知用戶')
+            correct = student.get('correct', 0)
+            level = student.get('level', 1)
+            accuracy = student.get('accuracy', 0)
             
             # 創建排名項目
             rank_item = {
@@ -492,21 +550,21 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                         "contents": [
                             {
                                 "type": "text",
-                                "text": student['name'],
+                                "text": nickname,
                                 "weight": "bold",
                                 "size": "sm",
                                 "color": "#2c1810"
                             },
                             {
                                 "type": "text",
-                                "text": f"分數: {student['score']} | 等級: {student['level']}",
+                                "text": f"答對: {correct} 題 | 等級: {level}",
                                 "size": "xs",
                                 "color": "#8b4513",
                                 "margin": "xs"
                             },
                             {
                                 "type": "text",
-                                "text": f"答題: {student['questions_answered']} | 正確: {student['correct_answers']} ({accuracy:.1f}%)",
+                                "text": f"準確率: {accuracy}% | 總題數: {student.get('total_questions', 0)}",
                                 "size": "xs",
                                 "color": "#8b4513"
                             }
@@ -525,7 +583,11 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
         
         # 添加用戶自己的排名信息（如果不在前10名）
         if user_rank and user_rank > 10 and user_student:
-            user_accuracy = (user_student["correct_answers"] / user_student["questions_answered"] * 100) if user_student["questions_answered"] > 0 else 0
+            user_nickname = user_student.get('nickname', '您')
+            user_correct = user_student.get('correct', 0)
+            user_level = user_student.get('level', 1)
+            user_accuracy = user_student.get('accuracy', 0)
+            user_total = user_student.get('total_questions', 0)
             
             # 分隔線
             separator = {
@@ -552,21 +614,21 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                         "contents": [
                             {
                                 "type": "text",
-                                "text": f"你的排名: 第{user_rank}名",
+                                "text": f"你的排名: 第{user_rank}名 ({user_nickname})",
                                 "weight": "bold",
                                 "size": "sm",
                                 "color": "#2c1810"
                             },
                             {
                                 "type": "text",
-                                "text": f"分數: {user_student['score']} | 等級: {user_student['level']}",
+                                "text": f"答對: {user_correct} 題 | 等級: {user_level}",
                                 "size": "xs",
                                 "color": "#8b4513",
                                 "margin": "xs"
                             },
                             {
                                 "type": "text",
-                                "text": f"答題: {user_student['questions_answered']} | 正確: {user_student['correct_answers']} ({user_accuracy:.1f}%)",
+                                "text": f"準確率: {user_accuracy}% | 總題數: {user_total}",
                                 "size": "xs",
                                 "color": "#8b4513"
                             }
