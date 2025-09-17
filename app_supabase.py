@@ -659,26 +659,37 @@ def get_question_hero_image_url_with_fallback(question):
         return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_question.png"
 
 def get_question_hero_image_url(level):
-    """獲取等級海報圖片 URL"""
+    """獲取等級海報圖片 URL（支援level 1-14）"""
     try:
         # 根據等級使用對應的海報圖片
         base_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot"
         
-        # 等級海報映射
+        # 等級海報映射（支援level 1-14）
         level_posters = {
             1: f"{base_url}/level_1_poster.png",
             2: f"{base_url}/level_2_poster.png", 
             3: f"{base_url}/level_3_poster.png",
             4: f"{base_url}/level_4_poster.png",
             5: f"{base_url}/level_5_poster.png",
+            6: f"{base_url}/level_6_poster.png",
+            7: f"{base_url}/level_7_poster.png",
+            8: f"{base_url}/level_8_poster.png",
+            9: f"{base_url}/level_9_poster.png",
+            10: f"{base_url}/level_10_poster.png",
+            11: f"{base_url}/level_11_poster.png",
+            12: f"{base_url}/level_12_poster.png",
+            13: f"{base_url}/level_13_poster.png",
+            14: f"{base_url}/level_14_poster.png",
         }
         
-        # 如果等級超過5，使用等級5的圖片
-        if level > 5:
-            level = 5
-            
-        poster_url = level_posters.get(level, level_posters[1])
-        return poster_url
+        # 所有level都有對應poster，直接使用
+        poster_url = level_posters.get(level)
+        if poster_url:
+            return poster_url
+        else:
+            # 如果等級超過14或不在映射中，使用level 1作為預設
+            logger.warning(f"⚠️ 等級 {level} 超出範圍，使用level 1 poster")
+            return level_posters[1]
         
     except Exception as e:
         logger.error(f"❌ 獲取等級海報失敗: {e}")
@@ -717,7 +728,7 @@ def create_score_flex_message(user_stats, nickname):
         
         flex_message = {
             "type": "flex",
-            "altText": f"📊 {nickname} 的學習成績",
+            "altText": f"📊 {nickname} 的遊戲積分",
             "contents": {
                 "type": "bubble",
                 "header": {
@@ -726,7 +737,7 @@ def create_score_flex_message(user_stats, nickname):
                     "contents": [
                         {
                             "type": "text",
-                            "text": f"📊 {nickname} 的成績",
+                            "text": f"📊 {nickname} 的遊戲積分",
                             "weight": "bold",
                             "size": "lg",
                             "color": "#FFFFFF",
@@ -936,7 +947,7 @@ def send_score_message(user_id):
             level = user_stats.get('level', 1)
             correct_in_level = user_stats.get('correct_in_level', 0)
             
-            score_text = f"""📊 {nickname} 的學習成績
+            score_text = f"""📊 {nickname} 的遊戲積分
 
 🏆 當前等級：第 {level} 級
 ✅ 答對題數：{correct_answers} 題
@@ -1160,8 +1171,133 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
         # 如果 Flex Message 創建失敗，返回文字訊息
         return {"text": "抱歉，排行榜顯示出現問題，請稍後再試。"}
 
+def get_level_title(level):
+    """根據等級獲取對應的稱號"""
+    level_titles = {
+        1: "解剖新手村", 2: "胚體學長", 3: "肌肉拆解師", 4: "神經探路員", 
+        5: "解剖影武者", 6: "組織細胞使者", 7: "血管引導員", 8: "解剖研究員",
+        9: "解剖操盤手", 10: "解剖副教授", 11: "腦神經導師", 12: "人體地圖管理",
+        13: "解剖大魔導", 14: "解剖學傳說"
+    }
+    return level_titles.get(level, f"等級{level}解剖師")
+
+def create_level_up_flex_message(old_level, new_level):
+    """創建level升級的Flex Message"""
+    try:
+        # 獲取等級對應的稱號
+        old_title = get_level_title(old_level)
+        new_title = get_level_title(new_level)
+        
+        # 獲取等級對應的海報圖片
+        level_poster_url = f"https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_{new_level}_poster.png"
+        
+        flex_message = {
+            "type": "flex",
+            "altText": f"🎉 恭喜升級！從{old_title}晉升為{new_title}！",
+            "contents": {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": level_poster_url,
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "🎉 恭喜升級！",
+                            "weight": "bold",
+                            "size": "xl",
+                            "color": "#FF6B35",
+                            "align": "center",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"🏆 從{old_title}",
+                            "size": "md",
+                            "color": "#666666",
+                            "align": "center",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"晉升為{new_title}！",
+                            "size": "md",
+                            "color": "#666666",
+                            "align": "center"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "xl"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "margin": "lg",
+                            "spacing": "sm",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"你已經掌握了等級 {new_level} 的知識，",
+                                    "color": "#666666",
+                                    "size": "sm",
+                                    "align": "center"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"現在開始挑戰等級 {new_level + 1} 的更高難度！",
+                                    "color": "#666666",
+                                    "size": "sm",
+                                    "align": "center"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "繼續加油，朝著終極解剖師的目標前進！",
+                                    "color": "#FF6B35",
+                                    "size": "sm",
+                                    "align": "center",
+                                    "weight": "bold",
+                                    "margin": "md"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "height": "sm",
+                            "action": {
+                                "type": "message",
+                                "label": "🚀 繼續答題",
+                                "text": "開始"
+                            },
+                            "color": "#FF6B35"
+                        }
+                    ],
+                    "flex": 0
+                }
+            }
+        }
+        
+        return flex_message
+        
+    except Exception as e:
+        logger.error(f"❌ 創建level升級Flex Message失敗: {e}")
+        return None
+
 def send_level_up_celebration(user_id, old_level, new_level):
-    """發送帶有 hero 圖示的升級慶祝訊息 - 修復版本"""
+    """發送level升級慶祝訊息 - 使用Flex Message"""
     
     # 檢查是否達到最高等級
     MAX_LEVEL = 14  # 根據實際數據，最高等級是14
@@ -1171,67 +1307,91 @@ def send_level_up_celebration(user_id, old_level, new_level):
         send_completion_celebration(user_id, new_level)
         return
     
-    # 方案1: 使用 Hero 模板（推薦）
+    # 方案1: 使用 Flex Message（主要方案）
     try:
-        hero_message = {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "generic",
-                    "elements": [
-                        {
-                            "title": "🎉 恭喜升級！",
-                            "image_url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/levelup.png",
-                            "subtitle": f"從{old_level} 晉升為{new_level}！",
-                            "buttons": [
-                                {
-                                    "type": "postback",
-                                    "title": "繼續挑戰",
-                                    "payload": "CONTINUE_CHALLENGE"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }
-        }
-        
-        # 發送 Hero 訊息
-        send_message(user_id, hero_message)
-        
-        # 發送詳細文字訊息
-        text_message = {
-            "text": f"你已經掌握了等級{new_level}的知識, 現在開始挑戰等級{new_level+1}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
-        }
-        send_message(user_id, text_message)
-        
+        flex_message = create_level_up_flex_message(old_level, new_level)
+        if flex_message:
+            send_message(user_id, flex_message)
+            logger.info(f"✅ 成功發送level升級Flex Message給用戶 {user_id}: {old_level} -> {new_level}")
+            return
+        else:
+            raise Exception("Flex Message創建失敗")
+            
     except Exception as e:
-        print(f"Hero 模板發送失敗: {e}")
+        logger.error(f"❌ Flex Message發送失敗: {e}")
         
-        # 方案2: 備用方案 - 先發送圖片，再發送文字
+        # 方案2: 備用方案 - 使用簡化的 LINE Flex Message
         try:
-            # 發送圖片
-            image_message = {
-                "attachment": {
-                    "type": "image",
-                    "payload": {
-                        "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/levelup.png"
+            # 獲取等級對應的稱號
+            old_title = get_level_title(old_level)
+            new_title = get_level_title(new_level)
+            
+            # 創建簡化版 Flex Message
+            simple_flex = {
+                "type": "flex",
+                "altText": f"🎉 恭喜升級！從{old_title}晉升為{new_title}！",
+                "contents": {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "🎉 恭喜升級！",
+                                "weight": "bold",
+                                "size": "xl",
+                                "color": "#FF6B35",
+                                "align": "center"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"從 {old_title} 晉升為 {new_title}！",
+                                "size": "md",
+                                "align": "center",
+                                "margin": "md",
+                                "wrap": True
+                            },
+                            {
+                                "type": "text",
+                                "text": f"你已經掌握了等級{new_level}的知識！",
+                                "size": "sm",
+                                "align": "center",
+                                "margin": "md",
+                                "wrap": True,
+                                "color": "#666666"
+                            }
+                        ]
+                    },
+                    "footer": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "action": {
+                                    "type": "message",
+                                    "label": "繼續挑戰",
+                                    "text": "開始"
+                                },
+                                "style": "primary",
+                                "color": "#FF6B35"
+                            }
+                        ]
                     }
                 }
             }
-            send_message(user_id, image_message)
             
-            # 發送慶祝文字
-            celebration_text = f"🎉 恭喜升級！\n從{old_level} 晉升為{new_level}！\n你已經掌握了等級{new_level}的知識, 現在開始挑戰等級{new_level+1}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
-            
-            text_message = {"text": celebration_text}
-            send_message(user_id, text_message)
+            send_message(user_id, simple_flex)
+            logger.info(f"✅ 成功發送簡化版升級Flex Message給用戶 {user_id}: {old_level} -> {new_level}")
             
         except Exception as e2:
-            print(f"備用方案也失敗: {e2}")
+            logger.error(f"❌ 簡化版Flex Message也失敗: {e2}")
             
             # 方案3: 最後備用 - 只發送文字
-            fallback_text = f"🎉 恭喜升級！\n從{old_level} 晉升為{new_level}！\n你已經掌握了等級{new_level}的知識, 現在開始挑戰等級{new_level+1}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
+            old_title = get_level_title(old_level)
+            new_title = get_level_title(new_level)
+            fallback_text = f"🎉 恭喜升級！\n🏆 從{old_title}晉升為{new_title}！\n\n你已經掌握了等級{new_level}的知識, 現在開始挑戰等級{new_level+1}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
             send_message(user_id, {"text": fallback_text})
 
 def send_completion_celebration(user_id, final_level):
@@ -1251,41 +1411,13 @@ def send_completion_celebration(user_id, final_level):
                 
         except Exception as e:
             logger.error(f"❌ 通關完成 Flex Message 發送失敗: {e}")
-            
-            # 備用方案：發送詳細的通關完成文字訊息
-            completion_text = f"""🏆 恭喜 {nickname} 通關完成！
-
-🎉 你已經成功完成了所有 {final_level} 個等級的挑戰！
-🌟 你現在是真正的解剖學大師！
-
-📊 通關成就：
-✅ 完成了所有等級的學習
-✅ 掌握了完整的解剖學知識體系
-✅ 成為了終極解剖師
-
-🎯 接下來你可以：
-• 查看排行榜，看看自己的排名
-• 重新挑戰，鞏固已學知識
-• 幫助其他學員學習
-• 等待新的挑戰內容更新
-
-感謝你的堅持學習，繼續保持這份熱情！"""
-            
-            text_message = {"text": completion_text}
-            send_message(user_id, text_message)
+            # 如果Flex Message發送失敗，記錄錯誤但不發送備用文字訊息
         
-        # 發送特殊成就徽章訊息
-        badge_message = {
-            "text": "🏅 獲得特殊成就：終極解剖師徽章！\n\n這枚徽章代表你已經掌握了所有解剖學知識，是真正的學習冠軍！"
-        }
-        send_message(user_id, badge_message)
+        # 不發送額外的徽章文字訊息，徽章資訊已包含在Flex Message中
         
     except Exception as e:
         logger.error(f"❌ 通關完成慶祝訊息發送失敗: {e}")
-        
-        # 最終備用方案：只發送簡單文字
-        fallback_text = f"🏆 恭喜 {nickname}！你已經完成了所有等級的挑戰，成為了終極解剖師！"
-        send_message(user_id, {"text": fallback_text})
+        # 不發送任何備用文字訊息，只嘗試發送Flex Message
 
 def create_completion_celebration_flex(nickname, final_level):
     """創建通關慶祝的 LINE Flex Message"""
@@ -1302,7 +1434,7 @@ def create_completion_celebration_flex(nickname, final_level):
                     "contents": [
                         {
                             "type": "image",
-                            "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/completion_trophy.png",
+                            "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/finish_14%20level.jpg",
                             "size": "full",
                             "aspectMode": "cover",
                             "aspectRatio": "20:13"
@@ -1489,7 +1621,8 @@ def update_user_level(user_id: str, new_level: int) -> bool:
 def check_daily_question_limit(user_id: str) -> dict:
     """檢查用戶每日答題限制
     
-    注意：暫時跳過每日限制檢查，直到 daily_questions_answered 欄位被添加到數據庫
+    使用 daily_quota 欄位來追蹤每日答題數量
+    每日限制：普通用戶最多 3 題
     
     Returns:
         dict: {
@@ -1500,14 +1633,67 @@ def check_daily_question_limit(user_id: str) -> dict:
         }
     """
     try:
-        logger.info(f"⚠️ 暫時跳過用戶 {user_id} 的每日限制檢查（等待數據庫欄位添加）")
+        # 管理員用戶不受每日限制
+        if is_admin_user(user_id):
+            logger.info(f"👑 管理員用戶 {user_id} 不受每日限制約束")
+            return {
+                'can_answer': True,
+                'questions_answered': 0,
+                'remaining': 999,
+                'reset_time': '管理員無限制'
+            }
         
-        # 暫時返回允許答題的默認值
+        # 獲取用戶統計數據
+        user_stats = get_user_stats(user_id)
+        if not user_stats:
+            logger.info(f"📝 新用戶 {user_id}，創建初始記錄")
+            return {
+                'can_answer': True,
+                'questions_answered': 0,
+                'remaining': 3,
+                'reset_time': '每日午夜12點重置'
+            }
+        
+        # 檢查是否需要重置每日計數（新的一天）
+        current_date = datetime.datetime.now().date()
+        last_update_date = None
+        
+        if user_stats.get('last_updated'):
+            try:
+                last_update_str = user_stats['last_updated']
+                if isinstance(last_update_str, str):
+                    last_update_date = datetime.datetime.fromisoformat(last_update_str.replace('Z', '+00:00')).date()
+                else:
+                    last_update_date = current_date
+            except:
+                last_update_date = current_date
+        else:
+            last_update_date = current_date
+        
+        # 如果是新的一天，重置 daily_quota
+        daily_questions = user_stats.get('daily_quota', 0)
+        if last_update_date < current_date:
+            logger.info(f"🔄 用戶 {user_id} 新的一天，重置每日計數")
+            daily_questions = 0
+            # 更新數據庫中的計數
+            supabase.table('user_stats').update({
+                'daily_quota': 0,
+                'last_updated': datetime.datetime.now().isoformat()
+            }).eq('user_id', user_id).execute()
+        
+        # 檢查是否達到每日限制
+        daily_limit = 3
+        questions_answered = daily_questions
+        remaining = max(0, daily_limit - questions_answered)
+        can_answer = questions_answered < daily_limit
+        
+        logger.info(f"📊 用戶 {user_id} 每日答題狀況: {questions_answered}/{daily_limit}, 可答題: {can_answer}")
+        
         return {
-            'can_answer': True,
-            'questions_answered': 0,
-            'remaining': 999,  # 暫時設為很大的數字
-            'reset_time': '功能暫時停用'
+            'can_answer': can_answer,
+            'questions_answered': questions_answered,
+            'remaining': remaining,
+            'reset_time': '每日午夜12點重置'
         }
         
     except Exception as e:
@@ -1516,8 +1702,8 @@ def check_daily_question_limit(user_id: str) -> dict:
         return {
             'can_answer': True,
             'questions_answered': 0,
-            'remaining': 999,
-            'reset_time': '功能暫時停用'
+            'remaining': 3,
+            'reset_time': '每日午夜12點重置'
         }
 
 def reset_user_progress(user_id: str) -> bool:
@@ -1559,11 +1745,54 @@ def reset_user_progress(user_id: str) -> bool:
 def update_daily_question_count(user_id: str) -> bool:
     """更新用戶每日答題計數
     
-    注意：暫時跳過每日計數更新，直到 daily_questions_answered 欄位被添加到數據庫
+    使用 daily_quota 欄位來追蹤每日答題數量
+    每次答題後調用此函數增加計數
     """
     try:
-        logger.info(f"⚠️ 暫時跳過用戶 {user_id} 的每日計數更新（等待數據庫欄位添加）")
-        return True  # 暫時返回成功，避免阻擋其他功能
+        # 管理員用戶不需要更新每日計數
+        if is_admin_user(user_id):
+            logger.info(f"👑 管理員用戶 {user_id} 不需要更新每日計數")
+            return True
+        
+        # 獲取當前用戶統計數據
+        user_stats = get_user_stats(user_id)
+        if not user_stats:
+            logger.warning(f"⚠️ 用戶 {user_id} 統計數據不存在，無法更新每日計數")
+            return False
+        
+        # 檢查是否需要重置每日計數（新的一天）
+        current_date = datetime.datetime.now().date()
+        last_update_date = None
+        
+        if user_stats.get('last_updated'):
+            try:
+                last_update_str = user_stats['last_updated']
+                if isinstance(last_update_str, str):
+                    last_update_date = datetime.datetime.fromisoformat(last_update_str.replace('Z', '+00:00')).date()
+                else:
+                    last_update_date = current_date
+            except:
+                last_update_date = current_date
+        else:
+            last_update_date = current_date
+        
+        # 如果是新的一天，從 0 開始計數，否則增加計數
+        current_daily_count = user_stats.get('daily_quota', 0)
+        if last_update_date < current_date:
+            new_daily_count = 1  # 新的一天，第一題
+            logger.info(f"🆕 用戶 {user_id} 新的一天，重置每日計數為 1")
+        else:
+            new_daily_count = current_daily_count + 1
+            logger.info(f"📈 用戶 {user_id} 每日計數增加: {current_daily_count} -> {new_daily_count}")
+        
+        # 更新數據庫
+        supabase.table('user_stats').update({
+            'daily_quota': new_daily_count,
+            'last_updated': datetime.datetime.now().isoformat()
+        }).eq('user_id', user_id).execute()
+        
+        logger.info(f"✅ 成功更新用戶 {user_id} 每日答題計數為 {new_daily_count}")
+        return True
             
     except Exception as e:
         logger.error(f"❌ 更新每日答題計數失敗: {e}")
@@ -2030,26 +2259,10 @@ def handle_normal_quiz(sender_id, message_text):
             daily_limit_status = check_daily_question_limit(sender_id)
             
             if not daily_limit_status['can_answer']:
-                # 已達到每日限制，發送提醒訊息
-                questions_answered = daily_limit_status['questions_answered']
-                reset_time = daily_limit_status['reset_time']
+                # 已達到每日限制，發送包含暱稱的提醒訊息
+                nickname = get_user_nickname(sender_id)
                 
-                limit_message = f"""⏰ 每日答題次數已達上限
-                
-🎯 今日已完成：{questions_answered}/3 題
-📚 您已經很努力學習了！
-
-💡 溫馨提醒：
-• 每天最多可以答 3 題
-• 這樣可以讓您更好地消化學習內容
-• 明天 00:00 重置答題次數
-
-🌟 您可以：
-• 輸入「排行榜」查看您的排名
-• 輸入「積分」查看學習成果
-• 明天再來繼續學習新知識
-
-感謝您的堅持學習！🎉"""
+                limit_message = f"{nickname}已達到當日挑戰次數上限，請明天再來！"
                 
                 send_message(sender_id, {"text": limit_message})
                 return
@@ -2433,9 +2646,9 @@ def handle_normal_answer(sender_id, answer, level):
         # 檢查是否需要升級並發送進度反饋
         upgraded = check_and_handle_level_up(sender_id, level, is_correct)
         
-        # 發送進度反饋訊息（如果沒有升級的話）
-        if is_correct and not upgraded:
-            send_progress_feedback(sender_id, level)
+        # 移除額外的進度反饋文字訊息，只保留flex message
+        # 原本會發送額外的「✅ 答對了！📈 等級 X 進度：X/3」文字訊息
+        # 現在只保留flex message，提供更簡潔的用戶體驗
         
         # 清除當前會話
         clear_user_session(sender_id)
@@ -2456,6 +2669,17 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         
         # 獲取解說圖片 URL
         explanation_image_url = get_explanation_image_url(question_data)
+        
+        # 獲取用戶當前進度資訊
+        user_stats = get_user_stats(user_id)
+        current_level = user_stats.get('level', 1) if user_stats else 1
+        current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
+        
+        # 如果答對了，進度+1
+        if is_correct:
+            current_progress += 1
+        
+        remaining = max(0, 3 - current_progress)
         
         # 設定答案結果的主題
         if is_correct:
@@ -2517,6 +2741,26 @@ def send_explanation_with_image(user_id, question_data, is_correct):
                             "color": "#28a745",
                             "weight": "bold",
                             "margin": "sm"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"📈 等級 {current_level} 進度：{current_progress}/3",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#28a745",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"還需要答對{remaining}題升級" if remaining > 0 else "準備升級！",
+                            "size": "sm",
+                            "color": "#28a745",
+                            "weight": "bold",
+                            "margin": "xs"
                         },
                         {
                             "type": "separator",
@@ -2588,15 +2832,21 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         send_message(user_id, {"text": fallback_text})
 
 def get_explanation_image_url(question_data):
-    """獲取解說圖片 URL（簡化邏輯）"""
+    """獲取解說圖片 URL（修復版本 - 優先使用image_url欄位）"""
     try:
-        # 優先順序1: 使用資料庫中的 qimage_url 欄位
+        # 優先順序1: 使用資料庫中的 image_url 欄位（根據用戶要求修正）
+        image_url = question_data.get('image_url', '')
+        if image_url and image_url.strip():
+            logger.info(f"✅ 使用題目解說圖片 (image_url): {image_url}")
+            return image_url
+        
+        # 優先順序2: 如果image_url為空，嘗試qimage_url作為備用
         qimage_url = question_data.get('qimage_url', '')
         if qimage_url and qimage_url.strip():
-            logger.info(f"✅ 使用題目特定圖片: {qimage_url}")
+            logger.info(f"✅ 使用題目特定圖片 (qimage_url): {qimage_url}")
             return qimage_url
         
-        # 優先順序2: 使用用戶當前 level 對應的 level poster
+        # 優先順序3: 使用用戶當前 level 對應的 level poster
         level = question_data.get('level', 1)
         level_poster_url = get_question_hero_image_url(level)
         logger.info(f"✅ 使用等級 {level} 海報圖片: {level_poster_url}")
@@ -2728,30 +2978,11 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
         return False
 
 def send_progress_feedback(user_id, current_level):
-    """發送進度反饋訊息"""
-    try:
-        # 獲取用戶當前統計
-        stats = get_user_stats(user_id)
-        if not stats:
-            return
-        
-        current_progress = stats.get('correct_in_level', 0)
-        remaining = 3 - current_progress
-        
-        if remaining > 0:
-            feedback_message = {
-                "text": f"✅ 答對了！\n\n📈 等級 {current_level} 進度：{current_progress}/3\n🎯 還需要答對 {remaining} 題即可升級！\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
-            }
-            send_message(user_id, feedback_message)
-        else:
-            # 如果進度已滿，但沒有升級（理論上不應該發生）
-            feedback_message = {
-                "text": f"✅ 答對了！準備升級中..."
-            }
-            send_message(user_id, feedback_message)
-            
-    except Exception as e:
-        logger.error(f"❌ 發送進度反饋失敗: {e}")
+    """發送進度反饋訊息（已停用 - 進度資訊已整合到flex message中）"""
+    # 此函數已停用，進度資訊現在直接顯示在Hero Flex Message中
+    # 避免發送額外的文字訊息，提供更簡潔的用戶體驗
+    logger.info(f"📈 進度反饋已整合到flex message中，不發送額外文字訊息")
+    return
 
 def handle_postback(sender_id, postback):
     """處理按鈕點擊"""
