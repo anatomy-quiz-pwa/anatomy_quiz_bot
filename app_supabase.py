@@ -279,6 +279,14 @@ def send_line_message(user_id, message_data):
     try:
         response = requests.post(url, headers=headers, data=json.dumps(data))
         logger.info(f"📤 LINE 訊息發送結果: {response.status_code}")
+        
+        # 如果發送失敗，記錄詳細錯誤信息
+        if response.status_code != 200:
+            logger.error(f"❌ LINE 訊息發送失敗 - 狀態碼: {response.status_code}")
+            logger.error(f"❌ 響應內容: {response.text}")
+            logger.error(f"❌ 發送的數據: {json.dumps(data, ensure_ascii=False)}")
+            return {"error": f"HTTP {response.status_code}: {response.text}"}
+        
         return response.json()
     except Exception as e:
         logger.error(f"❌ LINE 訊息發送失敗: {e}")
@@ -289,8 +297,8 @@ def get_leaderboard_data():
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
-        # 使用 Supabase 查詢獲取排行榜數據
-        response = supabase.table('user_stats').select('*').order('score', desc=True).limit(10).execute()
+        # 使用 Supabase 查詢獲取排行榜數據 - 修復：使用 correct 欄位而不是 score
+        response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
         
         if response.data:
             logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
@@ -330,6 +338,47 @@ def send_leaderboard_message(user_id):
     except Exception as e:
         logger.error(f"❌ 發送排行榜 Flex Message 失敗: {e}")
         send_message(user_id, {"text": "抱歉，發送排行榜時發生錯誤，請稍後再試。"})
+
+def send_score_message(user_id):
+    """發送用戶積分信息"""
+    try:
+        logger.info(f"📊 正在為用戶 {user_id} 準備積分信息...")
+        
+        # 獲取用戶統計數據
+        user_stats = get_user_stats(user_id)
+        
+        if not user_stats:
+            logger.warning(f"⚠️ 找不到用戶 {user_id} 的數據")
+            send_message(user_id, {"text": "抱歉，找不到您的積分數據，請先開始答題。"})
+            return
+        
+        # 獲取用戶暱稱
+        nickname = get_user_nickname(user_id)
+        
+        # 計算積分（使用正確答案數）
+        correct_answers = user_stats.get('correct', 0)
+        wrong_answers = user_stats.get('wrong', 0)
+        level = user_stats.get('level', 1)
+        correct_in_level = user_stats.get('correct_in_level', 0)
+        
+        # 構建積分訊息
+        score_text = f"""📊 {nickname} 的學習成績
+
+🏆 當前等級：第 {level} 級
+✅ 答對題數：{correct_answers} 題
+❌ 答錯題數：{wrong_answers} 題
+📈 本級答對：{correct_in_level} 題
+
+💡 提示：繼續答題可以獲得更多積分並升級！
+輸入「開始」繼續挑戰，輸入「排行榜」查看排名。"""
+        
+        send_message(user_id, {"text": score_text})
+        
+        logger.info(f"✅ 成功發送積分信息給用戶 {user_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ 發送積分信息失敗: {e}")
+        send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
 
 def create_leaderboard_flex_message(top_10, all_students, user_id):
     """創建排行榜 Flex Message"""
@@ -986,6 +1035,10 @@ def handle_admin_quiz(sender_id, message_text):
             # 發送排行榜 Flex Message
             logger.info(f"📊 管理員用戶 {sender_id} 請求查看排行榜")
             send_leaderboard_message(sender_id)
+        elif message_text.lower() in ['積分', 'score', '分數', '成績']:
+            # 發送用戶積分信息
+            logger.info(f"📊 管理員用戶 {sender_id} 請求查看積分")
+            send_score_message(sender_id)
         else:
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
@@ -1014,6 +1067,10 @@ def handle_normal_quiz(sender_id, message_text):
             # 發送排行榜 Flex Message
             logger.info(f"📊 普通用戶 {sender_id} 請求查看排行榜")
             send_leaderboard_message(sender_id)
+        elif message_text.lower() in ['積分', 'score', '分數', '成績']:
+            # 發送用戶積分信息
+            logger.info(f"📊 普通用戶 {sender_id} 請求查看積分")
+            send_score_message(sender_id)
         else:
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
