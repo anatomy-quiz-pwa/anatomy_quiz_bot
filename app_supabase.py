@@ -815,6 +815,9 @@ def create_score_flex_message(user_stats, nickname):
         total_questions = correct_answers + wrong_answers
         accuracy = round((correct_answers / max(total_questions, 1)) * 100, 1)
         
+        # 獲取當前等級的poster圖片
+        level_poster_url = get_question_hero_image_url(level)
+        
         # 根據等級設定顏色主題
         if level >= 10:
             header_color = "#FFD700"  # 金色
@@ -843,24 +846,44 @@ def create_score_flex_message(user_stats, nickname):
                     "layout": "vertical",
                     "contents": [
                         {
-                            "type": "text",
-                            "text": f"📊 {nickname} 的遊戲積分",
-                            "weight": "bold",
-                            "size": "lg",
-                            "color": "#FFFFFF",
-                            "align": "center"
+                            "type": "image",
+                            "url": level_poster_url,
+                            "size": "full",
+                            "aspectRatio": "20:13",
+                            "aspectMode": "cover",
+                            "flex": 1
                         },
                         {
-                            "type": "text",
-                            "text": f"{level_emoji} 等級 {level} 學習者",
-                            "size": "sm",
-                            "color": "#FFFFFF",
-                            "align": "center",
-                            "margin": "sm"
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"📊 {nickname} 的遊戲積分",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#FFFFFF",
+                                    "align": "center"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"{level_emoji} 等級 {level} 學習者",
+                                    "size": "sm",
+                                    "color": "#FFFFFF",
+                                    "align": "center",
+                                    "margin": "sm"
+                                }
+                            ],
+                            "position": "absolute",
+                            "offsetBottom": "0px",
+                            "offsetStart": "0px",
+                            "offsetEnd": "0px",
+                            "paddingAll": "lg",
+                            "backgroundColor": header_color,
+                            "cornerRadius": "0px 0px 10px 10px"
                         }
                     ],
-                    "backgroundColor": header_color,
-                    "paddingAll": "lg",
+                    "paddingAll": "0px",
                     "cornerRadius": "10px"
                 },
                 "body": {
