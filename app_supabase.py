@@ -1193,21 +1193,52 @@ def send_normal_help_message(sender_id, level):
     
     send_message(sender_id, {"text": help_text})
 
+# 會話管理 - 儲存用戶當前題目狀態
+user_sessions = {}
+
+def get_user_session(user_id):
+    """獲取用戶會話狀態"""
+    return user_sessions.get(user_id, {})
+
+def set_user_session(user_id, session_data):
+    """設置用戶會話狀態"""
+    user_sessions[user_id] = session_data
+
+def clear_user_session(user_id):
+    """清除用戶會話狀態"""
+    if user_id in user_sessions:
+        del user_sessions[user_id]
+
 def handle_admin_answer(sender_id, answer):
-    """處理管理員答案"""
+    """處理管理員答案 - 完整版本"""
     try:
-        # 簡化的答案處理邏輯
-        # 在實際應用中，應該從會話中獲取當前題目
+        # 獲取用戶當前會話
+        session = get_user_session(sender_id)
+        current_question = session.get('current_question')
         
-        # 模擬答案處理
-        if answer in ['1', 'A']:
+        if not current_question:
             send_message(sender_id, {
-                "text": "✅ 答對了！\n\n🔑 管理員模式：您有權限訪問所有等級的題目。\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
+                "text": "❌ 沒有找到當前題目，請輸入「開始」重新開始答題。"
             })
-        else:
-            send_message(sender_id, {
-                "text": "❌ 答錯了！\n\n🔑 管理員模式：您有權限訪問所有等級的題目。\n\n輸入「開始」繼續答題，或使用其他管理員指令。"
-            })
+            return
+        
+        # 轉換答案格式 (A-D 轉為 1-4)
+        answer_mapping = {'A': '1', 'B': '2', 'C': '3', 'D': '4'}
+        normalized_answer = answer_mapping.get(answer, answer)
+        
+        # 檢查答案是否正確
+        correct_answer_index = current_question.get('correct_answer', 0)
+        correct_answer = str(correct_answer_index + 1)  # 轉為 1-based
+        is_correct = normalized_answer == correct_answer
+        
+        # 發送解說訊息（包含圖片）
+        send_explanation_with_image(sender_id, current_question, is_correct)
+        
+        # 更新用戶統計
+        update_user_stats_after_answer(sender_id, is_correct)
+        
+        # 清除當前會話
+        clear_user_session(sender_id)
         
     except Exception as e:
         logger.error(f"❌ 處理管理員答案失敗: {e}")
