@@ -271,6 +271,14 @@ def send_line_message(user_id, message_data):
         'Authorization': f'Bearer {LINE_CHANNEL_ACCESS_TOKEN}'
     }
     
+    # 確保訊息有正確的 type 欄位
+    if isinstance(message_data, dict):
+        if 'text' in message_data and 'type' not in message_data:
+            message_data['type'] = 'text'
+        elif 'type' not in message_data:
+            # 如果沒有 type 且沒有 text，預設為文字訊息
+            message_data = {'type': 'text', 'text': str(message_data)}
+    
     data = {
         "to": user_id,
         "messages": [message_data]
