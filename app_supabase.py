@@ -2804,7 +2804,9 @@ def handle_admin_answer(sender_id, answer):
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
         # 檢查是否需要升級（管理員也需要升級邏輯）
-        current_level = get_user_stats(sender_id).get('level', 1) if get_user_stats(sender_id) else 1
+        # 修正：在統計更新後獲取最新的等級數據，避免重複調用
+        user_stats = get_user_stats(sender_id)
+        current_level = user_stats.get('level', 1) if user_stats else 1
         check_and_handle_level_up(sender_id, current_level, is_correct)
         
         # 發送解說訊息（包含圖片）- 在數據更新後發送，確保顯示最新進度
@@ -3075,6 +3077,11 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
             new_correct = current_stats.get('correct', 0) + (1 if is_correct else 0)
             new_wrong = current_stats.get('wrong', 0) + (0 if is_correct else 1)
             
+            # 更新當前等級答對數（只有答對才增加）
+            new_correct_in_level = current_stats.get('correct_in_level', 0)
+            if is_correct:
+                new_correct_in_level += 1
+            
             # 更新已答對題目ID列表
             correct_qids = current_stats.get('correct_qids', [])
             if is_correct and question_id:
@@ -3091,6 +3098,7 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
                 'user_id': user_id,
                 'correct': new_correct,
                 'wrong': new_wrong,
+                'correct_in_level': new_correct_in_level,
                 'correct_qids': correct_qids,
                 'last_update': datetime.datetime.now().isoformat()
             }
@@ -3112,7 +3120,7 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
                 'correct': 1 if is_correct else 0,
                 'wrong': 0 if is_correct else 1,
                 'level': 1,
-                'correct_in_level': 0,  # 初始化當前等級答對數
+                'correct_in_level': 1 if is_correct else 0,  # 初始化當前等級答對數
                 'correct_qids': correct_qids,
                 'last_update': datetime.datetime.now().isoformat()
             }
@@ -3142,8 +3150,8 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
         if not stats:
             return False
         
-        # 獲取當前等級答對題數
-        current_level_correct = stats.get('correct_in_level', 0) + 1  # 加上這次答對的題目
+        # 獲取當前等級答對題數（已經在 update_user_stats_after_answer 中更新）
+        current_level_correct = stats.get('correct_in_level', 0)
         
         # 檢查是否需要升級（每3題升級）
         if current_level_correct >= 3:
