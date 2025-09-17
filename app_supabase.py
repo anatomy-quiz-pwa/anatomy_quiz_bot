@@ -66,6 +66,9 @@ VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
+# 功能配置 - 暱稱設定固定使用 Flex Messages
+# USE_FLEX_MESSAGES = True  # 暱稱功能固定使用 Flex Message
+
 # LINE 環境變數
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET')
@@ -239,10 +242,25 @@ def handle_nickname_input(user_id, text):
                     # 清除等待狀態
                     set_awaiting_nickname(user_id, False)
                     
-                    # 發送確認訊息
-                    send_message(user_id, {
-                        "text": f"🎉 好的，之後就叫你「{nickname}」！\n\n現在你可以：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n\n準備好開始你的解剖學學習之旅了嗎？"
-                    })
+                    # 強制發送 Flex Message（不使用 fallback）
+                    logger.info(f"📱 準備發送暱稱設定成功的 Flex Message 給用戶 {user_id}")
+                    
+                    try:
+                        nickname_success_flex = create_nickname_success_flex_message(nickname)
+                        flex_message = {
+                            "type": "flex",
+                            "altText": f"🎉 好的，之後就叫你「{nickname}」啦！準備好開始你的解剖學學習之旅了嗎？",
+                            "contents": nickname_success_flex
+                        }
+                        
+                        # 強制發送 Flex Message
+                        result = send_message(user_id, flex_message)
+                        logger.info(f"✅ 暱稱設定 Flex Message 發送完成給用戶 {user_id}，結果: {result}")
+                        
+                    except Exception as flex_error:
+                        logger.error(f"❌ Flex Message 處理失敗: {flex_error}")
+                        # 即使出錯也不發送文字訊息，確保用戶只收到 Flex Message
+                        raise flex_error
                     return True
                 else:
                     logger.error(f"❌ 更新用戶 {user_id} 暱稱失敗")
@@ -309,6 +327,42 @@ def activate_admin_mode(user_id):
     except Exception as e:
         logger.error(f"❌ 激活用戶 {user_id} 管理員模式失敗: {e}")
         send_message(user_id, {"text": "❌ 管理員模式激活失敗，請稍後再試。"})
+
+def deactivate_admin_mode(user_id):
+    """停用用戶的管理員模式"""
+    try:
+        logger.info(f"🔒 正在為用戶 {user_id} 停用管理員模式...")
+        
+        # 檢查用戶是否存在
+        existing_user = supabase.table('users').select('*').eq('line_user_id', user_id).execute()
+        
+        if existing_user.data:
+            # 清除管理員權限
+            normal_user_data = {
+                'is_admin': False,
+                'test_mode': False,
+                'admin_levels': [],
+                'admin_permissions': {}
+            }
+            
+            # 更新用戶權限
+            result = supabase.table('users').update(normal_user_data).eq('line_user_id', user_id).execute()
+            logger.info(f"✅ 用戶 {user_id} 管理員權限已清除")
+            
+            # 發送停用成功消息
+            send_message(user_id, {
+                "text": f"🔒 管理員模式已停用！\n\n您已回到普通用戶模式：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看指令\n• 受到每日答題限制\n• 只能訪問當前等級的題目\n\n如需重新激活管理員模式，請再次輸入 PAOPASS"
+            })
+            
+            logger.info(f"🎉 用戶 {user_id} 管理員模式停用完成")
+            
+        else:
+            logger.warning(f"⚠️ 用戶 {user_id} 不存在，無法停用管理員模式")
+            send_message(user_id, {"text": "❌ 用戶不存在，無法停用管理員模式。"})
+            
+    except Exception as e:
+        logger.error(f"❌ 停用用戶 {user_id} 管理員模式失敗: {e}")
+        send_message(user_id, {"text": "❌ 管理員模式停用失敗，請稍後再試。"})
 
 def get_real_students_data():
     """獲取真實的 Supabase 數據並轉換為標準格式"""
@@ -435,10 +489,12 @@ def get_leaderboard_data():
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
         # 使用 JOIN 查詢同時獲取用戶統計和暱稱資料
+        # 獲取更多數據以便找到用戶排名（獲取前50名）
+        # 使用 user_id 作為次要排序條件，確保相同分數用戶的排序穩定
         response = supabase.table('user_stats').select('''
             *,
             users!inner(game_nickname)
-        ''').order('correct', desc=True).limit(10).execute()
+        ''').order('correct', desc=True).order('user_id', desc=False).limit(50).execute()
         
         if response.data:
             logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
@@ -477,7 +533,8 @@ def get_leaderboard_data():
         
         # 備用方法：分別查詢用戶統計和暱稱
         try:
-            stats_response = supabase.table('user_stats').select('*').order('correct', desc=True).limit(10).execute()
+            # 使用穩定的排序條件：先按正確答案數降序，再按 user_id 升序
+            stats_response = supabase.table('user_stats').select('*').order('correct', desc=True).order('user_id', desc=False).limit(50).execute()
             
             if stats_response.data:
                 processed_data = []
@@ -502,6 +559,56 @@ def get_leaderboard_data():
             logger.error(f"❌ 備用查詢也失敗: {e2}")
         
         return []
+
+def get_user_rank_info(user_id):
+    """獲取特定用戶的排名信息"""
+    try:
+        logger.info(f"🔍 正在查詢用戶 {user_id} 的排名...")
+        
+        # 查詢用戶的統計數據
+        user_response = supabase.table('user_stats').select('*').eq('user_id', user_id).execute()
+        
+        if not user_response.data:
+            logger.warning(f"⚠️ 找不到用戶 {user_id} 的統計數據")
+            return None
+        
+        user_stats = user_response.data[0]
+        user_correct = user_stats.get('correct', 0)
+        
+        # 使用與排行榜相同的排序邏輯計算排名
+        # 查詢比該用戶分數高的用戶數量
+        higher_score_response = supabase.table('user_stats').select('user_id').gt('correct', user_correct).execute()
+        higher_score_count = len(higher_score_response.data)
+        
+        # 查詢與該用戶分數相同但 user_id 較小的用戶數量（次要排序）
+        same_score_response = supabase.table('user_stats').select('user_id').eq('correct', user_correct).lt('user_id', user_id).execute()
+        same_score_count = len(same_score_response.data)
+        
+        # 用戶排名 = 比他分數高的人數 + 相同分數但 user_id 較小的人數 + 1
+        user_rank = higher_score_count + same_score_count + 1
+        
+        # 獲取用戶暱稱
+        nickname = get_user_nickname(user_id)
+        
+        # 組裝用戶排名信息
+        user_rank_info = {
+            'user_id': user_id,
+            'nickname': nickname,
+            'rank': user_rank,
+            'correct': user_stats.get('correct', 0),
+            'wrong': user_stats.get('wrong', 0),
+            'level': user_stats.get('level', 1),
+            'correct_in_level': user_stats.get('correct_in_level', 0),
+            'total_questions': user_stats.get('correct', 0) + user_stats.get('wrong', 0),
+            'accuracy': round((user_stats.get('correct', 0) / max(user_stats.get('correct', 0) + user_stats.get('wrong', 0), 1)) * 100, 1)
+        }
+        
+        logger.info(f"✅ 用戶 {user_id} 的排名: 第{user_rank}名")
+        return user_rank_info
+        
+    except Exception as e:
+        logger.error(f"❌ 查詢用戶排名失敗: {e}")
+        return None
 
 def create_question_flex_message(question, is_admin=False):
     """創建題目的 Hero Flex Message"""
@@ -966,9 +1073,9 @@ def send_score_message(user_id):
         send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
 
 def create_leaderboard_flex_message(top_10, all_students, user_id):
-    """創建排行榜 Flex Message - 只顯示前三名加用戶排名"""
+    """創建排行榜 Flex Message - 顯示前三名加用戶排名"""
     try:
-        # 找到用戶的排名
+        # 先嘗試從all_students中找到用戶排名
         user_rank = None
         user_student = None
         for i, student in enumerate(all_students, 1):
@@ -977,13 +1084,20 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                 user_student = student
                 break
         
-        # 只取前三名
+        # 如果在前50名中找不到用戶，使用專門的查詢函數
+        if not user_rank:
+            user_rank_info = get_user_rank_info(user_id)
+            if user_rank_info:
+                user_rank = user_rank_info['rank']
+                user_student = user_rank_info
+        
+        # 取前三名
         top_3 = top_10[:3]
         
         # 創建 Flex Message 內容
         flex_content = {
             "type": "flex",
-            "altText": "🏆 排行榜 - 前三名",
+            "altText": "🏆 排行榜 - 血液正在加速循環",
             "contents": {
                 "type": "bubble",
                 "header": {
@@ -1000,7 +1114,7 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
                         },
                         {
                             "type": "text",
-                            "text": "前三名",
+                            "text": "血液正在加速循環，帶著力量去征服排行榜吧！",
                             "size": "sm",
                             "color": "#8b4513",
                             "align": "center",
@@ -1090,7 +1204,7 @@ def create_leaderboard_flex_message(top_10, all_students, user_id):
             flex_content["contents"]["body"]["contents"].append(rank_item)
         
         # 添加用戶自己的排名信息（如果不在前三名）
-        if user_rank and user_rank > 3 and user_student:
+        if user_rank and user_student and user_rank > 3:
             user_nickname = user_student.get('nickname', '您')
             user_correct = user_student.get('correct', 0)
             user_level = user_student.get('level', 1)
@@ -1969,6 +2083,62 @@ def create_welcome_flex_message(nickname):
         }
     }
 
+def create_nickname_success_flex_message(nickname):
+    """創建暱稱設定成功的 flex 訊息模板"""
+    return {
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/nickname.png",
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"🎉 好的，之後就叫你「{nickname}」啦！",
+                    "weight": "bold",
+                    "size": "lg",
+                    "wrap": True,
+                    "color": "#B5651D"
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "準備好開始你的解剖學學習之旅了嗎？",
+                    "size": "md",
+                    "margin": "md",
+                    "wrap": True,
+                    "color": "#333333"
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#B5651D",
+                    "action": {
+                        "type": "message",
+                        "label": "🚀 開始答題",
+                        "text": "開始"
+                    }
+                }
+            ]
+        }
+    }
+
 def handle_text_message(sender_id, message):
     """處理文字訊息"""
     try:
@@ -1978,6 +2148,23 @@ def handle_text_message(sender_id, message):
         # 首先檢查是否為暱稱輸入
         if handle_nickname_input(sender_id, message_text):
             logger.info(f"✅ 用戶 {sender_id} 輸入已作為暱稱處理")
+            return
+        
+        # 檢查PAOPASS管理員模式切換
+        if message_text.upper() == 'PAOPASS':
+            logger.info(f"🔑 用戶 {sender_id} 輸入PAOPASS，檢查管理員模式狀態")
+            
+            # 檢查當前是否為管理員
+            current_admin_status = is_admin_user(sender_id)
+            
+            if current_admin_status:
+                # 如果已經是管理員，則停用管理員模式
+                logger.info(f"🔒 用戶 {sender_id} 已是管理員，將停用管理員模式")
+                deactivate_admin_mode(sender_id)
+            else:
+                # 如果不是管理員，則激活管理員模式
+                logger.info(f"🔑 用戶 {sender_id} 不是管理員，將激活管理員模式")
+                activate_admin_mode(sender_id)
             return
         
         # 檢查是否為管理員用戶
@@ -2203,7 +2390,7 @@ def handle_admin_quiz(sender_id, message_text):
     """處理管理員用戶的問答邏輯"""
     try:
         # 管理員可以訪問所有等級的題目
-        if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
+        if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰', '出題', '題目', 'quiz', 'question']:
             send_admin_quiz_question(sender_id)
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_admin_help_message(sender_id)
@@ -2240,7 +2427,7 @@ def handle_admin_quiz(sender_id, message_text):
                 handle_admin_answer(sender_id, message_text)
             else:
                 send_message(sender_id, {
-                    "text": f"🔑 管理員模式已啟用！\n\n您可以使用以下指令：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您有權限訪問所有等級的題目！"
+                    "text": f"🔑 管理員模式已啟用！\n\n您可以使用以下指令：\n• 輸入「開始」或「出題」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您有權限訪問所有等級的題目！"
                 })
         
     except Exception as e:
@@ -2254,7 +2441,7 @@ def handle_normal_quiz(sender_id, message_text):
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
         
-        if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰']:
+        if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰', '出題', '題目', 'quiz', 'question']:
             # 檢查每日答題限制
             daily_limit_status = check_daily_question_limit(sender_id)
             
@@ -2539,26 +2726,38 @@ def send_admin_help_message(sender_id):
 
 def send_normal_help_message(sender_id, level):
     """發送普通用戶幫助訊息"""
-    help_text = f"""📚 問答指令幫助
+    help_text = f"""🧭 解剖冒險指南
 
-🎯 當前等級：{level}
+🔬 你的當前等級：{level}
+（答對 3 題就能進階！）
 
-📚 問答指令：
-• 開始 / start - 開始答題（等級 {level}）
-• 幫助 / help - 顯示此幫助訊息
-• 排行榜 / leaderboard - 查看排行榜
-• 積分 / score - 查看個人積分
+⚔️ 主要指令
+• 開始 / start —— 展開挑戰，迎戰今日的 3 題！
+• 排行榜 / leaderboard —— 看看誰的腦袋最靈光 🏆
+• 積分 / score —— 查看你的學習戰績
 
-🔄 進度管理：
-• reset / 重置 - 重置學習進度（回到等級1）
+📖 其他指令
+• 幫助 / help —— 呼叫這份冒險指南
+• reset / 重置 —— 重置進度，回到 Lv.1
 
-💡 提示：
-• 輸入答案時可以使用數字 (1-4) 或字母 (A-D)
-• 答對題目可以獲得積分
-• 答對 3 題即可升級到下一等級
+🎮 遊戲規則
+• 點擊題目上的按鈕，或是輸入 1–4 回答問題
+• 答對題目獲得積分
+• 答對 3 題 升級到下一等級
 • 每天最多可以答 3 題
+• 連續答題兩天以上，當日 quota +1 🎁
 
-開始學習吧！"""
+🗺️ 冒險進程
+這場冒險共有 14 個等級：
+• 前期：基礎解剖 🦴（肌肉、骨頭）
+• 中期：進階挑戰 🧠（神經、血管）
+• 後期：臨床應用 🩺（案例、陷阱題、綜合思考）
+
+題目會一級比一級更難，等你一路突破到最終 Boss！
+
+💡 小提示
+每天都要 解剖咬一口 🦴
+不小心就會吃下許多解剖文獻 📚"""
     
     send_message(sender_id, {"text": help_text})
 
@@ -2600,12 +2799,16 @@ def handle_admin_answer(sender_id, answer):
         correct_answer = str(correct_answer_index + 1)  # 轉為 1-based
         is_correct = normalized_answer == correct_answer
         
-        # 發送解說訊息（包含圖片）
-        send_explanation_with_image(sender_id, current_question, is_correct)
-        
         # 更新用戶統計（包含題目ID）
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
+        
+        # 檢查是否需要升級（管理員也需要升級邏輯）
+        current_level = get_user_stats(sender_id).get('level', 1) if get_user_stats(sender_id) else 1
+        check_and_handle_level_up(sender_id, current_level, is_correct)
+        
+        # 發送解說訊息（包含圖片）- 在數據更新後發送，確保顯示最新進度
+        send_explanation_with_image(sender_id, current_question, is_correct)
         
         # 清除當前會話
         clear_user_session(sender_id)
@@ -2636,15 +2839,15 @@ def handle_normal_answer(sender_id, answer, level):
         correct_answer = str(correct_answer_index + 1)  # 轉為 1-based
         is_correct = normalized_answer == correct_answer
         
-        # 發送解說訊息（包含圖片）
-        send_explanation_with_image(sender_id, current_question, is_correct)
-        
         # 更新用戶統計（包含題目ID）
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
         # 檢查是否需要升級並發送進度反饋
         upgraded = check_and_handle_level_up(sender_id, level, is_correct)
+        
+        # 發送解說訊息（包含圖片）- 在數據更新後發送，確保顯示最新進度
+        send_explanation_with_image(sender_id, current_question, is_correct)
         
         # 移除額外的進度反饋文字訊息，只保留flex message
         # 原本會發送額外的「✅ 答對了！📈 等級 X 進度：X/3」文字訊息
