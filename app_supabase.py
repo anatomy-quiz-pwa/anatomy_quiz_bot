@@ -1750,7 +1750,7 @@ def handle_normal_answer(sender_id, answer, level):
         send_message(sender_id, {"text": "❌ 處理答案時發生錯誤，請稍後再試。"})
 
 def send_explanation_with_image(user_id, question_data, is_correct):
-    """發送解說訊息（包含圖片）"""
+    """發送解說訊息（使用 Hero Flex Message 格式）"""
     try:
         # 獲取解說文字
         explanation = question_data.get('explanation', '暫無詳細解說')
@@ -1762,9 +1762,126 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         # 獲取解說圖片 URL
         explanation_image_url = get_explanation_image_url(question_data)
         
-        # 發送結果訊息
+        # 設定答案結果的主題
+        if is_correct:
+            result_emoji = "✅"
+            result_text = "答對了！"
+            header_color = "#28a745"  # 綠色
+            bg_color = "#f8fff8"      # 淺綠色
+        else:
+            result_emoji = "❌"
+            result_text = "答錯了！"
+            header_color = "#dc3545"  # 紅色
+            bg_color = "#fff8f8"      # 淺紅色
+        
+        # 創建 Hero Flex Message
+        hero_flex_message = {
+            "type": "flex",
+            "altText": f"{result_emoji} {result_text} 正確答案：{correct_option}",
+            "contents": {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": explanation_image_url if explanation_image_url else "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_explanation.png",
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover"
+                },
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"{result_emoji} {result_text}",
+                            "weight": "bold",
+                            "size": "xl",
+                            "color": "#FFFFFF",
+                            "align": "center"
+                        }
+                    ],
+                    "backgroundColor": header_color,
+                    "paddingAll": "lg"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "📚 正確答案",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#333333",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": correct_option,
+                            "size": "md",
+                            "color": "#28a745",
+                            "weight": "bold",
+                            "margin": "sm"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": "💡 詳細解說",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#333333",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": explanation,
+                            "wrap": True,
+                            "size": "sm",
+                            "color": "#555555",
+                            "margin": "sm"
+                        }
+                    ],
+                    "backgroundColor": bg_color,
+                    "paddingAll": "lg",
+                    "spacing": "sm"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "message",
+                                "label": "🚀 繼續答題",
+                                "text": "開始"
+                            },
+                            "style": "primary",
+                            "color": header_color
+                        }
+                    ],
+                    "spacing": "sm",
+                    "paddingAll": "lg"
+                }
+            }
+        }
+        
+        # 發送 Hero Flex Message
+        send_message(user_id, hero_flex_message)
+        logger.info(f"✅ 成功發送答案解說 Hero Flex Message 給用戶 {user_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ 發送 Hero Flex Message 失敗: {e}")
+        # 備用方案：發送純文字訊息
         result_text = "✅ 答對了！" if is_correct else "❌ 答錯了！"
-        explanation_text = f"""{result_text}
+        explanation = question_data.get('explanation', '暫無詳細解說')
+        correct_answer_index = question_data.get('correct_answer', 0)
+        correct_option = question_data.get('options', [''])[correct_answer_index]
+        
+        fallback_text = f"""{result_text}
 
 📚 正確答案：{correct_option}
 
@@ -1773,28 +1890,7 @@ def send_explanation_with_image(user_id, question_data, is_correct):
 
 輸入「開始」繼續答題！"""
         
-        # 先發送文字解說
-        send_message(user_id, {"text": explanation_text})
-        
-        # 如果有解說圖片，嘗試發送圖片
-        if explanation_image_url:
-            try:
-                image_message = {
-                    "type": "image",
-                    "originalContentUrl": explanation_image_url,
-                    "previewImageUrl": explanation_image_url
-                }
-                send_message(user_id, image_message)
-                logger.info(f"✅ 成功發送解說圖片給用戶 {user_id}")
-            except Exception as e:
-                logger.warning(f"⚠️ 發送解說圖片失敗: {e}")
-                # 圖片發送失敗不影響整體流程
-        
-    except Exception as e:
-        logger.error(f"❌ 發送解說訊息失敗: {e}")
-        # 備用方案：只發送簡單文字
-        fallback_text = "✅ 答對了！" if is_correct else "❌ 答錯了！"
-        send_message(user_id, {"text": f"{fallback_text}\n\n輸入「開始」繼續答題！"})
+        send_message(user_id, {"text": fallback_text})
 
 def get_explanation_image_url(question_data):
     """獲取解說圖片 URL（包含錯誤處理）"""
