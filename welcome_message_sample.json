@@ -1,0 +1,71 @@
+{
+  "type": "bubble",
+  "hero": {
+    "type": "image",
+    "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+    "size": "full",
+    "aspectRatio": "20:13",
+    "aspectMode": "cover"
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "🎉 歡迎來到《解剖咬一口》！",
+        "weight": "bold",
+        "size": "lg",
+        "wrap": true
+      },
+      {
+        "type": "text",
+        "text": "每天一口小小解剖，探索人體奧秘！\n\n👉 第一步：請輸入你的「暱稱」開始挑戰！",
+        "size": "md",
+        "margin": "md",
+        "wrap": true
+      },
+      {
+        "type": "separator",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "✏️ 暱稱規則：\n- 2–10 個字\n- 中文 / 英文 / 數字\n- 不能包含特殊符號",
+        "size": "sm",
+        "margin": "md",
+        "wrap": true,
+        "color": "#555555"
+      },
+      {
+        "type": "separator",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "💡 範例暱稱：\n解剖大師、Brain、醫學生001、小醫生",
+        "size": "sm",
+        "margin": "md",
+        "wrap": true,
+        "color": "#333333"
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#B5651D",
+        "action": {
+          "type": "message",
+          "label": "⚡️ 輸入暱稱開始挑戰",
+          "text": "我的暱稱是___"
+        }
+      }
+    ]
+  }
+}

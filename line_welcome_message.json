@@ -1,0 +1,163 @@
+{
+  "to": "USER_ID_PLACEHOLDER",
+  "messages": [
+    {
+      "type": "flex",
+      "altText": "歡迎來到解剖咬一口 Beta測試版",
+      "contents": {
+        "type": "bubble",
+        "size": "kilo",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "image",
+              "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+              "size": "full",
+              "aspectMode": "cover",
+              "aspectRatio": "16:9",
+              "margin": "none"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "歡迎來到解剖咬一口 Beta測試版",
+                  "weight": "bold",
+                  "size": "xl",
+                  "color": "#4CAF50",
+                  "align": "center",
+                  "margin": "lg"
+                },
+                {
+                  "type": "text",
+                  "text": "每天來一點解剖!",
+                  "size": "md",
+                  "color": "#666666",
+                  "align": "center",
+                  "margin": "sm"
+                },
+                {
+                  "type": "text",
+                  "text": "準備好進入人體不可思議了嗎?",
+                  "size": "sm",
+                  "color": "#666666",
+                  "align": "center",
+                  "margin": "sm"
+                },
+                {
+                  "type": "text",
+                  "text": "輸入你的暱稱開始遊戲!",
+                  "size": "sm",
+                  "color": "#666666",
+                  "align": "center",
+                  "margin": "md"
+                }
+              ],
+              "paddingAll": "20px"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "icon",
+                      "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_generic_pen_28.png",
+                      "size": "sm"
+                    },
+                    {
+                      "type": "text",
+                      "text": "暱稱要求:",
+                      "weight": "bold",
+                      "size": "sm",
+                      "color": "#333333",
+                      "margin": "sm"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "• 長度: 2-10 個字符",
+                  "size": "xs",
+                  "color": "#666666",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "• 內容: 中文、英文、數字",
+                  "size": "xs",
+                  "color": "#666666",
+                  "margin": "xs"
+                },
+                {
+                  "type": "text",
+                  "text": "• 不能包含特殊符號",
+                  "size": "xs",
+                  "color": "#666666",
+                  "margin": "xs"
+                }
+              ],
+              "backgroundColor": "#f5f5f5",
+              "paddingAll": "15px",
+              "margin": "md",
+              "cornerRadius": "sm"
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "icon",
+                      "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_generic_bulb_28.png",
+                      "size": "sm"
+                    },
+                    {
+                      "type": "text",
+                      "text": "範例暱稱:",
+                      "weight": "bold",
+                      "size": "sm",
+                      "color": "#333333",
+                      "margin": "sm"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "解剖大師、Brain、醫學生001、小醫生",
+                  "size": "xs",
+                  "color": "#666666",
+                  "margin": "xs",
+                  "wrap": true
+                }
+              ],
+              "backgroundColor": "#f5f5f5",
+              "paddingAll": "15px",
+              "margin": "sm",
+              "cornerRadius": "sm"
+            },
+            {
+              "type": "text",
+              "text": "請直接輸入你想要的暱稱:",
+              "size": "sm",
+              "color": "#333333",
+              "align": "center",
+              "margin": "lg"
+            }
+          ],
+          "paddingAll": "0px"
+        }
+      }
+    }
+  ]
+}

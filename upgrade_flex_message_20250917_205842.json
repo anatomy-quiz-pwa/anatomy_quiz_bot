@@ -1,0 +1,102 @@
+{
+  "target_user_id": "U1234567890abcdef_line_test",
+  "message": {
+    "type": "flex",
+    "altText": "🎉 恭喜升級！從初級解剖師晉升為中級解剖師！",
+    "contents": {
+      "type": "bubble",
+      "hero": {
+        "type": "image",
+        "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_4_poster.png",
+        "size": "full",
+        "aspectRatio": "20:13",
+        "aspectMode": "cover"
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🎉 恭喜升級！",
+            "weight": "bold",
+            "size": "xl",
+            "color": "#FF6B35",
+            "align": "center",
+            "margin": "md"
+          },
+          {
+            "type": "text",
+            "text": "🏆 從初級解剖師",
+            "size": "md",
+            "color": "#666666",
+            "align": "center",
+            "margin": "md"
+          },
+          {
+            "type": "text",
+            "text": "晉升為中級解剖師！",
+            "size": "md",
+            "color": "#666666",
+            "align": "center"
+          },
+          {
+            "type": "separator",
+            "margin": "xl"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "lg",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "你已經掌握了等級 4 的知識，",
+                "color": "#666666",
+                "size": "sm",
+                "align": "center"
+              },
+              {
+                "type": "text",
+                "text": "現在開始挑戰等級 5 的更高難度！",
+                "color": "#666666",
+                "size": "sm",
+                "align": "center"
+              },
+              {
+                "type": "text",
+                "text": "繼續加油，朝著終極解剖師的目標前進！",
+                "color": "#FF6B35",
+                "size": "sm",
+                "align": "center",
+                "weight": "bold",
+                "margin": "md"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+              "type": "message",
+              "label": "🚀 繼續答題",
+              "text": "開始"
+            },
+            "color": "#FF6B35"
+          }
+        ],
+        "flex": 0
+      }
+    }
+  },
+  "created_at": "20250917_205842"
+}
