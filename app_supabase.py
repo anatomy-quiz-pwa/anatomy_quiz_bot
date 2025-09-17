@@ -278,6 +278,7 @@ def send_line_message(user_id, message_data):
         elif 'type' not in message_data:
             # 如果沒有 type 且沒有 text，預設為文字訊息
             message_data = {'type': 'text', 'text': str(message_data)}
+        # 如果已經有 type 欄位（如 flex message），保持原樣
     
     data = {
         "to": user_id,
@@ -704,8 +705,7 @@ def create_score_flex_message(user_stats, nickname):
                             "text": progress_bar,
                             "size": "xs",
                             "color": "#666666",
-                            "margin": "sm",
-                            "family": "monospace"
+                            "margin": "sm"
                         }
                     ],
                     "backgroundColor": bg_color,
@@ -785,9 +785,13 @@ def send_score_message(user_id):
         user_stats = get_user_stats(user_id)
         
         if not user_stats:
-            logger.warning(f"⚠️ 找不到用戶 {user_id} 的數據")
-            send_message(user_id, {"text": "抱歉，找不到您的積分數據，請先開始答題。"})
-            return
+            logger.info(f"📊 用戶 {user_id} 是新用戶，創建初始積分記錄...")
+            # 為新用戶創建初始數據
+            user_stats = create_initial_user_stats(user_id)
+            if not user_stats:
+                logger.warning(f"⚠️ 無法為用戶 {user_id} 創建初始數據")
+                send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
+                return
         
         # 獲取用戶暱稱
         nickname = get_user_nickname(user_id)
@@ -1190,6 +1194,37 @@ def get_user_stats(user_id: str) -> Optional[dict]:
         print(f"獲取用戶統計失敗: {e}")
         return None
 
+def create_initial_user_stats(user_id: str) -> Optional[dict]:
+    """為新用戶創建初始統計資料"""
+    try:
+        if supabase is None:
+            logger.error("❌ Supabase 未連接")
+            return None
+        
+        # 創建初始數據
+        initial_data = {
+            'user_id': user_id,
+            'correct': 0,
+            'wrong': 0,
+            'level': 1,
+            'correct_in_level': 0,
+            'last_update': datetime.datetime.now().isoformat()
+        }
+        
+        # 插入到數據庫
+        result = supabase.table('user_stats').upsert(initial_data).execute()
+        
+        if result.data:
+            logger.info(f"✅ 成功為用戶 {user_id} 創建初始積分記錄")
+            return result.data[0]
+        else:
+            logger.error(f"❌ 創建初始數據失敗，無返回數據")
+            return None
+            
+    except Exception as e:
+        logger.error(f"❌ 創建初始用戶統計失敗: {e}")
+        return None
+
 def update_user_level(user_id: str, new_level: int) -> bool:
     """更新用戶等級"""
     try:
@@ -1238,6 +1273,11 @@ def webhook():
                 postback = event['postback']
                 # 處理按鈕點擊
                 handle_postback(sender_id, postback)
+                
+            elif event['type'] == 'follow':
+                sender_id = event['source']['userId']
+                # 處理用戶關注事件
+                handle_follow_event(sender_id)
     
     # 處理 Facebook Messenger 訊息
     elif 'object' in data and data['object'] == 'page':
@@ -1254,6 +1294,176 @@ def webhook():
                     handle_postback(sender_id, messaging_event['postback'])
     
     return 'OK', 200
+
+def handle_follow_event(sender_id):
+    """處理用戶關注事件"""
+    try:
+        logger.info(f"🎉 新用戶關注: {sender_id}")
+        
+        # 初始化用戶數據
+        get_or_create_user_stats(sender_id)
+        
+        # 發送歡迎訊息
+        send_welcome_message(sender_id)
+        
+    except Exception as e:
+        logger.error(f"❌ 處理關注事件失敗 {sender_id}: {e}")
+
+def send_welcome_message(sender_id):
+    """發送歡迎訊息"""
+    try:
+        # 獲取用戶暱稱
+        nickname = get_user_nickname(sender_id)
+        
+        # 創建歡迎 flex 訊息
+        welcome_flex = create_welcome_flex_message(nickname)
+        
+        # 發送訊息
+        send_flex_message(sender_id, "歡迎加入解剖學測驗！", welcome_flex)
+        logger.info(f"✅ 已發送歡迎訊息給用戶: {sender_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ 發送歡迎訊息失敗 {sender_id}: {e}")
+
+def create_welcome_flex_message(nickname):
+    """創建完整的歡迎 flex 訊息模板 - 根據截圖重新設計"""
+    return {
+        "type": "bubble",
+        "size": "kilo",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                # Hero 圖片
+                {
+                    "type": "image",
+                    "url": "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+                    "size": "full",
+                    "aspectMode": "cover",
+                    "aspectRatio": "16:9",
+                    "margin": "none"
+                },
+                # 標題區域
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "歡迎來到解剖咬一口 Beta測試版",
+                            "weight": "bold",
+                            "size": "xl",
+                            "color": "#4CAF50",
+                            "align": "center",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": "每天來一點解剖!",
+                            "size": "md",
+                            "color": "#666666",
+                            "align": "center",
+                            "margin": "sm"
+                        },
+                        {
+                            "type": "text",
+                            "text": "準備好進入人體不可思議了嗎?",
+                            "size": "sm",
+                            "color": "#666666",
+                            "align": "center",
+                            "margin": "sm"
+                        },
+                        {
+                            "type": "text",
+                            "text": "輸入你的暱稱開始遊戲!",
+                            "size": "sm",
+                            "color": "#666666",
+                            "align": "center",
+                            "margin": "md"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                },
+                # 暱稱要求區塊
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "📝 暱稱要求:",
+                            "weight": "bold",
+                            "size": "sm",
+                            "color": "#333333",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": "• 長度: 2-10 個字符",
+                            "size": "xs",
+                            "color": "#666666",
+                            "margin": "xs"
+                        },
+                        {
+                            "type": "text",
+                            "text": "• 內容: 中文、英文、數字",
+                            "size": "xs",
+                            "color": "#666666",
+                            "margin": "xs"
+                        },
+                        {
+                            "type": "text",
+                            "text": "• 不能包含特殊符號",
+                            "size": "xs",
+                            "color": "#666666",
+                            "margin": "xs"
+                        }
+                    ],
+                    "backgroundColor": "#f5f5f5",
+                    "paddingAll": "15px",
+                    "margin": "md",
+                    "cornerRadius": "sm"
+                },
+                # 範例暱稱區塊
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "💡 範例暱稱:",
+                            "weight": "bold",
+                            "size": "sm",
+                            "color": "#333333",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": "解剖大師、Brain、醫學生001、小醫生",
+                            "size": "xs",
+                            "color": "#666666",
+                            "margin": "xs",
+                            "wrap": True
+                        }
+                    ],
+                    "backgroundColor": "#f5f5f5",
+                    "paddingAll": "15px",
+                    "margin": "sm",
+                    "cornerRadius": "sm"
+                },
+                # 輸入提示
+                {
+                    "type": "text",
+                    "text": "請直接輸入你想要的暱稱:",
+                    "size": "sm",
+                    "color": "#333333",
+                    "align": "center",
+                    "margin": "lg"
+                }
+            ],
+            "paddingAll": "0px"
+        }
+    }
 
 def handle_text_message(sender_id, message):
     """處理文字訊息"""
@@ -1944,41 +2154,24 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         send_message(user_id, {"text": fallback_text})
 
 def get_explanation_image_url(question_data):
-    """獲取解說圖片 URL（包含錯誤處理）"""
+    """獲取解說圖片 URL（簡化邏輯）"""
     try:
-        # 優先使用資料庫中的圖片 URL
-        image_url = question_data.get('image_url', '')
-        if image_url and image_url.strip():
-            return image_url
-        
-        # 嘗試使用題目圖片 URL
+        # 優先順序1: 使用資料庫中的 qimage_url 欄位
         qimage_url = question_data.get('qimage_url', '')
         if qimage_url and qimage_url.strip():
+            logger.info(f"✅ 使用題目特定圖片: {qimage_url}")
             return qimage_url
         
-        # 構建預設圖片路徑
+        # 優先順序2: 使用用戶當前 level 對應的 level poster
         level = question_data.get('level', 1)
-        question_id = question_data.get('id', 1)
-        
-        # 嘗試特定題目的解說圖片
-        specific_url = f"https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/explanations/level_{level}_q{question_id}.png"
-        
-        # 檢查圖片是否存在
-        try:
-            import requests
-            response = requests.head(specific_url, timeout=5)
-            if response.status_code == 200:
-                return specific_url
-        except:
-            pass
-        
-        # 使用預設解說圖片
-        default_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_explanation.png"
-        return default_url
+        level_poster_url = get_question_hero_image_url(level)
+        logger.info(f"✅ 使用等級 {level} 海報圖片: {level_poster_url}")
+        return level_poster_url
         
     except Exception as e:
         logger.error(f"❌ 獲取解說圖片 URL 失敗: {e}")
-        return None
+        # 如果發生錯誤，返回預設的 level 1 海報圖片
+        return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_1_poster.png"
 
 def update_user_stats_after_answer(user_id, is_correct):
     """更新用戶統計資料"""
