@@ -1296,6 +1296,157 @@ def handle_normal_answer(sender_id, answer, level):
         logger.error(f"❌ 處理普通答案失敗: {e}")
         send_message(sender_id, {"text": "❌ 處理答案時發生錯誤，請稍後再試。"})
 
+def send_explanation_with_image(user_id, question_data, is_correct):
+    """發送解說訊息（包含圖片）"""
+    try:
+        # 獲取解說文字
+        explanation = question_data.get('explanation', '暫無詳細解說')
+        
+        # 獲取正確答案
+        correct_answer_index = question_data.get('correct_answer', 0)
+        correct_option = question_data.get('options', [''])[correct_answer_index]
+        
+        # 獲取解說圖片 URL
+        explanation_image_url = get_explanation_image_url(question_data)
+        
+        # 發送結果訊息
+        result_text = "✅ 答對了！" if is_correct else "❌ 答錯了！"
+        explanation_text = f"""{result_text}
+
+📚 正確答案：{correct_option}
+
+💡 解說：
+{explanation}
+
+輸入「開始」繼續答題！"""
+        
+        # 先發送文字解說
+        send_message(user_id, {"text": explanation_text})
+        
+        # 如果有解說圖片，嘗試發送圖片
+        if explanation_image_url:
+            try:
+                image_message = {
+                    "type": "image",
+                    "originalContentUrl": explanation_image_url,
+                    "previewImageUrl": explanation_image_url
+                }
+                send_message(user_id, image_message)
+                logger.info(f"✅ 成功發送解說圖片給用戶 {user_id}")
+            except Exception as e:
+                logger.warning(f"⚠️ 發送解說圖片失敗: {e}")
+                # 圖片發送失敗不影響整體流程
+        
+    except Exception as e:
+        logger.error(f"❌ 發送解說訊息失敗: {e}")
+        # 備用方案：只發送簡單文字
+        fallback_text = "✅ 答對了！" if is_correct else "❌ 答錯了！"
+        send_message(user_id, {"text": f"{fallback_text}\n\n輸入「開始」繼續答題！"})
+
+def get_explanation_image_url(question_data):
+    """獲取解說圖片 URL（包含錯誤處理）"""
+    try:
+        # 優先使用資料庫中的圖片 URL
+        image_url = question_data.get('image_url', '')
+        if image_url and image_url.strip():
+            return image_url
+        
+        # 嘗試使用題目圖片 URL
+        qimage_url = question_data.get('qimage_url', '')
+        if qimage_url and qimage_url.strip():
+            return qimage_url
+        
+        # 構建預設圖片路徑
+        level = question_data.get('level', 1)
+        question_id = question_data.get('id', 1)
+        
+        # 嘗試特定題目的解說圖片
+        specific_url = f"https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/explanations/level_{level}_q{question_id}.png"
+        
+        # 檢查圖片是否存在
+        try:
+            import requests
+            response = requests.head(specific_url, timeout=5)
+            if response.status_code == 200:
+                return specific_url
+        except:
+            pass
+        
+        # 使用預設解說圖片
+        default_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_explanation.png"
+        return default_url
+        
+    except Exception as e:
+        logger.error(f"❌ 獲取解說圖片 URL 失敗: {e}")
+        return None
+
+def update_user_stats_after_answer(user_id, is_correct):
+    """更新用戶統計資料"""
+    try:
+        if supabase is None:
+            logger.warning("⚠️ Supabase 未連接，無法更新統計資料")
+            return
+        
+        # 獲取當前統計資料
+        current_stats = get_user_stats(user_id)
+        
+        if current_stats:
+            # 更新現有統計
+            new_correct = current_stats.get('correct', 0) + (1 if is_correct else 0)
+            new_wrong = current_stats.get('wrong', 0) + (0 if is_correct else 1)
+            
+            update_data = {
+                'user_id': user_id,
+                'correct': new_correct,
+                'wrong': new_wrong,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+        else:
+            # 創建新統計資料
+            update_data = {
+                'user_id': user_id,
+                'correct': 1 if is_correct else 0,
+                'wrong': 0 if is_correct else 1,
+                'level': 1,
+                'last_update': datetime.datetime.now().isoformat()
+            }
+        
+        # 更新資料庫
+        result = supabase.table('user_stats').upsert(update_data).execute()
+        
+        if result.data:
+            logger.info(f"✅ 成功更新用戶 {user_id} 統計資料")
+        else:
+            logger.warning(f"⚠️ 更新用戶 {user_id} 統計資料失敗")
+            
+    except Exception as e:
+        logger.error(f"❌ 更新用戶統計資料失敗: {e}")
+
+def check_and_handle_level_up(user_id, current_level, is_correct):
+    """檢查並處理等級提升"""
+    try:
+        if not is_correct:
+            return  # 只有答對才可能升級
+        
+        # 獲取用戶統計資料
+        stats = get_user_stats(user_id)
+        if not stats:
+            return
+        
+        correct_answers = stats.get('correct', 0)
+        
+        # 計算應該的等級（每10題正確答案升一級）
+        expected_level = min(14, (correct_answers // 10) + 1)
+        
+        if expected_level > current_level:
+            # 等級提升
+            update_user_level(user_id, expected_level)
+            send_level_up_celebration(user_id, current_level, expected_level)
+            logger.info(f"🎉 用戶 {user_id} 從等級 {current_level} 提升到 {expected_level}")
+            
+    except Exception as e:
+        logger.error(f"❌ 檢查等級提升失敗: {e}")
+
 def handle_postback(sender_id, postback):
     """處理按鈕點擊"""
     payload = postback['payload']
