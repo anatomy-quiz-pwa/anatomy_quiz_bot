@@ -1,0 +1,7 @@
+{
+  "test_name": "蘇的帳號PAOPASS實際觸發測試",
+  "timestamp": "2025-09-17 23:31:36",
+  "success": true,
+  "user_id": "U9a9df49945755ef651d067743f3c7ea7",
+  "description": "通過模擬LINE webhook實際觸發測試蘇的帳號PAOPASS功能"
+}

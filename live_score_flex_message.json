@@ -1,0 +1,154 @@
+{
+  "type": "flex",
+  "altText": "📊 我是保保 的遊戲積分",
+  "contents": {
+    "type": "bubble",
+    "header": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "text",
+          "text": "📊 我是保保 的遊戲積分",
+          "weight": "bold",
+          "size": "lg",
+          "color": "#FFFFFF",
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "🌟 等級 1 學習者",
+          "size": "sm",
+          "color": "#FFFFFF",
+          "align": "center",
+          "margin": "sm"
+        }
+      ],
+      "backgroundColor": "#32CD32",
+      "paddingAll": "lg",
+      "cornerRadius": "10px"
+    },
+    "body": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "✅ 答對題數",
+              "size": "sm",
+              "color": "#666666",
+              "flex": 2
+            },
+            {
+              "type": "text",
+              "text": "0 題",
+              "weight": "bold",
+              "size": "sm",
+              "color": "#28a745",
+              "align": "end",
+              "flex": 1
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "❌ 答錯題數",
+              "size": "sm",
+              "color": "#666666",
+              "flex": 2
+            },
+            {
+              "type": "text",
+              "text": "0 題",
+              "weight": "bold",
+              "size": "sm",
+              "color": "#dc3545",
+              "align": "end",
+              "flex": 1
+            }
+          ],
+          "margin": "md"
+        },
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": "🎯 準確率",
+              "size": "sm",
+              "color": "#666666",
+              "flex": 2
+            },
+            {
+              "type": "text",
+              "text": "0.0%",
+              "weight": "bold",
+              "size": "sm",
+              "color": "#17a2b8",
+              "align": "end",
+              "flex": 1
+            }
+          ],
+          "margin": "md"
+        },
+        {
+          "type": "separator",
+          "margin": "lg"
+        },
+        {
+          "type": "text",
+          "text": "📈 本級進度：0 題",
+          "size": "sm",
+          "color": "#333333",
+          "margin": "lg"
+        },
+        {
+          "type": "text",
+          "text": "░░░░░░░░░░",
+          "size": "xs",
+          "color": "#666666",
+          "margin": "sm"
+        }
+      ],
+      "backgroundColor": "#F0FFF0",
+      "paddingAll": "lg",
+      "spacing": "sm"
+    },
+    "footer": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "button",
+          "action": {
+            "type": "message",
+            "label": "🚀 繼續挑戰",
+            "text": "開始"
+          },
+          "style": "primary",
+          "color": "#32CD32"
+        },
+        {
+          "type": "button",
+          "action": {
+            "type": "message",
+            "label": "🏆 查看排行榜",
+            "text": "排行榜"
+          },
+          "style": "secondary"
+        }
+      ],
+      "spacing": "sm",
+      "paddingAll": "lg"
+    }
+  }
+}

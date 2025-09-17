@@ -1,0 +1,151 @@
+{
+  "user_id": "U977c24d1fec3a2bf07035504e1444911",
+  "user_name": "寶的測試帳號",
+  "user_stats": {
+    "id": 339,
+    "user_id": "U977c24d1fec3a2bf07035504e1444911",
+    "correct": 0,
+    "wrong": 0,
+    "last_update": "2025-09-17",
+    "created_at": "2025-08-26T11:14:05.597828+00:00",
+    "daily_quota": 0,
+    "streak_days": 0,
+    "last_updated": "2025-09-17",
+    "level": 1,
+    "correct_in_level": 0,
+    "correct_qids": []
+  },
+  "nickname": "我是保保",
+  "flex_message": {
+    "type": "flex",
+    "altText": "📊 我是保保 的遊戲積分",
+    "contents": {
+      "type": "bubble",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "📊 我是保保 的遊戲積分",
+            "weight": "bold",
+            "size": "lg",
+            "color": "#FFFFFF",
+            "align": "center"
+          },
+          {
+            "type": "text",
+            "text": "🌟 等級 1 學習者",
+            "size": "sm",
+            "color": "#FFFFFF",
+            "align": "center",
+            "margin": "sm"
+          }
+        ],
+        "backgroundColor": "#32CD32",
+        "paddingAll": "lg",
+        "cornerRadius": "10px"
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+              {
+                "type": "text",
+                "text": "✅ 答對題數",
+                "size": "sm",
+                "color": "#666666",
+                "flex": 2
+              },
+              {
+                "type": "text",
+                "text": "0 題",
+                "weight": "bold",
+                "size": "sm",
+                "color": "#28a745",
+                "align": "end",
+                "flex": 1
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+              {
+                "type": "text",
+                "text": "❌ 答錯題數",
+                "size": "sm",
+                "color": "#666666",
+                "flex": 2
+              },
+              {
+                "type": "text",
+                "text": "0 題",
+                "weight": "bold",
+                "size": "sm",
+                "color": "#dc3545",
+                "align": "end",
+                "flex": 1
+              }
+            ],
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+              {
+                "type": "text",
+                "text": "🎯 準確率",
+                "size": "sm",
+                "color": "#666666",
+                "flex": 2
+              },
+              {
+                "type": "text",
+                "text": "0.0%",
+                "weight": "bold",
+                "size": "sm",
+                "color": "#17a2b8",
+                "align": "end",
+                "flex": 1
+              }
+            ],
+            "margin": "md"
+          },
+          {
+            "type": "separator",
+            "margin": "lg"
+          },
+          {
+            "type": "text",
+            "text": "📈 本級進度：0 題",
+            "size": "sm",
+            "color": "#333333",
+            "margin": "lg"
+          },
+          {
+            "type": "text",
+            "text": "░░░░░░░░░░",
+            "size": "xs",
+            "color": "#666666",
+            "margin": "sm"
+          }
+        ],
+        "backgroundColor": "#F0FFF0",
+        "paddingAll": "lg",
+        "spacing": "sm"
+      }
+    }
+  },
+  "validation_result": {
+    "is_valid": true,
+    "errors": []
+  },
+  "test_timestamp": "2025-09-17 22:49:56.831416"
+}
