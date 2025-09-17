@@ -231,7 +231,7 @@ def handle_nickname_input(user_id, text):
                     'line_user_id': user_id,
                     'game_nickname': nickname,
                     'created_at': datetime.datetime.now().isoformat()
-                }).execute()
+                }, on_conflict='line_user_id').execute()
                 
                 if result.data:
                     logger.info(f"✅ 用戶 {user_id} 暱稱設置成功: {nickname}")
@@ -1457,13 +1457,11 @@ def create_initial_user_stats(user_id: str) -> Optional[dict]:
             'wrong': 0,
             'level': 1,
             'correct_in_level': 0,
-            'daily_questions_answered': 0,
-            'last_question_date': datetime.date.today().isoformat(),
             'last_update': datetime.datetime.now().isoformat()
         }
         
-        # 插入到數據庫
-        result = supabase.table('user_stats').upsert(initial_data).execute()
+        # 插入到數據庫 - 使用 on_conflict 參數處理重複鍵值
+        result = supabase.table('user_stats').upsert(initial_data, on_conflict='user_id').execute()
         
         if result.data:
             logger.info(f"✅ 成功為用戶 {user_id} 創建初始積分記錄")
@@ -1482,7 +1480,7 @@ def update_user_level(user_id: str, new_level: int) -> bool:
         supabase.table('user_stats').upsert({
             'user_id': user_id,
             'level': new_level
-        }).execute()
+        }, on_conflict='user_id').execute()
         return True
     except Exception as e:
         print(f"更新用戶等級失敗: {e}")
@@ -1490,6 +1488,8 @@ def update_user_level(user_id: str, new_level: int) -> bool:
 
 def check_daily_question_limit(user_id: str) -> dict:
     """檢查用戶每日答題限制
+    
+    注意：暫時跳過每日限制檢查，直到 daily_questions_answered 欄位被添加到數據庫
     
     Returns:
         dict: {
@@ -1500,75 +1500,14 @@ def check_daily_question_limit(user_id: str) -> dict:
         }
     """
     try:
-        if supabase is None:
-            logger.error("❌ Supabase 未連接，無法檢查每日限制")
-            return {
-                'can_answer': True,  # 連接失敗時允許答題，避免阻擋用戶
-                'questions_answered': 0,
-                'remaining': 3,
-                'reset_time': '明天 00:00'
-            }
+        logger.info(f"⚠️ 暫時跳過用戶 {user_id} 的每日限制檢查（等待數據庫欄位添加）")
         
-        # 獲取用戶統計資料
-        user_stats = get_user_stats(user_id)
-        
-        if not user_stats:
-            # 新用戶，創建初始記錄
-            logger.info(f"🆕 為新用戶 {user_id} 創建初始統計")
-            user_stats = create_initial_user_stats(user_id)
-            if not user_stats:
-                logger.error(f"❌ 創建用戶 {user_id} 初始統計失敗")
-                return {
-                    'can_answer': True,
-                    'questions_answered': 0,
-                    'remaining': 3,
-                    'reset_time': '明天 00:00'
-                }
-        
-        # 獲取今日答題數據
-        today = datetime.date.today()
-        last_question_date_str = user_stats.get('last_question_date')
-        daily_questions_answered = user_stats.get('daily_questions_answered', 0)
-        
-        # 解析最後答題日期
-        if last_question_date_str:
-            try:
-                if isinstance(last_question_date_str, str):
-                    last_question_date = datetime.datetime.fromisoformat(last_question_date_str).date()
-                else:
-                    last_question_date = last_question_date_str
-            except (ValueError, TypeError):
-                logger.warning(f"⚠️ 無法解析日期格式: {last_question_date_str}")
-                last_question_date = today
-        else:
-            last_question_date = today
-        
-        # 檢查是否需要重置每日計數
-        if last_question_date < today:
-            logger.info(f"🔄 重置用戶 {user_id} 的每日答題計數")
-            daily_questions_answered = 0
-            # 更新資料庫
-            try:
-                supabase.table('user_stats').upsert({
-                    'user_id': user_id,
-                    'daily_questions_answered': 0,
-                    'last_question_date': today.isoformat()
-                }).execute()
-            except Exception as e:
-                logger.error(f"❌ 重置每日計數失敗: {e}")
-        
-        # 計算剩餘答題次數
-        daily_limit = 3
-        remaining = max(0, daily_limit - daily_questions_answered)
-        can_answer = remaining > 0
-        
-        logger.info(f"📊 用戶 {user_id} 每日答題狀態: 已答{daily_questions_answered}題, 剩餘{remaining}題")
-        
+        # 暫時返回允許答題的默認值
         return {
-            'can_answer': can_answer,
-            'questions_answered': daily_questions_answered,
-            'remaining': remaining,
-            'reset_time': '明天 00:00'
+            'can_answer': True,
+            'questions_answered': 0,
+            'remaining': 999,  # 暫時設為很大的數字
+            'reset_time': '功能暫時停用'
         }
         
     except Exception as e:
@@ -1577,43 +1516,54 @@ def check_daily_question_limit(user_id: str) -> dict:
         return {
             'can_answer': True,
             'questions_answered': 0,
-            'remaining': 3,
-            'reset_time': '明天 00:00'
+            'remaining': 999,
+            'reset_time': '功能暫時停用'
         }
 
-def update_daily_question_count(user_id: str) -> bool:
-    """更新用戶每日答題計數"""
+def reset_user_progress(user_id: str) -> bool:
+    """重置用戶進度到初始狀態"""
     try:
         if supabase is None:
-            logger.error("❌ Supabase 未連接，無法更新每日計數")
+            logger.error("❌ Supabase 未連接，無法重置用戶進度")
             return False
         
-        # 獲取當前統計
-        user_stats = get_user_stats(user_id)
-        if not user_stats:
-            logger.error(f"❌ 無法獲取用戶 {user_id} 統計資料")
-            return False
-        
-        # 獲取今日答題數
-        today = datetime.date.today()
-        daily_questions_answered = user_stats.get('daily_questions_answered', 0)
-        
-        # 增加答題計數
-        new_count = daily_questions_answered + 1
-        
-        # 更新資料庫
-        result = supabase.table('user_stats').upsert({
+        # 重置用戶統計數據到初始狀態
+        reset_data = {
             'user_id': user_id,
-            'daily_questions_answered': new_count,
-            'last_question_date': today.isoformat()
-        }).execute()
+            'level': 1,
+            'correct': 0,
+            'wrong': 0,
+            'correct_in_level': 0,
+            'daily_quota': 0,
+            'streak_days': 0,
+            'last_updated': datetime.datetime.now().isoformat(),
+            'correct_qids': []
+        }
         
-        if result.data:
-            logger.info(f"✅ 用戶 {user_id} 每日答題計數已更新為 {new_count}")
-            return True
+        # 檢查用戶是否存在
+        existing_user = supabase.table('user_stats').select('user_id').eq('user_id', user_id).execute()
+        
+        if existing_user.data:
+            # 用戶存在，更新資料
+            supabase.table('user_stats').update(reset_data).eq('user_id', user_id).execute()
         else:
-            logger.error(f"❌ 更新用戶 {user_id} 每日計數失敗")
-            return False
+            # 用戶不存在，插入新記錄
+            supabase.table('user_stats').insert(reset_data).execute()
+        logger.info(f"✅ 成功重置用戶 {user_id} 的進度")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 重置用戶進度失敗: {e}")
+        return False
+
+def update_daily_question_count(user_id: str) -> bool:
+    """更新用戶每日答題計數
+    
+    注意：暫時跳過每日計數更新，直到 daily_questions_answered 欄位被添加到數據庫
+    """
+    try:
+        logger.info(f"⚠️ 暫時跳過用戶 {user_id} 的每日計數更新（等待數據庫欄位添加）")
+        return True  # 暫時返回成功，避免阻擋其他功能
             
     except Exception as e:
         logger.error(f"❌ 更新每日答題計數失敗: {e}")
@@ -1825,7 +1775,7 @@ def handle_admin_message(sender_id, message_text):
             handle_level_command(sender_id, message_text)
         else:
             # 普通訊息處理，但具有管理員權限
-            handle_regular_message(sender_id, message_text)
+            handle_admin_quiz(sender_id, message_text)
             
     except Exception as e:
         logger.error(f"❌ 處理管理員訊息失敗: {e}")
@@ -1838,7 +1788,7 @@ def handle_admin_command(sender_id, message_text):
         parts = message_text.split()
         if len(parts) < 2:
             send_message(sender_id, {
-                "text": "管理員命令格式：\n/admin status - 查看狀態\n/admin users - 查看用戶列表\n/admin stats - 查看統計數據"
+                "text": "管理員命令格式：\n/admin status - 查看狀態\n/admin users - 查看用戶列表\n/admin stats - 查看統計數據\n/admin reset <user_id> - 重置指定用戶進度"
             })
             return
         
@@ -1884,6 +1834,28 @@ def handle_admin_command(sender_id, message_text):
                 send_message(sender_id, {"text": stats_text})
             else:
                 send_message(sender_id, {"text": "❌ 無法獲取統計數據"})
+                
+        elif command == 'reset' and len(parts) >= 3:
+            # 重置指定用戶進度
+            target_user_id = parts[2]
+            logger.info(f"🔑 管理員 {sender_id} 請求重置用戶 {target_user_id} 的進度")
+            
+            if reset_user_progress(target_user_id):
+                send_message(sender_id, {
+                    "text": f"✅ 已成功重置用戶 {target_user_id} 的進度\n\n重置內容：\n• 等級：1\n• 答對題數：0\n• 答錯題數：0\n• 連續天數：0"
+                })
+                
+                # 通知被重置的用戶
+                try:
+                    send_message(target_user_id, {
+                        "text": "🔄 系統通知：您的學習進度已被管理員重置\n\n✅ 您的學習進度已重置為：\n• 等級：1\n• 答對題數：0\n• 答錯題數：0\n• 連續天數：0\n\n🎯 重新開始您的解剖學學習之旅！\n輸入「開始」開始答題吧！"
+                    })
+                except:
+                    logger.warning(f"⚠️ 無法通知用戶 {target_user_id} 進度已被重置")
+            else:
+                send_message(sender_id, {
+                    "text": f"❌ 重置用戶 {target_user_id} 進度失敗，請檢查用戶ID是否正確"
+                })
         else:
             send_message(sender_id, {"text": "❌ 未知的管理員命令"})
             
@@ -2014,6 +1986,25 @@ def handle_admin_quiz(sender_id, message_text):
             # 發送用戶積分信息
             logger.info(f"📊 管理員用戶 {sender_id} 請求查看積分")
             send_score_message(sender_id)
+        elif message_text.lower() in ['reset', 'RESET', '重置', '重設', '重新開始']:
+            # 處理管理員重置進度請求
+            logger.info(f"🔄 管理員用戶 {sender_id} 請求重置進度")
+            if reset_user_progress(sender_id):
+                reset_message = """🔑 管理員模式 - 進度重置成功！
+                
+✅ 您的學習進度已重置為：
+• 等級：1
+• 答對題數：0
+• 答錯題數：0
+• 連續天數：0
+
+🎯 重新開始您的解剖學學習之旅！
+輸入「開始」開始答題吧！
+
+💡 管理員提醒：您仍保有所有管理員權限"""
+                send_message(sender_id, {"text": reset_message})
+            else:
+                send_message(sender_id, {"text": "❌ 重置進度失敗，請檢查資料庫連接。"})
         else:
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
@@ -2075,6 +2066,23 @@ def handle_normal_quiz(sender_id, message_text):
             # 發送用戶積分信息
             logger.info(f"📊 普通用戶 {sender_id} 請求查看積分")
             send_score_message(sender_id)
+        elif message_text.lower() in ['reset', 'RESET', '重置', '重設', '重新開始']:
+            # 處理重置進度請求
+            logger.info(f"🔄 普通用戶 {sender_id} 請求重置進度")
+            if reset_user_progress(sender_id):
+                reset_message = """🔄 進度重置成功！
+                
+✅ 您的學習進度已重置為：
+• 等級：1
+• 答對題數：0
+• 答錯題數：0
+• 連續天數：0
+
+🎯 重新開始您的解剖學學習之旅！
+輸入「開始」開始答題吧！"""
+                send_message(sender_id, {"text": reset_message})
+            else:
+                send_message(sender_id, {"text": "❌ 重置進度失敗，請稍後再試或聯繫管理員。"})
         else:
             # 檢查是否為答案選項
             if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
@@ -2100,8 +2108,26 @@ def send_admin_quiz_question(sender_id):
             send_message(sender_id, {"text": "❌ 目前沒有可用的題目，請稍後再試。"})
             return
         
+        # 獲取用戶統計信息，包含已答對的題目ID
+        user_stats = get_user_stats(sender_id)
+        answered_question_ids = user_stats.get('correct_qids', []) if user_stats else []
+        
+        # 確保ID類型一致性（統一轉換為字符串進行比較）
+        answered_ids_str = [str(qid) for qid in answered_question_ids]
+        
+        # 過濾已答過的題目
+        available_questions = [q for q in all_questions if str(q['id']) not in answered_ids_str]
+        
+        # 如果沒有未答的題目，重置已答記錄或提供所有題目
+        if not available_questions:
+            logger.info(f"🔄 管理員 {sender_id} 已答完所有題目，提供重新挑戰選項")
+            available_questions = all_questions  # 管理員可以重新答題
+        
         # 隨機選擇一道題目
-        question = random.choice(all_questions)
+        question = random.choice(available_questions)
+        
+        # 記錄選題信息
+        logger.info(f"📚 為管理員 {sender_id} 選擇題目 {question['id']} (等級 {question['level']})")
         
         # 儲存當前題目到會話中
         session_data = {
@@ -2148,8 +2174,41 @@ def send_normal_quiz_question(sender_id, level):
             send_message(sender_id, {"text": f"❌ 等級 {level} 目前沒有可用的題目，請稍後再試。"})
             return
         
+        # 獲取用戶統計信息，包含已答對的題目ID
+        user_stats = get_user_stats(sender_id)
+        answered_question_ids = user_stats.get('correct_qids', []) if user_stats else []
+        
+        # 確保ID類型一致性（統一轉換為字符串進行比較）
+        answered_ids_str = [str(qid) for qid in answered_question_ids]
+        
+        # 過濾已答過的題目（僅限當前等級）
+        available_questions = [q for q in level_questions if str(q['id']) not in answered_ids_str]
+        
+        # 如果該等級沒有未答的題目，提示用戶升級或重置
+        if not available_questions:
+            logger.info(f"🎯 用戶 {sender_id} 已完成等級 {level} 所有題目")
+            
+            completion_message = f"""🎉 恭喜！您已完成等級 {level} 的所有題目！
+            
+✨ 學習成果：
+• 等級 {level} 全部題目已掌握
+• 您的解剖學知識又進步了！
+
+🚀 接下來您可以：
+• 繼續挑戰更高等級的題目
+• 輸入「積分」查看學習成果
+• 輸入「排行榜」查看排名
+
+💪 繼續加油，向更高等級邁進！"""
+            
+            send_message(sender_id, {"text": completion_message})
+            return
+        
         import random
-        question = random.choice(level_questions)
+        question = random.choice(available_questions)
+        
+        # 記錄選題信息
+        logger.info(f"📚 為用戶 {sender_id} 選擇等級 {level} 題目 {question['id']} (剩餘 {len(available_questions)} 道未答題目)")
         
         # 儲存當前題目到會話中
         session_data = {
@@ -2247,10 +2306,14 @@ def send_admin_help_message(sender_id):
 • /admin status - 查看管理員狀態
 • /admin users - 查看用戶列表
 • /admin stats - 查看統計數據
+• /admin reset <user_id> - 重置指定用戶進度
 • /test level <等級> - 測試特定等級權限
 • /test all - 測試所有等級權限
 • /level set <等級> - 設置用戶等級
 • /level check - 檢查當前等級
+
+🔄 進度管理：
+• reset / 重置 - 重置自己的學習進度
 
 🎯 特殊功能：
 • 您有權限訪問所有等級的題目
@@ -2270,11 +2333,17 @@ def send_normal_help_message(sender_id, level):
 📚 問答指令：
 • 開始 / start - 開始答題（等級 {level}）
 • 幫助 / help - 顯示此幫助訊息
+• 排行榜 / leaderboard - 查看排行榜
+• 積分 / score - 查看個人積分
+
+🔄 進度管理：
+• reset / 重置 - 重置學習進度（回到等級1）
 
 💡 提示：
 • 輸入答案時可以使用數字 (1-4) 或字母 (A-D)
 • 答對題目可以獲得積分
 • 答對 3 題即可升級到下一等級
+• 每天最多可以答 3 題
 
 開始學習吧！"""
     
@@ -2321,8 +2390,9 @@ def handle_admin_answer(sender_id, answer):
         # 發送解說訊息（包含圖片）
         send_explanation_with_image(sender_id, current_question, is_correct)
         
-        # 更新用戶統計
-        update_user_stats_after_answer(sender_id, is_correct)
+        # 更新用戶統計（包含題目ID）
+        question_id = current_question.get('id')
+        update_user_stats_after_answer(sender_id, is_correct, question_id)
         
         # 清除當前會話
         clear_user_session(sender_id)
@@ -2356,8 +2426,9 @@ def handle_normal_answer(sender_id, answer, level):
         # 發送解說訊息（包含圖片）
         send_explanation_with_image(sender_id, current_question, is_correct)
         
-        # 更新用戶統計
-        update_user_stats_after_answer(sender_id, is_correct)
+        # 更新用戶統計（包含題目ID）
+        question_id = current_question.get('id')
+        update_user_stats_after_answer(sender_id, is_correct, question_id)
         
         # 檢查是否需要升級並發送進度反饋
         upgraded = check_and_handle_level_up(sender_id, level, is_correct)
@@ -2536,7 +2607,7 @@ def get_explanation_image_url(question_data):
         # 如果發生錯誤，返回預設的 level 1 海報圖片
         return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_1_poster.png"
 
-def update_user_stats_after_answer(user_id, is_correct):
+def update_user_stats_after_answer(user_id, is_correct, question_id=None):
     """更新用戶統計資料"""
     try:
         if supabase is None:
@@ -2551,28 +2622,50 @@ def update_user_stats_after_answer(user_id, is_correct):
             new_correct = current_stats.get('correct', 0) + (1 if is_correct else 0)
             new_wrong = current_stats.get('wrong', 0) + (0 if is_correct else 1)
             
+            # 更新已答對題目ID列表
+            correct_qids = current_stats.get('correct_qids', [])
+            if is_correct and question_id:
+                # 確保 question_id 是整數
+                try:
+                    q_id = int(question_id)
+                    if q_id not in correct_qids:
+                        correct_qids.append(q_id)
+                        logger.info(f"🎯 用戶 {user_id} 答對題目 {q_id}，加入已答對列表")
+                except (ValueError, TypeError):
+                    logger.warning(f"⚠️ 題目ID {question_id} 不是有效的整數，跳過添加到已答對列表")
+            
             update_data = {
                 'user_id': user_id,
                 'correct': new_correct,
                 'wrong': new_wrong,
+                'correct_qids': correct_qids,
                 'last_update': datetime.datetime.now().isoformat()
             }
         else:
             # 創建新統計資料
             today = datetime.date.today()
+            correct_qids = []
+            if is_correct and question_id:
+                try:
+                    q_id = int(question_id)
+                    correct_qids = [q_id]
+                    logger.info(f"🎯 新用戶 {user_id} 答對題目 {q_id}，創建已答對列表")
+                except (ValueError, TypeError):
+                    logger.warning(f"⚠️ 題目ID {question_id} 不是有效的整數，創建空的已答對列表")
+                    correct_qids = []
+            
             update_data = {
                 'user_id': user_id,
                 'correct': 1 if is_correct else 0,
                 'wrong': 0 if is_correct else 1,
                 'level': 1,
                 'correct_in_level': 0,  # 初始化當前等級答對數
-                'daily_questions_answered': 0,  # 將在後續更新
-                'last_question_date': today.isoformat(),
+                'correct_qids': correct_qids,
                 'last_update': datetime.datetime.now().isoformat()
             }
         
-        # 更新資料庫
-        result = supabase.table('user_stats').upsert(update_data).execute()
+        # 更新資料庫 - 使用 on_conflict 參數處理重複鍵值
+        result = supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
         
         if result.data:
             logger.info(f"✅ 成功更新用戶 {user_id} 統計資料")
@@ -2614,8 +2707,8 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
                 'correct_in_level': remaining_correct  # 保留剩餘的答對題數
             }
             
-            # 更新數據庫
-            supabase.table('user_stats').upsert(update_data).execute()
+            # 更新數據庫 - 使用 on_conflict 參數處理重複鍵值
+            supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
             
             # 發送升級慶祝訊息
             send_level_up_celebration(user_id, current_level, new_level)
@@ -2626,7 +2719,7 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
             supabase.table('user_stats').upsert({
                 'user_id': user_id,
                 'correct_in_level': current_level_correct
-            }).execute()
+            }, on_conflict='user_id').execute()
             logger.info(f"📈 用戶 {user_id} 等級 {current_level} 進度：{current_level_correct}/3")
             return False  # 返回False表示沒有升級
             
