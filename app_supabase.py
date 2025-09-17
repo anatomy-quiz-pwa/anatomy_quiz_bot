@@ -1042,6 +1042,14 @@ def send_admin_quiz_question(sender_id):
         # 隨機選擇一道題目
         question = random.choice(all_questions)
         
+        # 儲存當前題目到會話中
+        session_data = {
+            'current_question': question,
+            'question_type': 'admin',
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        set_user_session(sender_id, session_data)
+        
         # 發送題目
         question_text = f"""🔑 管理員模式 - 隨機題目
 
@@ -1059,9 +1067,6 @@ def send_admin_quiz_question(sender_id):
         
         send_message(sender_id, {"text": question_text})
         
-        # 儲存當前題目信息（簡化版）
-        # 在實際應用中，應該使用會話管理來儲存題目狀態
-        
     except Exception as e:
         logger.error(f"❌ 發送管理員題目失敗: {e}")
         send_message(sender_id, {"text": "❌ 發送題目時發生錯誤，請稍後再試。"})
@@ -1078,6 +1083,15 @@ def send_normal_quiz_question(sender_id, level):
         
         import random
         question = random.choice(level_questions)
+        
+        # 儲存當前題目到會話中
+        session_data = {
+            'current_question': question,
+            'question_type': 'normal',
+            'level': level,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        set_user_session(sender_id, session_data)
         
         # 發送題目
         question_text = f"""📚 等級 {level} 題目
@@ -1245,17 +1259,38 @@ def handle_admin_answer(sender_id, answer):
         send_message(sender_id, {"text": "❌ 處理答案時發生錯誤，請稍後再試。"})
 
 def handle_normal_answer(sender_id, answer, level):
-    """處理普通用戶答案"""
+    """處理普通用戶答案 - 完整版本"""
     try:
-        # 簡化的答案處理邏輯
-        if answer in ['1', 'A']:
+        # 獲取用戶當前會話
+        session = get_user_session(sender_id)
+        current_question = session.get('current_question')
+        
+        if not current_question:
             send_message(sender_id, {
-                "text": f"✅ 答對了！\n\n📈 等級 {level} 進度更新\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
+                "text": "❌ 沒有找到當前題目，請輸入「開始」重新開始答題。"
             })
-        else:
-            send_message(sender_id, {
-                "text": f"❌ 答錯了！\n\n📚 等級 {level} 需要更多練習\n\n輸入「開始」繼續答題，或輸入「幫助」查看指令。"
-            })
+            return
+        
+        # 轉換答案格式 (A-D 轉為 1-4)
+        answer_mapping = {'A': '1', 'B': '2', 'C': '3', 'D': '4'}
+        normalized_answer = answer_mapping.get(answer, answer)
+        
+        # 檢查答案是否正確
+        correct_answer_index = current_question.get('correct_answer', 0)
+        correct_answer = str(correct_answer_index + 1)  # 轉為 1-based
+        is_correct = normalized_answer == correct_answer
+        
+        # 發送解說訊息（包含圖片）
+        send_explanation_with_image(sender_id, current_question, is_correct)
+        
+        # 更新用戶統計
+        update_user_stats_after_answer(sender_id, is_correct)
+        
+        # 檢查是否需要升級
+        check_and_handle_level_up(sender_id, level, is_correct)
+        
+        # 清除當前會話
+        clear_user_session(sender_id)
         
     except Exception as e:
         logger.error(f"❌ 處理普通答案失敗: {e}")
