@@ -375,7 +375,7 @@ def get_leaderboard_data():
         return []
 
 def create_question_flex_message(question, is_admin=False):
-    """創建題目的 Flex Message"""
+    """創建題目的 Hero Flex Message"""
     try:
         # 設定標題和顏色主題
         if is_admin:
@@ -386,6 +386,10 @@ def create_question_flex_message(question, is_admin=False):
             title = f"📚 等級 {question.get('level', 1)} 題目"
             header_color = "#2E8B57"  # 海洋綠
             bg_color = "#F0FFF0"      # 蜜露綠
+        
+        # 獲取等級海報圖片
+        level = question.get('level', 1)
+        hero_image_url = get_question_hero_image_url(level)
         
         # 創建選項按鈕
         option_actions = []
@@ -406,18 +410,19 @@ def create_question_flex_message(question, is_admin=False):
                 "style": "secondary",
                 "height": "sm"
             })
-        
-        # 創建選項文字列表
-        options_text = ""
-        for i, option in enumerate(question.get('options', []), 1):
-            options_text += f"{option_emojis[i-1]} {option}\n"
-        options_text = options_text.strip()  # 移除最後的換行符
 
         flex_message = {
             "type": "flex",
             "altText": f"{title} - {question.get('question', '')[:50]}...",
             "contents": {
                 "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": hero_image_url,
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover"
+                },
                 "header": {
                     "type": "box",
                     "layout": "vertical",
@@ -463,26 +468,6 @@ def create_question_flex_message(question, is_admin=False):
                             "color": "#444444",
                             "margin": "sm",
                             "flex": 0
-                        },
-                        {
-                            "type": "separator",
-                            "margin": "lg"
-                        },
-                        {
-                            "type": "text",
-                            "text": "📝 選項",
-                            "weight": "bold",
-                            "size": "md",
-                            "color": "#333333",
-                            "margin": "lg"
-                        },
-                        {
-                            "type": "text",
-                            "text": options_text,
-                            "wrap": True,
-                            "size": "sm",
-                            "color": "#555555",
-                            "margin": "sm"
                         }
                     ],
                     "backgroundColor": bg_color,
@@ -502,8 +487,47 @@ def create_question_flex_message(question, is_admin=False):
         return flex_message
         
     except Exception as e:
-        logger.error(f"❌ 創建題目 Flex Message 失敗: {e}")
+        logger.error(f"❌ 創建題目 Hero Flex Message 失敗: {e}")
         return None
+
+def get_question_hero_image_url(level):
+    """獲取題目的 Hero 圖片 URL"""
+    try:
+        # 根據等級使用對應的海報圖片
+        base_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot"
+        
+        # 等級海報映射
+        level_posters = {
+            1: f"{base_url}/level_1_poster.png",
+            2: f"{base_url}/level_2_poster.png", 
+            3: f"{base_url}/level_3_poster.png",
+            4: f"{base_url}/level_4_poster.png",
+            5: f"{base_url}/level_5_poster.png",
+        }
+        
+        # 如果等級超過5，使用等級5的圖片
+        if level > 5:
+            level = 5
+            
+        poster_url = level_posters.get(level, level_posters[1])
+        
+        # 檢查圖片是否存在
+        import requests
+        try:
+            response = requests.head(poster_url, timeout=5)
+            if response.status_code == 200:
+                return poster_url
+        except:
+            pass
+        
+        # 如果特定等級圖片不存在，使用預設圖片
+        default_url = f"{base_url}/default_question.png"
+        return default_url
+        
+    except Exception as e:
+        logger.error(f"❌ 獲取題目 Hero 圖片失敗: {e}")
+        # 返回預設圖片
+        return "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_question.png"
 
 def create_score_flex_message(user_stats, nickname):
     """創建積分的 Flex Message"""
