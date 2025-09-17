@@ -392,17 +392,27 @@ def create_question_flex_message(question, is_admin=False):
         option_emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"]
         
         for i, option in enumerate(question.get('options', []), 1):
+            # LINE 按鈕標籤限制為 20 字符，進行適當截取
+            max_label_length = 16  # 保留空間給 emoji 和編號
+            truncated_option = option[:max_label_length] + '...' if len(option) > max_label_length else option
+            
             option_actions.append({
                 "type": "button",
                 "action": {
                     "type": "message",
-                    "label": f"{option_emojis[i-1]} {option[:30]}{'...' if len(option) > 30 else ''}",
+                    "label": f"{option_emojis[i-1]} {truncated_option}",
                     "text": str(i)
                 },
                 "style": "secondary",
                 "height": "sm"
             })
         
+        # 創建選項文字列表
+        options_text = ""
+        for i, option in enumerate(question.get('options', []), 1):
+            options_text += f"{option_emojis[i-1]} {option}\n"
+        options_text = options_text.strip()  # 移除最後的換行符
+
         flex_message = {
             "type": "flex",
             "altText": f"{title} - {question.get('question', '')[:50]}...",
@@ -460,11 +470,19 @@ def create_question_flex_message(question, is_admin=False):
                         },
                         {
                             "type": "text",
-                            "text": "💡 請選擇答案",
+                            "text": "📝 選項",
                             "weight": "bold",
                             "size": "md",
                             "color": "#333333",
                             "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": options_text,
+                            "wrap": True,
+                            "size": "sm",
+                            "color": "#555555",
+                            "margin": "sm"
                         }
                     ],
                     "backgroundColor": bg_color,
