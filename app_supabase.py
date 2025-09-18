@@ -319,7 +319,7 @@ def activate_admin_mode(user_id):
         
         # 發送激活成功消息
         send_message(user_id, {
-            "text": f"🔑 管理員模式已成功激活！\n\n歡迎使用管理員功能：\n• 輸入「開始」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您現在有權限訪問所有等級的題目！"
+            "text": f"🔑 管理員模式已成功激活！\n\n歡迎使用管理員功能：\n• 輸入「開始」開始答題（按當前等級）\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您現在可以按照等級順序進行答題！"
         })
         
         logger.info(f"🎉 用戶 {user_id} 管理員模式激活完成")
@@ -1344,14 +1344,14 @@ def create_level_up_flex_message(old_level, new_level):
                             "contents": [
                                 {
                                     "type": "text",
-                                    "text": f"你已經掌握了等級 {new_level} 的知識，",
+                                    "text": f"你已經掌握了等級 {old_level} 的知識，",
                                     "color": "#666666",
                                     "size": "sm",
                                     "align": "center"
                                 },
                                 {
                                     "type": "text",
-                                    "text": f"現在開始挑戰等級 {new_level + 1} 的更高難度！",
+                                    "text": f"現在開始挑戰等級 {new_level} 的更高難度！",
                                     "color": "#666666",
                                     "size": "sm",
                                     "align": "center"
@@ -1455,7 +1455,7 @@ def send_level_up_celebration(user_id, old_level, new_level):
                             },
                             {
                                 "type": "text",
-                                "text": f"你已經掌握了等級{new_level}的知識！",
+                                "text": f"你已經掌握了等級{old_level}的知識！",
                                 "size": "sm",
                                 "align": "center",
                                 "margin": "md",
@@ -1492,7 +1492,7 @@ def send_level_up_celebration(user_id, old_level, new_level):
             # 方案3: 最後備用 - 只發送文字
             old_title = get_level_title(old_level)
             new_title = get_level_title(new_level)
-            fallback_text = f"🎉 恭喜升級！\n🏆 從{old_title}晉升為{new_title}！\n\n你已經掌握了等級{new_level}的知識, 現在開始挑戰等級{new_level+1}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
+            fallback_text = f"🎉 恭喜升級！\n🏆 從{old_title}晉升為{new_title}！\n\n你已經掌握了等級{old_level}的知識, 現在開始挑戰等級{new_level}的更高難度！\n繼續加油,朝著終極解剖師的目標前進！"
             send_message(user_id, {"text": fallback_text})
 
 def send_completion_celebration(user_id, final_level):
@@ -2414,7 +2414,7 @@ def handle_admin_quiz(sender_id, message_text):
                 handle_admin_answer(sender_id, message_text)
             else:
                 send_message(sender_id, {
-                    "text": f"🔑 管理員模式已啟用！\n\n您可以使用以下指令：\n• 輸入「開始」或「出題」開始答題\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您有權限訪問所有等級的題目！"
+                    "text": f"🔑 管理員模式已啟用！\n\n您可以使用以下指令：\n• 輸入「開始」或「出題」開始答題（按當前等級）\n• 輸入「排行榜」查看排名\n• 輸入「幫助」查看所有指令\n• 輸入「/admin status」查看管理員狀態\n• 輸入「/test level <等級>」測試特定等級\n\n您現在可以按照等級順序進行答題！"
                 })
         
     except Exception as e:
@@ -2484,37 +2484,40 @@ def handle_normal_quiz(sender_id, message_text):
         send_message(sender_id, {"text": "抱歉，處理您的訊息時發生錯誤，請稍後再試。"})
 
 def send_admin_quiz_question(sender_id):
-    """發送管理員問答題目（所有等級）"""
+    """發送管理員問答題目（按照當前等級）"""
     try:
         import random
         
-        # 管理員可以訪問所有等級的題目
-        all_questions = get_all_questions()
+        # 獲取用戶當前等級
+        user_stats = get_user_stats(sender_id)
+        current_level = user_stats.get('level', 1) if user_stats else 1
         
-        if not all_questions:
-            send_message(sender_id, {"text": "❌ 目前沒有可用的題目，請稍後再試。"})
+        # 獲取指定等級的題目
+        level_questions = get_questions_by_level(current_level)
+        
+        if not level_questions:
+            send_message(sender_id, {"text": f"❌ 等級 {current_level} 目前沒有可用的題目，請稍後再試。"})
             return
         
         # 獲取用戶統計信息，包含已答對的題目ID
-        user_stats = get_user_stats(sender_id)
         answered_question_ids = user_stats.get('correct_qids', []) if user_stats else []
         
         # 確保ID類型一致性（統一轉換為字符串進行比較）
         answered_ids_str = [str(qid) for qid in answered_question_ids]
         
         # 過濾已答過的題目
-        available_questions = [q for q in all_questions if str(q['id']) not in answered_ids_str]
+        available_questions = [q for q in level_questions if str(q['id']) not in answered_ids_str]
         
         # 如果沒有未答的題目，重置已答記錄或提供所有題目
         if not available_questions:
-            logger.info(f"🔄 管理員 {sender_id} 已答完所有題目，提供重新挑戰選項")
-            available_questions = all_questions  # 管理員可以重新答題
+            logger.info(f"🔄 管理員 {sender_id} 已答完等級 {current_level} 所有題目，提供重新挑戰選項")
+            available_questions = level_questions  # 管理員可以重新答題
         
         # 隨機選擇一道題目
         question = random.choice(available_questions)
         
         # 記錄選題信息
-        logger.info(f"📚 為管理員 {sender_id} 選擇題目 {question['id']} (等級 {question['level']})")
+        logger.info(f"📚 為管理員 {sender_id} 選擇等級 {current_level} 題目 {question['id']} (剩餘 {len(available_questions)} 道未答題目)")
         
         # 儲存當前題目到會話中
         session_data = {
@@ -2525,13 +2528,13 @@ def send_admin_quiz_question(sender_id):
         set_user_session(sender_id, session_data)
         
         # 發送題目 Flex Message
-        flex_message = create_question_flex_message(question, is_admin=True)
+        flex_message = create_question_flex_message(question, is_admin=True, user_level=current_level)
         
         if flex_message:
             send_message(sender_id, flex_message)
         else:
             # 備用方案：發送純文字
-            question_text = f"""🔑 管理員模式 - 隨機題目
+            question_text = f"""🔑 管理員模式 - 等級 {current_level} 題目
 
 📚 題目：{question['question']}
 🎯 等級：{question['level']}
@@ -2790,13 +2793,12 @@ def handle_admin_answer(sender_id, answer):
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
-        # 檢查是否需要升級（管理員也需要升級邏輯）
-        # 修正：在統計更新後獲取最新的等級數據，避免重複調用
+        # 檢查是否需要升級（管理員也需要升級邏輯）- 如果升級，會立即發送升級慶祝訊息
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
         check_and_handle_level_up(sender_id, current_level, is_correct)
         
-        # 發送解說訊息（包含圖片）- 在數據更新後發送，確保顯示最新進度
+        # 發送解說訊息（包含圖片）- 在升級檢查後發送，確保顯示最新進度
         send_explanation_with_image(sender_id, current_question, is_correct)
         
         # 清除當前會話
@@ -2832,10 +2834,10 @@ def handle_normal_answer(sender_id, answer, level):
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
-        # 檢查是否需要升級並發送進度反饋
+        # 檢查是否需要升級 - 如果升級，會立即發送升級慶祝訊息
         upgraded = check_and_handle_level_up(sender_id, level, is_correct)
         
-        # 發送解說訊息（包含圖片）- 在數據更新後發送，確保顯示最新進度
+        # 發送解說訊息（包含圖片）- 在升級檢查後發送，確保顯示最新進度
         send_explanation_with_image(sender_id, current_question, is_correct)
         
         # 移除額外的進度反饋文字訊息，只保留flex message
@@ -2862,14 +2864,14 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         # 獲取解說圖片 URL
         explanation_image_url = get_explanation_image_url(question_data)
         
-        # 獲取用戶當前進度資訊
+        # 獲取用戶當前進度資訊（在升級檢查之後的最新狀態）
         user_stats = get_user_stats(user_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
         current_progress = user_stats.get('correct_in_level', 0) if user_stats else 0
         
-        # 如果答對了，進度+1
-        if is_correct:
-            current_progress += 1
+        # 注意：此時的 current_progress 已經是升級檢查後的最新值
+        # 如果剛剛升級了，current_progress 會是升級後剩餘的答對數
+        # 不需要再手動 +1，因為數據庫中的值已經是最新的
         
         remaining = max(0, 3 - current_progress)
         
