@@ -3815,7 +3815,6 @@ def dashboard():
                 <table>
                     <thead>
                         <tr>
-                            <th>學生ID</th>
                             <th>姓名</th>
                             <th>等級</th>
                             <th>分數</th>
@@ -3835,7 +3834,6 @@ def dashboard():
         
         html_content += f"""
                         <tr>
-                            <td>{student["user_id"]}</td>
                             <td>{student["name"]}</td>
                             <td><span class="level-badge">等級 {student["level"]}</span></td>
                             <td class="{score_class}">{student["score"]}</td>
@@ -4133,10 +4131,6 @@ def score_manager():
                 <div class="user-info" id="user_info">
                     <h3>👤 用戶信息</h3>
                     <div class="info-item">
-                        <span class="info-label">用戶ID:</span>
-                        <span class="info-value" id="info_user_id">-</span>
-                    </div>
-                    <div class="info-item">
                         <span class="info-label">姓名:</span>
                         <span class="info-value" id="info_name">-</span>
                     </div>
@@ -4186,7 +4180,6 @@ def score_manager():
                     const data = await response.json();
                     
                     if (response.ok) {
-                        document.getElementById('info_user_id').textContent = data.user_id;
                         document.getElementById('info_name').textContent = data.name;
                         document.getElementById('info_score').textContent = data.score;
                         document.getElementById('info_correct').textContent = data.correct_answers;
