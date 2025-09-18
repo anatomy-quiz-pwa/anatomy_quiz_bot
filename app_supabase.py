@@ -2689,7 +2689,7 @@ def send_admin_help_message(sender_id):
     help_text = """🔑 管理員指令幫助
 
 📚 問答指令：
-• 開始 / start - 開始隨機答題（所有等級）
+• 開始 / start - 開始答題（按當前等級）
 • 幫助 / help - 顯示此幫助訊息
 
 🔧 管理員指令：
