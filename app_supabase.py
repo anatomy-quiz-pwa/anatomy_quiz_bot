@@ -488,26 +488,18 @@ def get_leaderboard_data():
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
-        # 使用 JOIN 查詢同時獲取用戶統計和暱稱資料
-        # 獲取更多數據以便找到用戶排名（獲取前50名）
-        # 使用 user_id 作為次要排序條件，確保相同分數用戶的排序穩定
-        response = supabase.table('user_stats').select('''
-            *,
-            users!inner(game_nickname)
-        ''').order('correct', desc=True).order('user_id', desc=False).limit(50).execute()
+        # 直接使用手動關聯方法，更穩定可靠
+        # 獲取用戶統計數據，按正確答案數排序
+        stats_response = supabase.table('user_stats').select('*').order('correct', desc=True).order('user_id', desc=False).limit(50).execute()
         
-        if response.data:
-            logger.info(f"✅ 成功獲取 {len(response.data)} 條真實數據")
+        if stats_response.data:
+            logger.info(f"✅ 成功獲取 {len(stats_response.data)} 條統計數據")
             
-            # 處理資料格式，確保每個項目都有暱稱
+            # 處理資料格式，獲取每個用戶的暱稱
             processed_data = []
-            for item in response.data:
-                # 獲取暱稱，如果沒有則生成預設暱稱
-                nickname = None
-                if 'users' in item and item['users'] and item['users'].get('game_nickname'):
-                    nickname = item['users']['game_nickname']
-                else:
-                    nickname = generate_default_nickname(item['user_id'])
+            for item in stats_response.data:
+                # 獲取用戶暱稱
+                nickname = get_user_nickname(item['user_id'])
                 
                 # 創建標準化的資料結構
                 processed_item = {
@@ -522,6 +514,7 @@ def get_leaderboard_data():
                 }
                 processed_data.append(processed_item)
             
+            logger.info(f"✅ 排行榜數據處理完成，共 {len(processed_data)} 條記錄")
             return processed_data
         else:
             logger.warning("⚠️ 沒有獲取到排行榜數據")
@@ -529,35 +522,6 @@ def get_leaderboard_data():
             
     except Exception as e:
         logger.error(f"❌ 獲取排行榜數據失敗: {e}")
-        logger.info("🔄 嘗試使用備用查詢方法...")
-        
-        # 備用方法：分別查詢用戶統計和暱稱
-        try:
-            # 使用穩定的排序條件：先按正確答案數降序，再按 user_id 升序
-            stats_response = supabase.table('user_stats').select('*').order('correct', desc=True).order('user_id', desc=False).limit(50).execute()
-            
-            if stats_response.data:
-                processed_data = []
-                for item in stats_response.data:
-                    nickname = get_user_nickname(item['user_id'])
-                    processed_item = {
-                        'user_id': item['user_id'],
-                        'nickname': nickname,
-                        'correct': item.get('correct', 0),
-                        'wrong': item.get('wrong', 0),
-                        'level': item.get('level', 1),
-                        'correct_in_level': item.get('correct_in_level', 0),
-                        'total_questions': item.get('correct', 0) + item.get('wrong', 0),
-                        'accuracy': round((item.get('correct', 0) / max(item.get('correct', 0) + item.get('wrong', 0), 1)) * 100, 1)
-                    }
-                    processed_data.append(processed_item)
-                
-                logger.info(f"✅ 備用方法成功獲取 {len(processed_data)} 條數據")
-                return processed_data
-            
-        except Exception as e2:
-            logger.error(f"❌ 備用查詢也失敗: {e2}")
-        
         return []
 
 def get_user_rank_info(user_id):
