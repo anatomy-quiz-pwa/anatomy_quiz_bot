@@ -781,8 +781,8 @@ def create_score_flex_message(user_stats, nickname):
         total_questions = correct_answers + wrong_answers
         accuracy = round((correct_answers / max(total_questions, 1)) * 100, 1)
         
-        # 獲取當前等級的poster圖片
-        level_poster_url = get_question_hero_image_url(level)
+        # 使用指定的積分hero圖片
+        level_poster_url = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/nickname.png"
         
         # 根據等級設定顏色主題
         if level >= 10:
@@ -845,12 +845,10 @@ def create_score_flex_message(user_stats, nickname):
                             "offsetStart": "0px",
                             "offsetEnd": "0px",
                             "paddingAll": "lg",
-                            "backgroundColor": header_color,
-                            "cornerRadius": "0px 0px 10px 10px"
+                            "backgroundColor": header_color
                         }
                     ],
-                    "paddingAll": "0px",
-                    "cornerRadius": "10px"
+                    "paddingAll": "0px"
                 },
                 "body": {
                     "type": "box",
