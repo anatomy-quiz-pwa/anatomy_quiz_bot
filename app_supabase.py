@@ -1772,7 +1772,7 @@ def check_daily_question_limit(user_id: str) -> dict:
             last_update_date = current_date
         
         # 如果是新的一天，重置 daily_quota
-        daily_questions = user_stats.get('daily_quota', 0)
+        daily_questions = user_stats.get('daily_quota') or 0  # 確保不為 None
         if last_update_date < current_date:
             logger.info(f"🔄 用戶 {user_id} 新的一天，重置每日計數")
             daily_questions = 0
@@ -1878,7 +1878,7 @@ def update_daily_question_count(user_id: str) -> bool:
             last_update_date = current_date
         
         # 如果是新的一天，從 0 開始計數，否則增加計數
-        current_daily_count = user_stats.get('daily_quota', 0)
+        current_daily_count = user_stats.get('daily_quota') or 0  # 確保不為 None
         if last_update_date < current_date:
             new_daily_count = 1  # 新的一天，第一題
             logger.info(f"🆕 用戶 {user_id} 新的一天，重置每日計數為 1")
@@ -2718,36 +2718,46 @@ def send_normal_help_message(sender_id, level):
     """發送普通用戶幫助訊息"""
     help_text = f"""🧭 解剖冒險指南
 
-🔬 你的當前等級：{level}
-（答對 3 題就能進階！）
+👋 歡迎來到 解剖咬一口！
+這是一個每天玩一點、慢慢升級的解剖闖關遊戲。
 
-⚔️ 主要指令
-• 開始 / start —— 展開挑戰，迎戰今日的 3 題！
-• 排行榜 / leaderboard —— 看看誰的腦袋最靈光 🏆
-• 積分 / score —— 查看你的學習戰績
+🦴 遊戲規則
 
-📖 其他指令
-• 幫助 / help —— 呼叫這份冒險指南
-• reset / 重置 —— 重置進度，回到 Lv.1
+每天可以答 3 題。
 
-🎮 遊戲規則
-• 點擊題目上的按鈕，或是輸入 1–4 回答問題
-• 答對題目獲得積分
-• 答對 3 題 升級到下一等級
-• 每天最多可以答 3 題
-• 連續答題兩天以上，當日 quota +1 🎁
+若連續兩天都有來，當天可答 4 題！
 
-🗺️ 冒險進程
-這場冒險共有 14 個等級：
-• 前期：基礎解剖 🦴（肌肉、骨頭）
-• 中期：進階挑戰 🧠（神經、血管）
-• 後期：臨床應用 🩺（案例、陷阱題、綜合思考）
+答對 3 題就能升到下一關。
 
-題目會一級比一級更難，等你一路突破到最終 Boss！
+總共有 14 級，還有 Boss 關等你挑戰！
 
-💡 小提示
-每天都要 解剖咬一口 🦴
-不小心就會吃下許多解剖文獻 📚"""
+每題都有即時解答 + 補充小知識。
+
+答題後會顯示進度條，方便追蹤今日挑戰。
+
+🏆 積分系統
+
+輸入「積分」 → 查看自己的積分。
+
+輸入「排行榜」 → 查看自己的排名。
+（未來舉辦比賽時，也能在這裡追蹤名次！）
+
+📖 積分怎麼算？
+
+答對 1 題 = +10 分
+
+連續登入天數 = 每日額外加分（如 +5 分 / 天）
+
+闖關升級或通過 Boss 關 = 額外獎勵分
+
+👉 積分會影響你的排行榜位置，也能當作你的專屬學習歷程記錄。
+
+📢 注意事項
+
+這個機器人沒有真人回覆喔～
+
+如果遊戲過程遇到問題，
+👉 歡迎到我們 IG 指定貼文留言！"""
     
     send_message(sender_id, {"text": help_text})
 
@@ -2793,13 +2803,13 @@ def handle_admin_answer(sender_id, answer):
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
-        # 檢查是否需要升級（管理員也需要升級邏輯）- 如果升級，會立即發送升級慶祝訊息
+        # 檢查是否需要升級（管理員也需要升級邏輯）- 獲取升級資訊
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
-        check_and_handle_level_up(sender_id, current_level, is_correct)
+        level_up_info = check_and_handle_level_up(sender_id, current_level, is_correct)
         
         # 發送解說訊息（包含圖片）- 在升級檢查後發送，確保顯示最新進度
-        send_explanation_with_image(sender_id, current_question, is_correct)
+        send_explanation_with_image(sender_id, current_question, is_correct, level_up_info)
         
         # 清除當前會話
         clear_user_session(sender_id)
@@ -2834,11 +2844,11 @@ def handle_normal_answer(sender_id, answer, level):
         question_id = current_question.get('id')
         update_user_stats_after_answer(sender_id, is_correct, question_id)
         
-        # 檢查是否需要升級 - 如果升級，會立即發送升級慶祝訊息
-        upgraded = check_and_handle_level_up(sender_id, level, is_correct)
+        # 檢查是否需要升級 - 獲取升級資訊
+        level_up_info = check_and_handle_level_up(sender_id, level, is_correct)
         
         # 發送解說訊息（包含圖片）- 在升級檢查後發送，確保顯示最新進度
-        send_explanation_with_image(sender_id, current_question, is_correct)
+        send_explanation_with_image(sender_id, current_question, is_correct, level_up_info)
         
         # 移除額外的進度反饋文字訊息，只保留flex message
         # 原本會發送額外的「✅ 答對了！📈 等級 X 進度：X/3」文字訊息
@@ -2851,7 +2861,7 @@ def handle_normal_answer(sender_id, answer, level):
         logger.error(f"❌ 處理普通答案失敗: {e}")
         send_message(sender_id, {"text": "❌ 處理答案時發生錯誤，請稍後再試。"})
 
-def send_explanation_with_image(user_id, question_data, is_correct):
+def send_explanation_with_image(user_id, question_data, is_correct, level_up_info=None):
     """發送解說訊息（使用 Hero Flex Message 格式）"""
     try:
         # 獲取解說文字
@@ -2942,19 +2952,11 @@ def send_explanation_with_image(user_id, question_data, is_correct):
                         },
                         {
                             "type": "text",
-                            "text": f"📈 等級 {current_level} 進度：{current_progress}/3",
+                            "text": f"📈 等級 {current_level} 進度：{current_progress}/3，還需要答對 {remaining} 題升級。",
                             "weight": "bold",
                             "size": "md",
                             "color": "#28a745",
                             "margin": "lg"
-                        },
-                        {
-                            "type": "text",
-                            "text": f"還需要答對{remaining}題升級" if remaining > 0 else "準備升級！",
-                            "size": "sm",
-                            "color": "#28a745",
-                            "weight": "bold",
-                            "margin": "xs"
                         },
                         {
                             "type": "separator",
@@ -3005,6 +3007,14 @@ def send_explanation_with_image(user_id, question_data, is_correct):
         # 發送 Hero Flex Message
         send_message(user_id, hero_flex_message)
         logger.info(f"✅ 成功發送答案解說 Hero Flex Message 給用戶 {user_id}")
+        
+        # 檢查是否需要發送升級訊息
+        if level_up_info and level_up_info.get('upgraded', False):
+            # 延遲發送升級訊息，確保在進度顯示之後
+            import time
+            time.sleep(0.5)  # 短暫延遲，讓用戶先看到進度訊息
+            send_level_up_celebration(user_id, level_up_info['old_level'], level_up_info['new_level'])
+            logger.info(f"🎉 延遲發送升級訊息給用戶 {user_id}: {level_up_info['old_level']} -> {level_up_info['new_level']}")
         
     except Exception as e:
         logger.error(f"❌ 發送 Hero Flex Message 失敗: {e}")
@@ -3092,7 +3102,18 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
                 'last_update': datetime.datetime.now().isoformat()
             }
         else:
-            # 創建新統計資料
+            # 創建新統計資料 - 但不要覆蓋現有的level
+            logger.warning(f"⚠️ 用戶 {user_id} 統計資料不存在，嘗試獲取現有等級")
+            
+            # 嘗試從資料庫直接查詢用戶等級，避免覆蓋
+            try:
+                existing_user = supabase.table('user_stats').select('level').eq('user_id', user_id).execute()
+                existing_level = existing_user.data[0].get('level', 1) if existing_user.data else 1
+                logger.info(f"🔍 找到用戶 {user_id} 現有等級: {existing_level}")
+            except Exception as e:
+                logger.warning(f"⚠️ 無法獲取用戶 {user_id} 現有等級: {e}")
+                existing_level = 1
+            
             today = datetime.date.today()
             correct_qids = []
             if is_correct and question_id:
@@ -3108,14 +3129,19 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
                 'user_id': user_id,
                 'correct': 1 if is_correct else 0,
                 'wrong': 0 if is_correct else 1,
-                'level': 1,
+                'level': existing_level,  # 使用現有等級，不重置為1
                 'correct_in_level': 1 if is_correct else 0,  # 初始化當前等級答對數
                 'correct_qids': correct_qids,
                 'last_update': datetime.datetime.now().isoformat()
             }
         
-        # 更新資料庫 - 使用 on_conflict 參數處理重複鍵值
-        result = supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
+        # 更新資料庫 - 使用更安全的方式避免等級被意外覆蓋
+        if current_stats:
+            # 如果用戶存在，只更新特定欄位，避免覆蓋level
+            result = supabase.table('user_stats').update(update_data).eq('user_id', user_id).execute()
+        else:
+            # 如果用戶不存在，使用upsert創建新記錄
+            result = supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
         
         if result.data:
             logger.info(f"✅ 成功更新用戶 {user_id} 統計資料")
@@ -3129,15 +3155,15 @@ def update_user_stats_after_answer(user_id, is_correct, question_id=None):
         logger.error(f"❌ 更新用戶統計資料失敗: {e}")
 
 def check_and_handle_level_up(user_id, current_level, is_correct):
-    """檢查並處理等級提升 - 統一使用3題升級邏輯"""
+    """檢查並處理等級提升 - 統一使用3題升級邏輯，返回升級資訊而非立即發送訊息"""
     try:
         if not is_correct:
-            return False  # 只有答對才可能升級，返回False表示沒有升級
+            return None  # 只有答對才可能升級，返回None表示沒有升級
         
         # 獲取用戶統計資料
         stats = get_user_stats(user_id)
         if not stats:
-            return False
+            return None
         
         # 獲取當前等級答對題數（已經在 update_user_stats_after_answer 中更新）
         current_level_correct = stats.get('correct_in_level', 0)
@@ -3160,10 +3186,14 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
             # 更新數據庫 - 使用 on_conflict 參數處理重複鍵值
             supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
             
-            # 發送升級慶祝訊息
-            send_level_up_celebration(user_id, current_level, new_level)
             logger.info(f"🎉 用戶 {user_id} 從等級 {current_level} 提升到 {new_level} (答對{current_level_correct}題)")
-            return True  # 返回True表示升級了
+            # 返回升級資訊，不立即發送訊息
+            return {
+                'upgraded': True,
+                'old_level': current_level,
+                'new_level': new_level,
+                'levels_gained': levels_to_upgrade
+            }
         else:
             # 未達到升級條件，只更新當前等級答對數
             supabase.table('user_stats').upsert({
@@ -3171,11 +3201,11 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
                 'correct_in_level': current_level_correct
             }, on_conflict='user_id').execute()
             logger.info(f"📈 用戶 {user_id} 等級 {current_level} 進度：{current_level_correct}/3")
-            return False  # 返回False表示沒有升級
+            return {'upgraded': False}  # 返回False表示沒有升級
             
     except Exception as e:
         logger.error(f"❌ 檢查等級提升失敗: {e}")
-        return False
+        return None
 
 def send_progress_feedback(user_id, current_level):
     """發送進度反饋訊息（已停用 - 進度資訊已整合到flex message中）"""
