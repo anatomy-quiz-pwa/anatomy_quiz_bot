@@ -2013,7 +2013,7 @@ def create_welcome_flex_message(nickname):
             "contents": [
                 {
                     "type": "text",
-                    "text": "🎉 歡迎來到《解剖咬一口》！",
+                    "text": "🎉 歡迎來到解剖咬一口Beta公測版Ｘ2025頸椎100題！",
                     "weight": "bold",
                     "size": "lg",
                     "wrap": True

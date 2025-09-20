@@ -30,7 +30,7 @@ def send_welcome_message_to_user(user_id):
         # 創建完整的 Flex 訊息格式
         flex_message = {
             "type": "flex",
-            "altText": "歡迎來到解剖咬一口 Beta測試版",
+            "altText": "歡迎來到解剖咬一口Beta公測版Ｘ2025頸椎100題",
             "contents": welcome_flex
         }
         
@@ -92,7 +92,7 @@ def create_welcome_message_json():
             "messages": [
                 {
                     "type": "flex",
-                    "altText": "歡迎來到解剖咬一口 Beta測試版",
+                    "altText": "歡迎來到解剖咬一口Beta公測版Ｘ2025頸椎100題",
                     "contents": welcome_flex
                 }
             ]
