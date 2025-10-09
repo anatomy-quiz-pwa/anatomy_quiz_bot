@@ -126,18 +126,242 @@ function showManualLogin() {
     document.getElementById('start-btn').style.display = 'inline-block';
 }
 
-// LINE 登录
+// 显示用户 ID 输入界面
+function showUserIdInput() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('manual-login-section').style.display = 'none';
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('start-btn').style.display = 'none';
+    
+    // 创建用户 ID 输入 HTML
+    const userIdInputHtml = `
+        <div id="line-user-id-input" class="mb-4">
+            <div class="alert alert-info">
+                <h5><i class="fab fa-line"></i> LINE 用户登入</h5>
+                <p class="mb-3">請輸入您的 LINE 用户 ID 來完成登入：</p>
+                
+                <div class="mb-3">
+                    <label for="line-user-id" class="form-label">LINE 用户 ID：</label>
+                    <input type="text" id="line-user-id" class="form-control" 
+                           placeholder="例如：U977c24d1fec3a2bf07035504e1444911" 
+                           maxlength="33">
+                    <div class="form-text">
+                        <i class="fas fa-info-circle"></i>
+                        您的 LINE 用户 ID 通常以 "U" 開頭，共 33 個字符
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <button class="btn btn-primary" onclick="sendVerificationCode()">
+                        <i class="fas fa-paper-plane"></i> 發送驗證碼
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="showLoginButton()">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 插入到登录区域
+    const loginSection = document.getElementById('login-section');
+    loginSection.insertAdjacentHTML('afterend', userIdInputHtml);
+}
+
+// 发送验证码
+async function sendVerificationCode() {
+    const userId = document.getElementById('line-user-id').value.trim();
+    
+    if (!userId) {
+        alert('請輸入 LINE 用户 ID');
+        return;
+    }
+    
+    if (!userId.startsWith('U') || userId.length !== 33) {
+        alert('請輸入正確的 LINE 用户 ID 格式（以 U 開頭，共 33 個字符）');
+        return;
+    }
+    
+    try {
+        // 生成 6 位数字验证码
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // 保存验证码到本地存储
+        localStorage.setItem('pendingVerificationCode', verificationCode);
+        localStorage.setItem('pendingUserId', userId);
+        
+        // 发送验证码到 LINE Bot
+        const message = {
+            text: `🔐 網頁登入驗證碼\n\n您的驗證碼是：${verificationCode}\n\n請在網頁中輸入此驗證碼完成登入。\n\n驗證碼有效期：5 分鐘`
+        };
+        
+        // 调用 API 发送验证码
+        const response = await fetch('/api/send-verification-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId,
+                verificationCode: verificationCode
+            })
+        });
+        
+        if (response.ok) {
+            // 显示验证码输入界面
+            showVerificationCodeInput(userId, verificationCode);
+        } else {
+            alert('發送驗證碼失敗，請重試');
+        }
+        
+    } catch (error) {
+        console.error('❌ 发送验证码失败:', error);
+        alert('發送驗證碼時發生錯誤，請重試');
+    }
+}
+
+// 显示验证码输入界面
+function showVerificationCodeInput(userId, verificationCode) {
+    // 移除用户 ID 输入界面
+    const userIdInput = document.getElementById('line-user-id-input');
+    if (userIdInput) {
+        userIdInput.remove();
+    }
+    
+    // 创建验证码输入 HTML
+    const verificationInputHtml = `
+        <div id="verification-code-input" class="mb-4">
+            <div class="alert alert-success">
+                <h5><i class="fas fa-key"></i> 輸入驗證碼</h5>
+                <p class="mb-3">我們已向您的 LINE 發送驗證碼，請輸入收到的 6 位數字：</p>
+                
+                <div class="mb-3">
+                    <label for="verification-code" class="form-label">驗證碼：</label>
+                    <input type="text" id="verification-code" class="form-control text-center" 
+                           placeholder="000000" maxlength="6" style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                </div>
+                
+                <div class="mb-3">
+                    <button class="btn btn-success" onclick="verifyCode()">
+                        <i class="fas fa-check"></i> 驗證登入
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="resendVerificationCode()">
+                        <i class="fas fa-redo"></i> 重新發送
+                    </button>
+                </div>
+                
+                <div class="text-muted small">
+                    <i class="fas fa-info-circle"></i>
+                    用户 ID：<code>${userId}</code> | 
+                    驗證碼：<code>${verificationCode}</code>（僅供測試）
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 插入到登录区域
+    const loginSection = document.getElementById('login-section');
+    loginSection.insertAdjacentHTML('afterend', verificationInputHtml);
+    
+    // 自动聚焦到验证码输入框
+    document.getElementById('verification-code').focus();
+}
+
+// 重新发送验证码
+async function resendVerificationCode() {
+    const userId = localStorage.getItem('pendingUserId');
+    if (userId) {
+        await sendVerificationCode();
+    }
+}
+
+// 验证验证码
+async function verifyCode() {
+    const inputCode = document.getElementById('verification-code').value.trim();
+    const expectedCode = localStorage.getItem('pendingVerificationCode');
+    const userId = localStorage.getItem('pendingUserId');
+    
+    if (!inputCode) {
+        alert('請輸入驗證碼');
+        return;
+    }
+    
+    if (inputCode !== expectedCode) {
+        alert('驗證碼錯誤，請重新輸入');
+        return;
+    }
+    
+    try {
+        // 验证成功，获取用户信息
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+        
+        if (userError || !userData) {
+            // 用户不存在，创建新用户
+            const newUser = {
+                user_id: userId,
+                nickname: `用户${userId.substr(-4)}`,
+                line_id: userId,
+                last_login: new Date().toISOString(),
+                created_at: new Date().toISOString()
+            };
+            
+            const { error: insertError } = await supabase
+                .from('users')
+                .insert([newUser]);
+            
+            if (insertError) {
+                console.error('❌ 创建用户失败:', insertError);
+                alert('創建用戶失敗，請重試');
+                return;
+            }
+            
+            userData = newUser;
+        }
+        
+        // 完成登录
+        const user = {
+            userId: userData.user_id,
+            displayName: userData.nickname,
+            pictureUrl: userData.picture_url || 'https://via.placeholder.com/100'
+        };
+        
+        gameState.user = user;
+        gameState.isLoggedIn = true;
+        gameState.nickname = user.displayName;
+        gameState.userId = user.userId;
+        
+        // 保存到本地存储
+        localStorage.setItem('lineUser', JSON.stringify(user));
+        
+        // 清除验证码输入界面
+        const verificationInput = document.getElementById('verification-code-input');
+        if (verificationInput) {
+            verificationInput.remove();
+        }
+        
+        showUserInfo(user);
+        
+        // 清除临时数据
+        localStorage.removeItem('pendingVerificationCode');
+        localStorage.removeItem('pendingUserId');
+        
+        console.log('✅ LINE Bot 验证码登录成功:', user.displayName);
+        
+    } catch (error) {
+        console.error('❌ 验证码验证失败:', error);
+        alert('驗證碼驗證時發生錯誤，請重試');
+    }
+}
+
+// LINE 登录（通过 LINE Bot 验证码）
 async function lineLogin() {
     try {
-        // LINE Login URL (使用现有的 LINE Login Channel ID)
-        const channelId = '2004874394'; // 现有的 LINE Login Channel ID
-        const redirectUri = encodeURIComponent('https://anatomy-quiz-bot.onrender.com/auth/callback');
-        const state = 'anatomy_quiz_' + Date.now();
-        
-        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${redirectUri}&state=${state}&scope=profile%20openid`;
-        
-        // 跳转到 LINE 登录页面
-        window.location.href = lineLoginUrl;
+        // 显示用户 ID 输入界面
+        showUserIdInput();
         
     } catch (error) {
         console.error('❌ LINE 登录失败:', error);
@@ -180,6 +404,85 @@ async function saveUserToSupabase(profile) {
         }
     } catch (error) {
         console.error('❌ 保存用户信息错误:', error);
+    }
+}
+
+// 复制到剪贴板
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('已複製到剪貼板！');
+    }).catch(err => {
+        console.error('複製失敗:', err);
+        // 备用方案
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('已複製到剪貼板！');
+    });
+}
+
+// 检查登录状态
+async function checkLoginStatus(loginToken) {
+    try {
+        // 检查 Supabase 中是否有对应的登录记录
+        const { data, error } = await supabase
+            .from('web_login_tokens')
+            .select('*')
+            .eq('token', loginToken)
+            .eq('status', 'completed')
+            .single();
+        
+        if (error || !data) {
+            alert('尚未完成登入，請先在 LINE Bot 中回覆登入訊息。');
+            return;
+        }
+        
+        // 获取用户信息
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', data.user_id)
+            .single();
+        
+        if (userError || !userData) {
+            alert('找不到用戶信息，請重新登入。');
+            return;
+        }
+        
+        // 完成登录
+        const user = {
+            userId: userData.user_id,
+            displayName: userData.nickname,
+            pictureUrl: userData.picture_url || 'https://via.placeholder.com/100'
+        };
+        
+        gameState.user = user;
+        gameState.isLoggedIn = true;
+        gameState.nickname = user.displayName;
+        gameState.userId = user.userId;
+        
+        // 保存到本地存储
+        localStorage.setItem('lineUser', JSON.stringify(user));
+        
+        // 清除登录说明
+        const instructionsElement = document.getElementById('line-bot-login-instructions');
+        if (instructionsElement) {
+            instructionsElement.remove();
+        }
+        
+        showUserInfo(user);
+        
+        // 清除登录令牌
+        localStorage.removeItem('pendingLoginToken');
+        
+        console.log('✅ LINE Bot 登录成功:', user.displayName);
+        
+    } catch (error) {
+        console.error('❌ 检查登录状态失败:', error);
+        alert('檢查登入狀態時發生錯誤，請重試。');
     }
 }
 
