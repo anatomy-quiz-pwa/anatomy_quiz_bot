@@ -349,7 +349,7 @@ async function verifyCode() {
 // LINE 登录（通过 LINE Bot 验证码）
 async function lineLogin() {
     try {
-        // 显示用户 ID 输入界面
+        // 直接显示昵称输入界面
         showUserIdInput();
         
     } catch (error) {
