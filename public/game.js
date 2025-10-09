@@ -310,7 +310,7 @@ async function verifyCode() {
         const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
-            .eq('nickname', nickname)
+            .eq('game_nickname', nickname)
             .single();
         
         if (userError || !userData) {
@@ -320,8 +320,8 @@ async function verifyCode() {
         
         // 完成登录
         const user = {
-            userId: userData.user_id,
-            displayName: userData.nickname,
+            userId: userData.line_user_id,
+            displayName: userData.game_nickname,
             pictureUrl: userData.picture_url || 'https://via.placeholder.com/100'
         };
         

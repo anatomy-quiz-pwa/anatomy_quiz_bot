@@ -31,8 +31,8 @@ export default async function handler(req, res) {
         
         const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('user_id, nickname')
-            .eq('nickname', nickname)
+            .select('line_user_id, game_nickname')
+            .eq('game_nickname', nickname)
             .single();
         
         if (userError || !userData) {
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
                 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
             },
             body: JSON.stringify({
-                to: userData.user_id,
+                to: userData.line_user_id,
                 messages: [message]
             })
         });
@@ -66,12 +66,12 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Failed to send verification code' });
         }
         
-        console.log(`✅ 验证码已发送到昵称 ${nickname} (${userData.user_id}): ${verificationCode}`);
+        console.log(`✅ 验证码已发送到昵称 ${nickname} (${userData.line_user_id}): ${verificationCode}`);
         
         res.status(200).json({ 
             success: true, 
             message: 'Verification code sent successfully',
-            userId: userData.user_id
+            userId: userData.line_user_id
         });
         
     } catch (error) {
