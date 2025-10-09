@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖學測驗 - 遊戲化問答系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #56ab2f;
+            --danger: #ff416c;
+            --warning: #ffd700;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .game-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .game-content {
+            padding: 40px;
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid var(--primary);
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            border: 3px solid #e9ecef;
+            border-radius: 15px;
+            background: white;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background: linear-gradient(135deg, var(--primary)15, var(--secondary)15);
+            border-color: var(--primary);
+            transform: translateX(10px);
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: var(--primary);
+            transform: translateX(10px) scale(1.02);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .option-btn.wrong {
+            background: linear-gradient(135deg, var(--danger), #ff4b2b);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .action-btn {
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .result-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            animation: bounceIn 0.6s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .level-badge {
+            background: linear-gradient(45deg, var(--warning), #ff8c00);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+            font-size: 1.1rem;
+        }
+
+        .explanation-box {
+            background: linear-gradient(135deg, #ffeaa715, #ffd70015);
+            border-left: 5px solid var(--warning);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .progress-bar-custom {
+            height: 30px;
+            border-radius: 15px;
+            background: #e9ecef;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        #start-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 遊戲標題 -->
+        <div class="game-header">
+            <h1><i class="fas fa-brain"></i> 解剖學測驗</h1>
+            <p class="mb-0">挑戰你的醫學知識！</p>
+        </div>
+
+        <!-- 統計欄 -->
+        <div class="stats-bar" id="stats-bar" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-score">0</span>
+                <span class="stat-label">總分</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-level">1</span>
+                <span class="stat-label">等級</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-correct">0/0</span>
+                <span class="stat-label">答對率</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-streak">0</span>
+                <span class="stat-label">連續答對</span>
+            </div>
+        </div>
+
+        <!-- 遊戲內容 -->
+        <div class="game-content">
+            <!-- 開始畫面 -->
+            <div id="start-screen">
+                <div class="feature-card">
+                    <h2 class="mb-4"><i class="fas fa-graduation-cap text-primary"></i> 歡迎來到解剖學測驗！</h2>
+                    <p class="lead mb-4">這是一個專為醫學學生設計的遊戲化學習平台</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
+                            <h5>即時回饋</h5>
+                            <p class="text-muted">答題後立即知道結果</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-trophy fa-3x text-success mb-3"></i>
+                            <h5>遊戲化學習</h5>
+                            <p class="text-muted">14個等級等你挑戰</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                            <h5>進度追蹤</h5>
+                            <p class="text-muted">實時查看你的學習成果</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <input type="text" id="nickname-input" class="form-control form-control-lg" 
+                               placeholder="請輸入你的暱稱（選填）" maxlength="20">
+                    </div>
+
+                    <button class="action-btn btn-primary-custom" onclick="startGame()">
+                        <i class="fas fa-play"></i> 開始遊戲
+                    </button>
+                </div>
+            </div>
+
+            <!-- 載入中 -->
+            <div id="loading-screen" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <h4>正在載入題目...</h4>
+            </div>
+
+            <!-- 遊戲畫面 -->
+            <div id="game-screen" style="display: none;">
+                <!-- 進度條 -->
+                <div class="progress-bar-custom">
+                    <div class="progress-fill" id="progress-bar" style="width: 0%">
+                        <span id="progress-text">0%</span>
+                    </div>
+                </div>
+
+                <!-- 題目卡片 -->
+                <div class="question-card">
+                    <div class="mb-3">
+                        <span class="level-badge" id="question-level">等級 1</span>
+                        <span class="badge bg-info ms-2" id="question-category">類別</span>
+                    </div>
+                    <div class="question-text" id="question-text">題目載入中...</div>
+                    <div id="options-container"></div>
+                </div>
+
+                <!-- 解釋區域 -->
+                <div id="explanation-area" style="display: none;">
+                    <div class="explanation-box">
+                        <h5><i class="fas fa-lightbulb text-warning"></i> 詳細解釋</h5>
+                        <p id="explanation-text"></p>
+                    </div>
+                </div>
+
+                <!-- 按鈕區 -->
+                <div class="text-center mt-4">
+                    <button class="action-btn btn-primary-custom" id="submit-btn" 
+                            onclick="submitAnswer()" disabled>
+                        <i class="fas fa-check"></i> 提交答案
+                    </button>
+                    <button class="action-btn btn-primary-custom" id="next-btn" 
+                            onclick="nextQuestion()" style="display: none;">
+                        <i class="fas fa-forward"></i> 下一題
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結果彈窗 -->
+    <div class="result-modal" id="result-modal">
+        <div class="result-content">
+            <div id="result-icon"></div>
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <div id="result-stats"></div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
