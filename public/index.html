@@ -710,31 +710,21 @@ button:active {
             }
         }
 
-        // 載入 Supabase 客戶端
+        // 初始化 Supabase 客戶端
         async function loadSupabaseClient() {
             return new Promise((resolve, reject) => {
-                if (window.supabase) {
+                try {
+                    // Supabase 腳本已經在 HTML 中載入，直接初始化客戶端
+                    window.supabase = window.supabase.createClient(
+                        'https://ciqlfqfgzqqgdrogedxg.supabase.co',
+                        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA'
+                    );
+                    console.log('✅ Supabase 客戶端初始化成功');
                     resolve();
-                    return;
+                } catch (error) {
+                    console.error('❌ Supabase 客戶端初始化失敗:', error);
+                    reject(error);
                 }
-                
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-                script.onload = () => {
-                    try {
-                        window.supabase = window.supabase.createClient(
-                            'https://ciqlfqfgzqqgdrogedxg.supabase.co',
-                            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA'
-                        );
-                        console.log('✅ Supabase 客戶端載入成功');
-                        resolve();
-                    } catch (error) {
-                        console.error('❌ Supabase 客戶端初始化失敗:', error);
-                        reject(error);
-                    }
-                };
-                script.onerror = reject;
-                document.head.appendChild(script);
             });
         }
 
