@@ -128,6 +128,8 @@ function showManualLogin() {
 
 // 显示昵称输入界面
 function showUserIdInput() {
+    console.log('📝 开始显示昵称输入界面');
+    
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('manual-login-section').style.display = 'none';
     document.getElementById('user-info').style.display = 'none';
@@ -170,7 +172,12 @@ function showUserIdInput() {
     
     // 插入到登录区域
     const loginSection = document.getElementById('login-section');
-    loginSection.insertAdjacentHTML('afterend', nicknameInputHtml);
+    if (loginSection) {
+        loginSection.insertAdjacentHTML('afterend', nicknameInputHtml);
+        console.log('✅ 昵称输入界面已插入到页面');
+    } else {
+        console.error('❌ 找不到 login-section 元素');
+    }
 }
 
 // 发送验证码
@@ -349,8 +356,10 @@ async function verifyCode() {
 // LINE 登录（通过 LINE Bot 验证码）
 async function lineLogin() {
     try {
+        console.log('🔑 点击了 LINE 登录按钮');
         // 直接显示昵称输入界面
         showUserIdInput();
+        console.log('✅ 已显示昵称输入界面');
         
     } catch (error) {
         console.error('❌ LINE 登录失败:', error);
