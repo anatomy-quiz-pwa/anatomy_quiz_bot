@@ -13,8 +13,9 @@
     <!-- Brand Theme -->
     <link href="{{ url_for('static', filename='brand-theme.css') }}" rel="stylesheet">
     <style>
-        body {
-            background: #F4E8D8;
+        /* 強制覆蓋所有樣式 - Anatomy Bite 品牌風格 */
+        html, body {
+            background: #F4E8D8 !important;
             background-image: 
                 repeating-linear-gradient(
                   0deg,
@@ -29,24 +30,209 @@
                   transparent 2px,
                   rgba(28, 28, 28, 0.02) 2px,
                   rgba(28, 28, 28, 0.02) 4px
-                );
-            min-height: 100vh;
-            font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+                ) !important;
+            background-size: 100% 100% !important;
+            background-attachment: fixed !important;
+            min-height: 100vh !important;
+            font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
+            color: #1C1C1C !important;
+            margin: 0 !important;
+            padding: 20px !important;
         }
         
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Playfair Display', serif;
-            letter-spacing: 0.05em;
+            font-family: 'Playfair Display', serif !important;
+            letter-spacing: 0.05em !important;
+            color: #1C1C1C !important;
         }
-        .main-container {
-            background: #fffaf5;
-            border-radius: 16px;
-            border: 3px solid #1C1C1C;
-            box-shadow: 8px 8px 0 #1C1C1C;
-            margin: 20px auto;
-            padding: 30px;
-            max-width: 800px;
+        
+        /* 遊戲容器樣式 */
+        .game-container {
+            max-width: 900px !important;
+            margin: 0 auto !important;
+            background: #fffaf5 !important;
+            border: 3px solid #1C1C1C !important;
+            box-shadow: 8px 8px 0 #1C1C1C !important;
+            border-radius: 16px !important;
+            overflow: hidden !important;
         }
+        
+        /* 遊戲標題區 */
+        .game-header {
+            background: #C57B57 !important;
+            color: #fffaf5 !important;
+            border-bottom: 3px solid #1C1C1C !important;
+            padding: 30px !important;
+            text-align: center;
+        }
+        
+        .game-header h1 {
+            color: #fffaf5 !important;
+            text-shadow: 2px 2px 0 #1C1C1C !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+            font-size: 2.5rem !important;
+        }
+        
+        .game-header p {
+            color: #fffaf5 !important;
+            opacity: 0.95;
+        }
+        
+        /* 遊戲內容區域 */
+        .game-content {
+            padding: 40px !important;
+        }
+        
+        /* 卡片樣式 */
+        .card, .feature-card, .question-card {
+            background: #fffaf5 !important;
+            border: 2px solid #1C1C1C !important;
+            box-shadow: 4px 4px 0 #1C1C1C !important;
+            border-radius: 12px !important;
+            padding: 2rem !important;
+            transition: all 0.3s ease;
+            margin: 20px 0 !important;
+        }
+        
+        .card:hover, .feature-card:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 6px 6px 0 #1C1C1C !important;
+        }
+        
+        /* 按鈕樣式 */
+        button, .action-btn, .btn-primary-custom, .btn {
+            background-color: #C57B57 !important;
+            color: #fffaf5 !important;
+            border: 2px solid #1C1C1C !important;
+            border-radius: 8px !important;
+            font-weight: bold !important;
+            padding: 15px 40px !important;
+            font-size: 1.2rem !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 3px 3px 0 #1C1C1C !important;
+            font-family: 'Noto Sans TC', sans-serif !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+        }
+        
+        button:hover, .action-btn:hover, .btn-primary-custom:hover, .btn:hover {
+            background-color: #B85C38 !important;
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 5px 5px 0 #1C1C1C !important;
+            color: #fffaf5 !important;
+            text-decoration: none !important;
+        }
+        
+        /* 特殊按鈕樣式 */
+        .btn-success {
+            background: linear-gradient(135deg, #00C300, #00A000) !important;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #00A000, #008000) !important;
+        }
+        
+        /* 統計欄 */
+        .stats-bar {
+            display: flex !important;
+            justify-content: space-around !important;
+            background: #B85C38 !important;
+            color: #fffaf5 !important;
+            border-bottom: 3px solid #1C1C1C !important;
+            padding: 20px !important;
+            margin: 0 !important;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem !important;
+            font-weight: bold !important;
+            color: #fffaf5 !important;
+            text-shadow: 1px 1px 0 #1C1C1C !important;
+            display: block !important;
+        }
+        
+        .stat-label {
+            color: #fffaf5 !important;
+            font-size: 0.9rem !important;
+            opacity: 0.9;
+        }
+        
+        /* 等級徽章 */
+        .level-badge {
+            background: #B85C38 !important;
+            color: #fffaf5 !important;
+            border: 2px solid #1C1C1C !important;
+            padding: 8px 16px !important;
+            border-radius: 20px !important;
+            font-weight: bold !important;
+            display: inline-block !important;
+            font-size: 0.9rem !important;
+            box-shadow: 2px 2px 0 #1C1C1C !important;
+        }
+        
+        /* 輸入框樣式 */
+        .form-control {
+            border: 2px solid #1C1C1C !important;
+            border-radius: 8px !important;
+            background: #fffaf5 !important;
+            color: #1C1C1C !important;
+            padding: 0.75rem !important;
+            font-family: 'Noto Sans TC', sans-serif !important;
+        }
+        
+        .form-control:focus {
+            border-color: #C57B57 !important;
+            box-shadow: 0 0 0 0.2rem rgba(197, 123, 87, 0.25) !important;
+            outline: none !important;
+        }
+        
+        /* Alert 樣式 */
+        .alert {
+            border: 2px solid #1C1C1C !important;
+            box-shadow: 3px 3px 0 #1C1C1C !important;
+            background: #F4E8D8 !important;
+            color: #1C1C1C !important;
+            border-radius: 12px !important;
+        }
+        
+        /* 載入動畫 */
+        .spinner {
+            border: 5px solid #F4E8D8 !important;
+            border-top: 5px solid #C57B57 !important;
+            border-radius: 50% !important;
+            width: 60px !important;
+            height: 60px !important;
+            animation: spin 1s linear infinite !important;
+            margin: 0 auto 20px !important;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 開始畫面 */
+        #start-screen {
+            text-align: center !important;
+            padding: 60px 40px !important;
+        }
+        
+        /* 載入畫面 */
+        .loading {
+            text-align: center !important;
+            padding: 60px !important;
+        }
+        
+        /* 遊戲畫面 */
+        #game-screen {
+            display: none !important;
+        }
+        /* 移除重複樣式，使用遊戲容器樣式 */
         .header {
             text-align: center;
             margin-bottom: 30px;
