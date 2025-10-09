@@ -126,28 +126,28 @@ function showManualLogin() {
     document.getElementById('start-btn').style.display = 'inline-block';
 }
 
-// 显示用户 ID 输入界面
+// 显示昵称输入界面
 function showUserIdInput() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('manual-login-section').style.display = 'none';
     document.getElementById('user-info').style.display = 'none';
     document.getElementById('start-btn').style.display = 'none';
     
-    // 创建用户 ID 输入 HTML
-    const userIdInputHtml = `
-        <div id="line-user-id-input" class="mb-4">
+    // 创建昵称输入 HTML
+    const nicknameInputHtml = `
+        <div id="line-nickname-input" class="mb-4">
             <div class="alert alert-info">
-                <h5><i class="fab fa-line"></i> LINE 用户登入</h5>
-                <p class="mb-3">請輸入您的 LINE 用户 ID 來完成登入：</p>
+                <h5><i class="fab fa-line"></i> LINE 昵称登入</h5>
+                <p class="mb-3">請輸入您在 LINE Bot 中設置的昵稱來完成登入：</p>
                 
                 <div class="mb-3">
-                    <label for="line-user-id" class="form-label">LINE 用户 ID：</label>
-                    <input type="text" id="line-user-id" class="form-control" 
-                           placeholder="例如：U977c24d1fec3a2bf07035504e1444911" 
-                           maxlength="33">
+                    <label for="line-nickname" class="form-label">LINE 昵称：</label>
+                    <input type="text" id="line-nickname" class="form-control" 
+                           placeholder="例如：小明、阿華、醫學學生" 
+                           maxlength="20">
                     <div class="form-text">
                         <i class="fas fa-info-circle"></i>
-                        您的 LINE 用户 ID 通常以 "U" 開頭，共 33 個字符
+                        請輸入您在 LINE Bot 中設置的昵稱（2-20 個字符）
                     </div>
                 </div>
                 
@@ -159,26 +159,31 @@ function showUserIdInput() {
                         <i class="fas fa-arrow-left"></i> 返回
                     </button>
                 </div>
+                
+                <div class="text-muted small">
+                    <i class="fas fa-question-circle"></i>
+                    不知道昵称？請先在 LINE Bot 中設置昵称，或使用手動輸入方式
+                </div>
             </div>
         </div>
     `;
     
     // 插入到登录区域
     const loginSection = document.getElementById('login-section');
-    loginSection.insertAdjacentHTML('afterend', userIdInputHtml);
+    loginSection.insertAdjacentHTML('afterend', nicknameInputHtml);
 }
 
 // 发送验证码
 async function sendVerificationCode() {
-    const userId = document.getElementById('line-user-id').value.trim();
+    const nickname = document.getElementById('line-nickname').value.trim();
     
-    if (!userId) {
-        alert('請輸入 LINE 用户 ID');
+    if (!nickname) {
+        alert('請輸入 LINE 昵称');
         return;
     }
     
-    if (!userId.startsWith('U') || userId.length !== 33) {
-        alert('請輸入正確的 LINE 用户 ID 格式（以 U 開頭，共 33 個字符）');
+    if (nickname.length < 2 || nickname.length > 20) {
+        alert('請輸入正確的昵称格式（2-20 個字符）');
         return;
     }
     
@@ -188,12 +193,7 @@ async function sendVerificationCode() {
         
         // 保存验证码到本地存储
         localStorage.setItem('pendingVerificationCode', verificationCode);
-        localStorage.setItem('pendingUserId', userId);
-        
-        // 发送验证码到 LINE Bot
-        const message = {
-            text: `🔐 網頁登入驗證碼\n\n您的驗證碼是：${verificationCode}\n\n請在網頁中輸入此驗證碼完成登入。\n\n驗證碼有效期：5 分鐘`
-        };
+        localStorage.setItem('pendingNickname', nickname);
         
         // 调用 API 发送验证码
         const response = await fetch('/api/send-verification-code', {
@@ -202,16 +202,21 @@ async function sendVerificationCode() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                userId: userId,
+                nickname: nickname,
                 verificationCode: verificationCode
             })
         });
         
         if (response.ok) {
             // 显示验证码输入界面
-            showVerificationCodeInput(userId, verificationCode);
+            showVerificationCodeInput(nickname, verificationCode);
         } else {
-            alert('發送驗證碼失敗，請重試');
+            const errorData = await response.json();
+            if (response.status === 404) {
+                alert('找不到該昵称，請確認昵称是否正確，或先在 LINE Bot 中設置昵称');
+            } else {
+                alert('發送驗證碼失敗，請重試');
+            }
         }
         
     } catch (error) {
@@ -221,11 +226,11 @@ async function sendVerificationCode() {
 }
 
 // 显示验证码输入界面
-function showVerificationCodeInput(userId, verificationCode) {
-    // 移除用户 ID 输入界面
-    const userIdInput = document.getElementById('line-user-id-input');
-    if (userIdInput) {
-        userIdInput.remove();
+function showVerificationCodeInput(nickname, verificationCode) {
+    // 移除昵称输入界面
+    const nicknameInput = document.getElementById('line-nickname-input');
+    if (nicknameInput) {
+        nicknameInput.remove();
     }
     
     // 创建验证码输入 HTML
@@ -233,7 +238,7 @@ function showVerificationCodeInput(userId, verificationCode) {
         <div id="verification-code-input" class="mb-4">
             <div class="alert alert-success">
                 <h5><i class="fas fa-key"></i> 輸入驗證碼</h5>
-                <p class="mb-3">我們已向您的 LINE 發送驗證碼，請輸入收到的 6 位數字：</p>
+                <p class="mb-3">我們已向昵称「<strong>${nickname}</strong>」的 LINE 發送驗證碼，請輸入收到的 6 位數字：</p>
                 
                 <div class="mb-3">
                     <label for="verification-code" class="form-label">驗證碼：</label>
@@ -252,7 +257,7 @@ function showVerificationCodeInput(userId, verificationCode) {
                 
                 <div class="text-muted small">
                     <i class="fas fa-info-circle"></i>
-                    用户 ID：<code>${userId}</code> | 
+                    昵称：<code>${nickname}</code> | 
                     驗證碼：<code>${verificationCode}</code>（僅供測試）
                 </div>
             </div>
@@ -269,8 +274,10 @@ function showVerificationCodeInput(userId, verificationCode) {
 
 // 重新发送验证码
 async function resendVerificationCode() {
-    const userId = localStorage.getItem('pendingUserId');
-    if (userId) {
+    const nickname = localStorage.getItem('pendingNickname');
+    if (nickname) {
+        // 设置昵称到输入框
+        document.getElementById('line-nickname').value = nickname;
         await sendVerificationCode();
     }
 }
@@ -279,7 +286,7 @@ async function resendVerificationCode() {
 async function verifyCode() {
     const inputCode = document.getElementById('verification-code').value.trim();
     const expectedCode = localStorage.getItem('pendingVerificationCode');
-    const userId = localStorage.getItem('pendingUserId');
+    const nickname = localStorage.getItem('pendingNickname');
     
     if (!inputCode) {
         alert('請輸入驗證碼');
@@ -292,34 +299,16 @@ async function verifyCode() {
     }
     
     try {
-        // 验证成功，获取用户信息
+        // 验证成功，通过昵称获取用户信息
         const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
-            .eq('user_id', userId)
+            .eq('nickname', nickname)
             .single();
         
         if (userError || !userData) {
-            // 用户不存在，创建新用户
-            const newUser = {
-                user_id: userId,
-                nickname: `用户${userId.substr(-4)}`,
-                line_id: userId,
-                last_login: new Date().toISOString(),
-                created_at: new Date().toISOString()
-            };
-            
-            const { error: insertError } = await supabase
-                .from('users')
-                .insert([newUser]);
-            
-            if (insertError) {
-                console.error('❌ 创建用户失败:', insertError);
-                alert('創建用戶失敗，請重試');
-                return;
-            }
-            
-            userData = newUser;
+            alert('找不到該昵称的用戶信息，請確認昵称是否正確');
+            return;
         }
         
         // 完成登录
@@ -347,7 +336,7 @@ async function verifyCode() {
         
         // 清除临时数据
         localStorage.removeItem('pendingVerificationCode');
-        localStorage.removeItem('pendingUserId');
+        localStorage.removeItem('pendingNickname');
         
         console.log('✅ LINE Bot 验证码登录成功:', user.displayName);
         
