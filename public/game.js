@@ -131,7 +131,7 @@ async function lineLogin() {
     try {
         // LINE Login URL (使用现有的 LINE Login Channel ID)
         const channelId = '2004874394'; // 现有的 LINE Login Channel ID
-        const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback');
+        const redirectUri = encodeURIComponent('https://anatomy-quiz-bot.onrender.com/auth/callback');
         const state = 'anatomy_quiz_' + Date.now();
         
         const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${redirectUri}&state=${state}&scope=profile%20openid`;
