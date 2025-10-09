@@ -88,9 +88,28 @@ async function loadQuestions() {
             throw new Error('題庫為空');
         }
         
-        gameState.allQuestions = data;
-        console.log(`✅ 成功從 Supabase 載入 ${data.length} 道題目`);
-        console.log('📊 題目分佈:', getQuestionDistribution(data));
+        // 轉換數據格式以符合遊戲系統
+        const convertedQuestions = data.map(item => ({
+            id: item.id,
+            question: item.question,
+            options: [
+                item.option_1 || '',
+                item.option_2 || '',
+                item.option_3 || '',
+                item.option_4 || ''
+            ].filter(opt => opt.trim() !== ''), // 過濾空選項
+            correct_answer: (item.correct_option || 1) - 1, // 轉換為 0-based 索引
+            explanation: item.explanation || '',
+            level: item.level || 1,
+            category: item.category || '解剖學',
+            image_url: item.image_url || '',
+            qimage_url: item.qimage_url || ''
+        }));
+        
+        gameState.allQuestions = convertedQuestions;
+        console.log(`✅ 成功從 Supabase 載入 ${convertedQuestions.length} 道題目`);
+        console.log('📊 題目分佈:', getQuestionDistribution(convertedQuestions));
+        console.log('🔍 示例題目:', convertedQuestions[0]);
         
     } catch (err) {
         console.error('❌ 載入題目錯誤:', err);
@@ -167,6 +186,26 @@ function displayQuestion() {
     document.getElementById('question-category').textContent = question.category;
     document.getElementById('question-text').textContent = question.question;
     
+    // 顯示題目圖片（如果有）
+    const questionCard = document.querySelector('.question-card .card-body');
+    let imageHtml = '';
+    
+    if (question.qimage_url) {
+        imageHtml = `
+            <div class="question-image mb-3">
+                <img src="${question.qimage_url}" 
+                     alt="題目圖片" 
+                     class="img-fluid rounded"
+                     style="max-width: 100%; height: auto; max-height: 300px;"
+                     onerror="this.style.display='none'">
+            </div>
+        `;
+    }
+    
+    // 插入圖片到題目文字後面
+    const questionTextElement = document.getElementById('question-text');
+    questionTextElement.insertAdjacentHTML('afterend', imageHtml);
+    
     // 顯示選項
     const optionsContainer = document.getElementById('options-container');
     optionsContainer.innerHTML = '';
@@ -239,6 +278,22 @@ async function submitAnswer() {
     if (question.explanation) {
         document.getElementById('explanation-text').textContent = question.explanation;
         document.getElementById('explanation-area').style.display = 'block';
+    }
+    
+    // 顯示答案圖片（如果有）
+    if (question.image_url) {
+        const explanationArea = document.getElementById('explanation-area');
+        const imageHtml = `
+            <div class="answer-image mt-3">
+                <h5 class="mb-3"><i class="fas fa-image text-info"></i> 答案圖片：</h5>
+                <img src="${question.image_url}" 
+                     alt="答案圖片" 
+                     class="img-fluid rounded"
+                     style="max-width: 100%; height: auto; max-height: 400px;"
+                     onerror="this.style.display='none'">
+            </div>
+        `;
+        explanationArea.insertAdjacentHTML('beforeend', imageHtml);
     }
     
     // 顯示結果動畫
