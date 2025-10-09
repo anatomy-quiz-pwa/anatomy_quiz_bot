@@ -8,7 +8,7 @@ import os
 import logging
 import secrets
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory
 from supabase import create_client, Client
 import json
 from typing import Optional, Dict, List
@@ -519,6 +519,11 @@ def logout():
     """登出"""
     session.clear()
     return redirect(url_for('index'))
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """服務靜態檔案"""
+    return send_from_directory('static', filename)
 
 # Vercel 需要的入口點
 app = app
