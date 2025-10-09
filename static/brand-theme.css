@@ -17,10 +17,9 @@
   --shadow-hover: 7px 7px 12px rgba(28, 28, 28, 0.2);
 }
 
-body {
-  background-color: var(--brand-bg) !important;
-  color: var(--brand-dark) !important;
-  font-family: var(--brand-font-zh), var(--brand-font-en) !important;
+/* 強制覆蓋所有背景樣式 */
+html, body {
+  background-color: #F4E8D8 !important;
   background-image: 
     repeating-linear-gradient(
       0deg,
@@ -38,6 +37,11 @@ body {
     ) !important;
   background-size: 100% 100% !important;
   background-attachment: fixed !important;
+  color: #1C1C1C !important;
+  font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 20px !important;
 }
 
 /* 標題字體使用英文品牌字體 */
@@ -51,18 +55,18 @@ h1, h2, h3, h4, h5, h6 {
 .game-container {
   max-width: 900px !important;
   margin: 0 auto !important;
-  background: var(--brand-light) !important;
-  border: 3px solid var(--brand-dark) !important;
-  box-shadow: 8px 8px 0 var(--brand-dark) !important;
+  background: #fffaf5 !important;
+  border: 3px solid #1C1C1C !important;
+  box-shadow: 8px 8px 0 #1C1C1C !important;
   border-radius: 16px !important;
   overflow: hidden !important;
 }
 
 /* 遊戲標題區 */
 .game-header {
-  background: var(--brand-accent) !important;
-  color: var(--brand-light) !important;
-  border-bottom: 3px solid var(--brand-dark) !important;
+  background: #C57B57 !important;
+  color: #fffaf5 !important;
+  border-bottom: 3px solid #1C1C1C !important;
   padding: 30px !important;
   text-align: center;
 }
@@ -90,13 +94,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .game-header h1 {
-  color: var(--brand-light) !important;
-  text-shadow: 2px 2px 0 var(--brand-dark) !important;
+  color: #fffaf5 !important;
+  text-shadow: 2px 2px 0 #1C1C1C !important;
   font-weight: 700;
+  margin: 0 !important;
+  font-size: 2.5rem !important;
 }
 
 .game-header p {
-  color: var(--brand-light) !important;
+  color: #fffaf5 !important;
   opacity: 0.95;
 }
 
@@ -104,9 +110,9 @@ h1, h2, h3, h4, h5, h6 {
 .stats-bar {
   display: flex !important;
   justify-content: space-around !important;
-  background: var(--brand-warm) !important;
-  color: var(--brand-light) !important;
-  border-bottom: 3px solid var(--brand-dark) !important;
+  background: #B85C38 !important;
+  color: #fffaf5 !important;
+  border-bottom: 3px solid #1C1C1C !important;
   padding: 20px !important;
   margin: 0 !important;
 }
@@ -118,24 +124,26 @@ h1, h2, h3, h4, h5, h6 {
 .stat-value {
   font-size: 2rem;
   font-weight: bold;
-  color: var(--brand-light) !important;
-  text-shadow: 1px 1px 0 var(--brand-dark);
+  color: #fffaf5 !important;
+  text-shadow: 1px 1px 0 #1C1C1C;
+  display: block !important;
 }
 
 .stat-label {
-  color: var(--brand-light) !important;
+  color: #fffaf5 !important;
   font-size: 0.9rem;
   opacity: 0.9;
 }
 
 /* 卡片樣式 - 黑線條與陰影 */
 .card, .feature-card, .question-card {
-  background: var(--brand-light) !important;
-  border: 2px solid var(--brand-dark) !important;
-  box-shadow: 4px 4px 0 var(--brand-dark) !important;
+  background: #fffaf5 !important;
+  border: 2px solid #1C1C1C !important;
+  box-shadow: 4px 4px 0 #1C1C1C !important;
   border-radius: 12px !important;
   padding: 2rem !important;
   transition: all 0.3s ease;
+  margin: 20px 0 !important;
 }
 
 .card:hover, .feature-card:hover {
@@ -145,28 +153,29 @@ h1, h2, h3, h4, h5, h6 {
 
 /* 按鈕樣式 - 美式復古手繪風 */
 button, .action-btn, .btn-primary-custom {
-  background-color: var(--brand-accent) !important;
-  color: var(--brand-light) !important;
-  border: 2px solid var(--brand-dark) !important;
+  background-color: #C57B57 !important;
+  color: #fffaf5 !important;
+  border: 2px solid #1C1C1C !important;
   border-radius: 8px !important;
   font-weight: bold;
   padding: 15px 40px !important;
   font-size: 1.2rem !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 3px 3px 0 var(--brand-dark) !important;
-  font-family: var(--brand-font-zh) !important;
+  box-shadow: 3px 3px 0 #1C1C1C !important;
+  font-family: 'Noto Sans TC', sans-serif !important;
 }
 
 button:hover, .action-btn:hover, .btn-primary-custom:hover {
-  background-color: var(--brand-warm) !important;
+  background-color: #B85C38 !important;
   transform: translate(-2px, -2px) !important;
-  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+  box-shadow: 5px 5px 0 #1C1C1C !important;
+  color: #fffaf5 !important;
 }
 
 button:active {
   transform: translate(1px, 1px) !important;
-  box-shadow: 2px 2px 0 var(--brand-dark) !important;
+  box-shadow: 2px 2px 0 #1C1C1C !important;
 }
 
 /* 選項按鈕 */
@@ -174,42 +183,42 @@ button:active {
   width: 100% !important;
   padding: 20px !important;
   margin: 10px 0 !important;
-  background: var(--brand-light) !important;
-  border: 2px solid var(--brand-dark) !important;
+  background: #fffaf5 !important;
+  border: 2px solid #1C1C1C !important;
   border-radius: 15px !important;
-  color: var(--brand-dark) !important;
+  color: #1C1C1C !important;
   text-align: left !important;
   font-size: 1.1rem !important;
   font-weight: 500 !important;
-  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  box-shadow: 3px 3px 0 #1C1C1C !important;
   transition: all 0.3s ease;
   cursor: pointer !important;
   position: relative !important;
 }
 
 .option-btn:hover {
-  background: var(--brand-bg) !important;
+  background: #F4E8D8 !important;
   transform: translate(-2px, -2px) !important;
-  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+  box-shadow: 5px 5px 0 #1C1C1C !important;
 }
 
 .option-btn.selected {
-  background: var(--brand-accent) !important;
-  color: var(--brand-light) !important;
+  background: #C57B57 !important;
+  color: #fffaf5 !important;
   transform: translate(-2px, -2px) !important;
-  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+  box-shadow: 5px 5px 0 #1C1C1C !important;
 }
 
 .option-btn.correct {
   background: #88B04B !important;
-  color: var(--brand-light) !important;
-  border-color: var(--brand-dark) !important;
+  color: #fffaf5 !important;
+  border-color: #1C1C1C !important;
 }
 
 .option-btn.wrong {
   background: #DC3545 !important;
-  color: var(--brand-light) !important;
-  border-color: var(--brand-dark) !important;
+  color: #fffaf5 !important;
+  border-color: #1C1C1C !important;
 }
 
 /* Logo 樣式 */
