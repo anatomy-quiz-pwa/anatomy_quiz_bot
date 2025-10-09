@@ -371,6 +371,26 @@ async function lineLogin() {
 // 确保 lineLogin 函数是全局可访问的
 window.lineLogin = lineLogin;
 
+// 添加一个简单的测试函数
+window.testLineLogin = function() {
+    console.log('🧪 测试 LINE 登录函数');
+    try {
+        lineLogin();
+    } catch (error) {
+        console.error('❌ 测试失败:', error);
+    }
+};
+
+// 添加一个简单的测试函数来检查元素
+window.testElements = function() {
+    console.log('🔍 检查页面元素');
+    const loginSection = document.getElementById('login-section');
+    const lineLoginBtn = document.getElementById('line-login-btn');
+    console.log('login-section:', loginSection);
+    console.log('line-login-btn:', lineLoginBtn);
+    console.log('lineLogin function:', typeof lineLogin);
+};
+
 // 登出
 function logout() {
     // 清除本地存储
@@ -907,5 +927,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     console.log('✅ 页面初始化完成');
+    
+    // 测试：3秒后自动显示昵称输入界面
+    setTimeout(() => {
+        console.log('🧪 3秒后自动测试显示昵称输入界面');
+        showUserIdInput();
+    }, 3000);
 });
 
