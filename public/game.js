@@ -72,7 +72,7 @@ async function loadQuestions() {
         console.log('🔄 正在從 Supabase 載入題目...');
         
         const { data, error } = await supabase
-            .from('questions')
+            .from('anatomy_questions_v2')
             .select('*')
             .order('level', { ascending: true });
         
