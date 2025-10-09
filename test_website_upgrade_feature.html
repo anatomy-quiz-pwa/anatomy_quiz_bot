@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網站升級功能測試頁面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .test-header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .level-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .level-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        .level-card.active {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #ffd70015, #ff8c0015);
+        }
+        .level-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .level-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .level-image {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .test-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .test-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            border: none;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-test {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        .info-box {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: linear-gradient(135deg, #56ab2f15, #a8e6cf15);
+            border-left: 5px solid #56ab2f;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .image-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-flask"></i> 網站升級功能測試頁面</h1>
+            <p class="lead">測試所有等級的升級圖片和稱號顯示</p>
+        </div>
+
+        <div class="info-box">
+            <h4><i class="fas fa-info-circle"></i> 測試說明</h4>
+            <ul>
+                <li><strong>目的</strong>：驗證 14 個等級的升級圖片是否正確載入</li>
+                <li><strong>圖片來源</strong>：Supabase Storage (<code>linebot/level_*_poster.png</code>)</li>
+                <li><strong>測試方法</strong>：點擊「載入所有圖片」按鈕，檢查每個等級的圖片狀態</li>
+                <li><strong>預期結果</strong>：所有等級都顯示 ✅ 圖片載入成功</li>
+            </ul>
+        </div>
+
+        <div class="test-buttons">
+            <button class="test-btn btn-test" onclick="loadAllImages()">
+                <i class="fas fa-download"></i> 載入所有圖片
+            </button>
+            <button class="test-btn btn-test" onclick="testRandomLevel()">
+                <i class="fas fa-random"></i> 隨機測試一個等級
+            </button>
+            <button class="test-btn btn-test" onclick="clearAll()">
+                <i class="fas fa-redo"></i> 重置
+            </button>
+        </div>
+
+        <div class="success-box" id="summary" style="display: none;">
+            <h4><i class="fas fa-chart-bar"></i> 測試結果統計</h4>
+            <p id="summary-text"></p>
+        </div>
+
+        <div class="row" id="levels-container">
+            <!-- 等級卡片將由 JavaScript 生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 等級稱號定義（與 game.js 一致）
+        const LEVEL_TITLES = {
+            1: "解剖新手村",
+            2: "胚體學長",
+            3: "肌肉拆解師",
+            4: "神經探路員",
+            5: "解剖影武者",
+            6: "組織細胞使者",
+            7: "血管引導員",
+            8: "解剖研究員",
+            9: "解剖操盤手",
+            10: "解剖副教授",
+            11: "腦神經導師",
+            12: "人體地圖管理",
+            13: "解剖大魔導",
+            14: "解剖學傳說"
+        };
+
+        // Supabase Storage URL
+        const SUPABASE_STORAGE_URL = 'https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot';
+
+        // 統計數據
+        let loadedCount = 0;
+        let failedCount = 0;
+
+        // 初始化頁面
+        function init() {
+            const container = document.getElementById('levels-container');
+            container.innerHTML = '';
+
+            for (let level = 1; level <= 14; level++) {
+                const card = createLevelCard(level);
+                container.appendChild(card);
+            }
+        }
+
+        // 創建等級卡片
+        function createLevelCard(level) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+
+            const title = LEVEL_TITLES[level];
+            const imageUrl = `${SUPABASE_STORAGE_URL}/level_${level}_poster.png`;
+
+            col.innerHTML = `
+                <div class="level-card" id="card-${level}">
+                    <div class="level-number">等級 ${level}</div>
+                    <div class="level-title">${title}</div>
+                    <div class="image-status status-loading" id="status-${level}">
+                        <i class="fas fa-spinner fa-spin"></i> 等待載入...
+                    </div>
+                    <div id="image-container-${level}" style="display: none;">
+                        <img src="${imageUrl}" 
+                             alt="等級 ${level} 海報" 
+                             class="level-image"
+                             id="image-${level}"
+                             onload="handleImageLoad(${level})"
+                             onerror="handleImageError(${level})">
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        // 載入所有圖片
+        function loadAllImages() {
+            loadedCount = 0;
+            failedCount = 0;
+            
+            for (let level = 1; level <= 14; level++) {
+                const container = document.getElementById(`image-container-${level}`);
+                const status = document.getElementById(`status-${level}`);
+                
+                container.style.display = 'block';
+                status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 載入中...';
+                status.className = 'image-status status-loading';
+            }
+
+            // 顯示摘要區
+            document.getElementById('summary').style.display = 'block';
+            updateSummary();
+        }
+
+        // 測試隨機等級
+        function testRandomLevel() {
+            const randomLevel = Math.floor(Math.random() * 14) + 1;
+            const container = document.getElementById(`image-container-${randomLevel}`);
+            const card = document.getElementById(`card-${randomLevel}`);
+            
+            // 清除其他等級的 active 狀態
+            document.querySelectorAll('.level-card').forEach(c => c.classList.remove('active'));
+            
+            // 設置當前卡片為 active
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 載入圖片
+            container.style.display = 'block';
+            
+            alert(`🎲 隨機選擇：等級 ${randomLevel} - ${LEVEL_TITLES[randomLevel]}`);
+        }
+
+        // 重置
+        function clearAll() {
+            loadedCount = 0;
+            failedCount = 0;
+            init();
+            document.getElementById('summary').style.display = 'none';
+        }
+
+        // 處理圖片載入成功
+        function handleImageLoad(level) {
+            const status = document.getElementById(`status-${level}`);
+            status.innerHTML = '<i class="fas fa-check-circle"></i> 圖片載入成功';
+            status.className = 'image-status status-success';
+            
+            loadedCount++;
+            updateSummary();
+        }
+
+        // 處理圖片載入失敗
+        function handleImageError(level) {
+            const status = document.getElementById(`status-${level}`);
+            const imageUrl = `${SUPABASE_STORAGE_URL}/level_${level}_poster.png`;
+            status.innerHTML = `<i class="fas fa-exclamation-circle"></i> 圖片載入失敗<br><small class="text-muted">${imageUrl}</small>`;
+            status.className = 'image-status status-error';
+            
+            // 隱藏圖片容器
+            document.getElementById(`image-container-${level}`).style.display = 'none';
+            
+            failedCount++;
+            updateSummary();
+        }
+
+        // 更新統計摘要
+        function updateSummary() {
+            const total = loadedCount + failedCount;
+            const percentage = total > 0 ? Math.round((loadedCount / 14) * 100) : 0;
+            
+            const summaryText = `
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h2 class="text-primary">${total}/14</h2>
+                        <p>已測試</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="text-success">${loadedCount}</h2>
+                        <p>成功</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="text-danger">${failedCount}</h2>
+                        <p>失敗</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 class="text-info">${percentage}%</h2>
+                        <p>成功率</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('summary-text').innerHTML = summaryText;
+
+            // 如果全部完成，顯示最終結果
+            if (total === 14) {
+                if (loadedCount === 14) {
+                    setTimeout(() => {
+                        alert('🎉 測試完成！所有 14 個等級的圖片都載入成功！\n\n✅ 升級功能可以正常使用。');
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        alert(`⚠️ 測試完成！\n\n成功：${loadedCount} 個\n失敗：${failedCount} 個\n\n請檢查失敗的等級圖片是否存在於 Supabase Storage。`);
+                    }, 500);
+                }
+            }
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
