@@ -549,6 +549,47 @@ button:active {
             alert('測試功能已觸發！按鈕可以正常點擊。');
         };
         
+        // 遊戲狀態
+        let gameState = {
+            currentLevel: 1,
+            score: 0,
+            correctAnswers: 0,
+            totalAnswers: 0,
+            currentQuestion: null,
+            selectedAnswer: null
+        };
+
+        // 示例題目數據
+        const sampleQuestions = [
+            {
+                id: 1,
+                level: 1,
+                category: "解剖學基礎",
+                question: "人體有多少塊骨頭？",
+                options: ["206塊", "208塊", "204塊", "210塊"],
+                correct_answer: 0,
+                explanation: "成人人體共有206塊骨頭，這些骨頭組成了人體的骨骼系統。"
+            },
+            {
+                id: 2,
+                level: 1,
+                category: "解剖學基礎", 
+                question: "人體最大的器官是什麼？",
+                options: ["心臟", "肝臟", "皮膚", "肺"],
+                correct_answer: 2,
+                explanation: "皮膚是人體最大的器官，成年人的皮膚總面積約為1.5-2平方米。"
+            },
+            {
+                id: 3,
+                level: 1,
+                category: "解剖學基礎",
+                question: "人體有多少個心腔？",
+                options: ["2個", "3個", "4個", "5個"],
+                correct_answer: 2,
+                explanation: "人體心臟有4個心腔：左心房、右心房、左心室、右心室。"
+            }
+        ];
+
         // 開始遊戲函數
         window.startGame = function() {
             console.log('🎮 開始遊戲按鈕被點擊');
@@ -557,7 +598,7 @@ button:active {
             const nicknameInput = document.getElementById('nickname-input');
             const nickname = nicknameInput ? nicknameInput.value.trim() : '遊客';
             
-            alert('🎮 開始遊戲！\n\n暱稱：' + nickname + '\n\n遊戲功能正在開發中，敬請期待！');
+            console.log('玩家暱稱：', nickname);
             
             // 隱藏開始畫面，顯示載入中
             const startScreen = document.getElementById('start-screen');
@@ -576,22 +617,186 @@ button:active {
                         // 顯示統計欄
                         const statsBar = document.getElementById('stats-bar');
                         if (statsBar) statsBar.style.display = 'flex';
+                        
+                        // 載入第一題
+                        loadQuestion();
                     }
                 }, 2000);
             }
         };
+
+        // 載入題目函數
+        function loadQuestion() {
+            console.log('📚 載入題目');
+            
+            // 隨機選擇一題
+            const randomIndex = Math.floor(Math.random() * sampleQuestions.length);
+            gameState.currentQuestion = sampleQuestions[randomIndex];
+            
+            // 顯示題目
+            displayQuestion();
+        }
+
+        // 顯示題目函數
+        function displayQuestion() {
+            const question = gameState.currentQuestion;
+            if (!question) {
+                console.error('沒有題目可以顯示');
+                return;
+            }
+
+            console.log('顯示題目：', question.question);
+
+            // 更新等級和類別
+            const levelElement = document.getElementById('question-level');
+            const categoryElement = document.getElementById('question-category');
+            const questionTextElement = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+
+            if (levelElement) levelElement.textContent = `等級 ${question.level}`;
+            if (categoryElement) categoryElement.textContent = question.category;
+            if (questionTextElement) questionTextElement.textContent = question.question;
+
+            // 清空選項容器
+            if (optionsContainer) {
+                optionsContainer.innerHTML = '';
+                
+                // 創建選項按鈕
+                question.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn';
+                    button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                    button.onclick = () => selectAnswer(index);
+                    button.id = `option-${index}`;
+                    optionsContainer.appendChild(button);
+                });
+            }
+
+            // 重置選擇狀態
+            gameState.selectedAnswer = null;
+            
+            // 啟用提交按鈕
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.display = 'inline-block';
+            }
+
+            // 隱藏下一題按鈕
+            const nextBtn = document.getElementById('next-btn');
+            if (nextBtn) {
+                nextBtn.style.display = 'none';
+            }
+
+            // 隱藏解釋區域
+            const explanationArea = document.getElementById('explanation-area');
+            if (explanationArea) {
+                explanationArea.style.display = 'none';
+            }
+        }
+
+        // 選擇答案函數
+        function selectAnswer(index) {
+            console.log('選擇答案：', index);
+            
+            // 移除所有選中狀態
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 添加選中狀態
+            const selectedBtn = document.getElementById(`option-${index}`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+                gameState.selectedAnswer = index;
+                
+                // 啟用提交按鈕
+                const submitBtn = document.getElementById('submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            }
+        }
         
         // 提交答案函數
         window.submitAnswer = function() {
-            console.log('📝 提交答案按鈕被點擊');
-            alert('提交答案功能正在開發中...');
+            if (gameState.selectedAnswer === null) {
+                alert('請先選擇一個答案！');
+                return;
+            }
+
+            const question = gameState.currentQuestion;
+            const isCorrect = gameState.selectedAnswer === question.correct_answer;
+            
+            console.log('提交答案：', gameState.selectedAnswer, '正確答案：', question.correct_answer, '是否正確：', isCorrect);
+
+            // 禁用所有選項
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            // 顯示正確/錯誤狀態
+            document.querySelectorAll('.option-btn').forEach((btn, index) => {
+                if (index === question.correct_answer) {
+                    btn.classList.add('correct');
+                } else if (index === gameState.selectedAnswer && !isCorrect) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            // 更新統計
+            gameState.totalAnswers++;
+            if (isCorrect) {
+                gameState.correctAnswers++;
+                gameState.score += 10;
+                alert('🎉 答對了！獲得10分！');
+            } else {
+                alert('😢 答錯了！正確答案是：' + question.options[question.correct_answer]);
+            }
+
+            // 更新統計顯示
+            updateStats();
+
+            // 顯示解釋
+            const explanationArea = document.getElementById('explanation-area');
+            const explanationText = document.getElementById('explanation-text');
+            if (explanationArea && explanationText) {
+                explanationText.textContent = question.explanation;
+                explanationArea.style.display = 'block';
+            }
+
+            // 隱藏提交按鈕，顯示下一題按鈕
+            const submitBtn = document.getElementById('submit-btn');
+            const nextBtn = document.getElementById('next-btn');
+            if (submitBtn) submitBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'inline-block';
         };
         
         // 下一題函數
         window.nextQuestion = function() {
             console.log('➡️ 下一題按鈕被點擊');
-            alert('下一題功能正在開發中...');
+            
+            // 載入下一題
+            loadQuestion();
         };
+
+        // 更新統計顯示
+        function updateStats() {
+            const scoreElement = document.getElementById('stat-score');
+            const levelElement = document.getElementById('stat-level');
+            const correctElement = document.getElementById('stat-correct');
+            const streakElement = document.getElementById('stat-streak');
+
+            if (scoreElement) scoreElement.textContent = gameState.score;
+            if (levelElement) levelElement.textContent = gameState.currentLevel;
+            if (correctElement) {
+                const accuracy = gameState.totalAnswers > 0 
+                    ? Math.round((gameState.correctAnswers / gameState.totalAnswers) * 100)
+                    : 0;
+                correctElement.textContent = `${gameState.correctAnswers}/${gameState.totalAnswers} (${accuracy}%)`;
+            }
+            if (streakElement) streakElement.textContent = gameState.correctAnswers; // 簡化顯示
+        }
         
         function showNicknameInput() {
             // 隱藏登入按鈕
