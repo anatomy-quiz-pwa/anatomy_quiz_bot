@@ -1,70 +1,169 @@
 {% extends "base.html" %}
 
-{% block title %}解剖學測驗系統 - 首頁{% endblock %}
+{% block title %}解剖咬一口 Anatomy Bite - 遊戲化問答系統{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 text-center">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="card-title mb-4">
-                    <i class="fas fa-graduation-cap text-primary"></i>
-                    歡迎來到解剖學測驗系統
-                </h2>
-                <p class="card-text lead mb-4">
-                    這是一個專為醫學學生設計的解剖學知識測驗平台。<br>
-                    透過LINE登入，你可以：
-                </p>
+<div class="game-container">
+    <!-- 遊戲標題 -->
+    <div class="game-header">
+        <h1><i class="fas fa-brain"></i> 解剖咬一口 Anatomy Bite</h1>
+        <p class="mb-0">每天學一點解剖、咬一口文獻！</p>
+    </div>
+
+    <!-- 統計欄 -->
+    <div class="stats-bar" id="stats-bar" style="display: none;">
+        <div class="stat-item">
+            <span class="stat-value" id="stat-score">0</span>
+            <span class="stat-label">總分</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-level">1</span>
+            <span class="stat-label">等級</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-correct">0/0</span>
+            <span class="stat-label">答對率</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-streak">0</span>
+            <span class="stat-label">連續答對</span>
+        </div>
+    </div>
+
+    <!-- 遊戲內容 -->
+    <div class="game-content">
+        <!-- 開始畫面 -->
+        <div id="start-screen">
+            <div class="feature-card">
+                <div class="text-center mb-4">
+                    <img src="https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png" 
+                         alt="解剖咬一口開場圖片" 
+                         style="max-width: 300px; height: auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                </div>
                 
                 <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-brain fa-3x text-primary mb-3"></i>
-                            <h5>挑戰測驗</h5>
-                            <p class="text-muted">從基礎到專業的14個等級</p>
-                        </div>
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
+                        <h5>即時回饋</h5>
+                        <p class="text-muted">答題後立即知道結果</p>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
-                            <h5>排行榜競爭</h5>
-                            <p class="text-muted">與其他同學比拼成績</p>
-                        </div>
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-trophy fa-3x text-success mb-3"></i>
+                        <h5>遊戲化學習</h5>
+                        <p class="text-muted">14個等級等你挑戰</p>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <i class="fas fa-sync-alt fa-3x text-success mb-3"></i>
-                            <h5>數據同步</h5>
-                            <p class="text-muted">LINE機器人與網站數據同步</p>
-                        </div>
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                        <h5>進度追蹤</h5>
+                        <p class="text-muted">實時查看你的學習成果</p>
+                    </div>
+                </div>
+
+                <!-- LINE 登录区域 -->
+                <div id="login-section" class="mb-4">
+                    <div class="mb-3">
+                        <a href="/login" class="action-btn btn-success" style="background: linear-gradient(135deg, #00C300, #00A000); text-decoration: none; display: inline-block;">
+                            <i class="fab fa-line"></i> 使用 LINE 登入
+                        </a>
+                    </div>
+                    <p class="text-muted small">或</p>
+                </div>
+                
+                <!-- 手动输入昵称区域 -->
+                <div id="manual-login-section" class="mb-4" style="display: none;">
+                    <div class="mb-4">
+                        <input type="text" id="nickname-input" class="form-control form-control-lg" 
+                               placeholder="請輸入你的暱稱（選填）" maxlength="20">
                     </div>
                 </div>
                 
-                <div class="d-grid gap-2 d-md-block">
-                    <a href="/demo" class="btn btn-success btn-lg me-2">
-                        <i class="fas fa-play"></i>
-                        演示模式（立即體驗）
-                    </a>
-                    <a href="/login" class="btn btn-primary btn-lg">
-                        <i class="fab fa-line"></i>
-                        使用LINE登入
-                    </a>
+                <!-- 用户信息显示 -->
+                <div id="user-info" class="mb-4" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-user"></i>
+                        <span id="user-display-name"></span>
+                        <a href="/logout" class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="fas fa-sign-out-alt"></i> 登出
+                        </a>
+                    </div>
                 </div>
-                
-                <hr class="my-4">
-                
-                <div class="alert alert-info">
-                    <h5><i class="fas fa-info-circle"></i> 使用說明</h5>
-                    <ul class="text-start">
-                        <li>點擊「使用LINE登入」按鈕開始</li>
-                        <li>系統會自動同步你在LINE機器人中的遊戲記錄</li>
-                        <li>每個等級都有對應的題目難度</li>
-                        <li>答對5題即可升級到下一個等級</li>
-                        <li>總共有14個等級，從「新手解剖師」到「終極解剖師」</li>
-                    </ul>
+
+                <a href="/demo" class="action-btn btn-primary-custom" style="text-decoration: none; display: inline-block;">
+                    <i class="fas fa-play"></i> 開始遊戲
+                </a>
+            </div>
+        </div>
+
+        <!-- 載入中 -->
+        <div id="loading-screen" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <h4>正在載入題目...</h4>
+        </div>
+
+        <!-- 遊戲畫面 -->
+        <div id="game-screen" style="display: none;">
+            <!-- 進度條 -->
+            <div class="progress-bar-custom">
+                <div class="progress-fill" id="progress-bar" style="width: 0%">
+                    <span id="progress-text">0%</span>
                 </div>
+            </div>
+
+            <!-- 題目卡片 -->
+            <div class="question-card">
+                <div class="mb-3">
+                    <span class="level-badge" id="question-level">等級 1</span>
+                    <span class="badge bg-info ms-2" id="question-category">類別</span>
+                </div>
+                <div class="question-text" id="question-text">題目載入中...</div>
+                <div id="options-container"></div>
+            </div>
+
+            <!-- 解釋區域 -->
+            <div id="explanation-area" style="display: none;">
+                <div class="explanation-box">
+                    <h5><i class="fas fa-lightbulb text-warning"></i> 詳細解釋</h5>
+                    <p id="explanation-text"></p>
+                </div>
+            </div>
+
+            <!-- 按鈕區 -->
+            <div class="text-center mt-4">
+                <button class="action-btn btn-primary-custom" id="submit-btn" 
+                        onclick="submitAnswer()" disabled>
+                    <i class="fas fa-check"></i> 提交答案
+                </button>
+                <button class="action-btn btn-primary-custom" id="next-btn" 
+                        onclick="nextQuestion()" style="display: none;">
+                    <i class="fas fa-forward"></i> 下一題
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- 結果彈窗 -->
+<div class="result-modal" id="result-modal">
+    <div class="result-content">
+        <div id="result-icon"></div>
+        <h2 id="result-title"></h2>
+        <p id="result-message"></p>
+        <div id="result-stats"></div>
+    </div>
+</div>
+
+<script>
+// 簡化的 JavaScript 功能
+function startGame() {
+    window.location.href = '/demo';
+}
+
+function submitAnswer() {
+    // 簡化功能
+}
+
+function nextQuestion() {
+    // 簡化功能
+}
+</script>
 {% endblock %}
