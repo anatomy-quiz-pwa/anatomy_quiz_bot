@@ -1,47 +1,64 @@
-/* 自定義樣式 */
+/* 自定義樣式 - Anatomy Bite 品牌風格 */
 :root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
-    --success-color: #56ab2f;
-    --danger-color: #ff416c;
-    --warning-color: #ffd700;
-    --info-color: #17a2b8;
+    --primary-color: #C57B57;
+    --secondary-color: #B85C38;
+    --success-color: #88B04B;
+    --danger-color: #DC3545;
+    --warning-color: #B85C38;
+    --info-color: #C57B57;
+    --brand-bg: #F4E8D8;
+    --brand-dark: #1C1C1C;
+    --brand-light: #fffaf5;
 }
 
 body {
-    font-family: 'Microsoft JhengHei', 'PingFang TC', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--brand-bg);
+    color: var(--brand-dark);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 0.05em;
 }
 
 .gradient-bg {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: var(--primary-color);
 }
 
 .card-hover {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid var(--brand-dark);
+    box-shadow: 4px 4px 0 var(--brand-dark);
 }
 
 .card-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--brand-dark);
 }
 
 .btn-gradient {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    border: none;
-    color: white;
+    background: var(--primary-color);
+    border: 2px solid var(--brand-dark);
+    color: var(--brand-light);
     transition: all 0.3s ease;
+    box-shadow: 3px 3px 0 var(--brand-dark);
+    border-radius: 8px;
+    font-weight: bold;
 }
 
 .btn-gradient:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    color: white;
+    background: var(--secondary-color);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--brand-dark);
+    color: var(--brand-light);
 }
 
 .level-progress {
-    background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
     height: 8px;
     border-radius: 4px;
+    border: 1px solid var(--brand-dark);
     transition: width 0.3s ease;
 }
 
@@ -53,27 +70,31 @@ body {
 }
 
 .stat-card {
-    background: white;
-    border-radius: 15px;
+    background: var(--brand-light);
+    border-radius: 12px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--brand-dark);
+    box-shadow: 4px 4px 0 var(--brand-dark);
     transition: transform 0.3s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--brand-dark);
 }
 
 .stat-number {
     font-size: 2.5rem;
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--brand-dark);
+    text-shadow: 1px 1px 0 var(--primary-color);
     margin-bottom: 10px;
 }
 
 .stat-label {
-    color: #666;
+    color: var(--brand-dark);
+    opacity: 0.8;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -85,27 +106,30 @@ body {
 }
 
 .quiz-option {
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
+    background: var(--brand-light);
+    border: 2px solid var(--brand-dark);
     border-radius: 10px;
     padding: 15px 20px;
     margin: 10px 0;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    box-shadow: 3px 3px 0 var(--brand-dark);
 }
 
 .quiz-option:hover {
-    background: #e9ecef;
-    border-color: var(--primary-color);
-    transform: translateX(5px);
+    background: var(--brand-bg);
+    border-color: var(--brand-dark);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--brand-dark);
 }
 
 .quiz-option.selected {
     background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-    transform: translateX(10px);
+    color: var(--brand-light);
+    border-color: var(--brand-dark);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--brand-dark);
 }
 
 .quiz-option.selected::before {
@@ -115,35 +139,39 @@ body {
     top: 50%;
     transform: translateY(-50%);
     font-weight: bold;
+    color: var(--brand-light);
 }
 
 .leaderboard-item {
-    background: #f8f9fa;
+    background: var(--brand-light);
     border-radius: 10px;
     padding: 15px;
     margin: 10px 0;
+    border: 2px solid var(--brand-dark);
     border-left: 5px solid var(--primary-color);
     transition: all 0.3s ease;
+    box-shadow: 3px 3px 0 var(--brand-dark);
 }
 
 .leaderboard-item:hover {
-    background: #e9ecef;
-    transform: translateX(5px);
+    background: var(--brand-bg);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--brand-dark);
 }
 
 .rank-1 { 
-    border-left-color: var(--warning-color);
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), #f8f9fa);
+    border-left-color: var(--secondary-color);
+    background: var(--brand-light);
 }
 
 .rank-2 { 
-    border-left-color: #c0c0c0;
-    background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), #f8f9fa);
+    border-left-color: var(--primary-color);
+    background: var(--brand-light);
 }
 
 .rank-3 { 
-    border-left-color: #cd7f32;
-    background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), #f8f9fa);
+    border-left-color: var(--brand-dark);
+    background: var(--brand-light);
 }
 
 .medal {
@@ -152,20 +180,22 @@ body {
 }
 
 .level-badge {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    color: white;
+    background: var(--secondary-color);
+    color: var(--brand-light);
     padding: 8px 16px;
     border-radius: 20px;
+    border: 2px solid var(--brand-dark);
     font-weight: bold;
     display: inline-block;
     font-size: 0.9rem;
+    box-shadow: 2px 2px 0 var(--brand-dark);
 }
 
 .loading-spinner {
     display: inline-block;
     width: 20px;
     height: 20px;
-    border: 3px solid rgba(102, 126, 234, 0.3);
+    border: 3px solid var(--brand-bg);
     border-radius: 50%;
     border-top-color: var(--primary-color);
     animation: spin 1s ease-in-out infinite;
@@ -198,9 +228,11 @@ body {
 
 .stat-box {
     padding: 15px;
-    background: rgba(102, 126, 234, 0.1);
+    background: var(--brand-bg);
+    border: 2px solid var(--brand-dark);
     border-radius: 10px;
     margin: 5px 0;
+    box-shadow: 2px 2px 0 var(--brand-dark);
 }
 
 .stat-box h4 {

@@ -1,0 +1,314 @@
+/* === Anatomy Bite 品牌主題 === */
+
+:root {
+  /* 品牌色彩 */
+  --brand-bg: #F4E8D8;
+  --brand-dark: #1C1C1C;
+  --brand-accent: #C57B57;
+  --brand-warm: #B85C38;
+  --brand-light: #fffaf5;
+  
+  /* 品牌字體 */
+  --brand-font-en: 'Playfair Display', serif;
+  --brand-font-zh: 'Noto Sans TC', sans-serif;
+  
+  /* 陰影效果 */
+  --shadow-soft: 4px 4px 8px rgba(28, 28, 28, 0.15);
+  --shadow-hover: 7px 7px 12px rgba(28, 28, 28, 0.2);
+}
+
+body {
+  background-color: var(--brand-bg) !important;
+  color: var(--brand-dark) !important;
+  font-family: var(--brand-font-zh), var(--brand-font-en) !important;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(28, 28, 28, 0.02) 2px,
+      rgba(28, 28, 28, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(28, 28, 28, 0.02) 2px,
+      rgba(28, 28, 28, 0.02) 4px
+    ) !important;
+  background-size: 100% 100% !important;
+  background-attachment: fixed !important;
+}
+
+/* 標題字體使用英文品牌字體 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--brand-font-en) !important;
+  letter-spacing: 0.05em;
+  color: var(--brand-dark);
+}
+
+/* 遊戲容器 - 美式復古風格 */
+.game-container {
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  background: var(--brand-light) !important;
+  border: 3px solid var(--brand-dark) !important;
+  box-shadow: 8px 8px 0 var(--brand-dark) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+/* 遊戲標題區 */
+.game-header {
+  background: var(--brand-accent) !important;
+  color: var(--brand-light) !important;
+  border-bottom: 3px solid var(--brand-dark) !important;
+  padding: 30px !important;
+  text-align: center;
+}
+
+.game-header h1 {
+  color: var(--brand-light) !important;
+  text-shadow: 2px 2px 0 var(--brand-dark) !important;
+  font-weight: 700;
+}
+
+.game-header p {
+  color: var(--brand-light) !important;
+  opacity: 0.95;
+}
+
+/* 統計欄 - 骨色與深色對比 */
+.stats-bar {
+  background: var(--brand-warm) !important;
+  color: var(--brand-light) !important;
+  border-bottom: 3px solid var(--brand-dark) !important;
+  padding: 20px !important;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--brand-light) !important;
+  text-shadow: 1px 1px 0 var(--brand-dark);
+}
+
+.stat-label {
+  color: var(--brand-light) !important;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* 卡片樣式 - 黑線條與陰影 */
+.card, .feature-card, .question-card {
+  background: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  box-shadow: 4px 4px 0 var(--brand-dark) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+  transition: all 0.3s ease;
+}
+
+.card:hover, .feature-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--brand-dark) !important;
+}
+
+/* 按鈕樣式 - 美式復古手繪風 */
+button, .action-btn, .btn-primary-custom {
+  background-color: var(--brand-accent) !important;
+  color: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 8px !important;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  font-family: var(--brand-font-zh) !important;
+}
+
+button:hover, .action-btn:hover, .btn-primary-custom:hover {
+  background-color: var(--brand-warm) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+}
+
+button:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 2px 2px 0 var(--brand-dark) !important;
+}
+
+/* 選項按鈕 */
+.option-btn {
+  background: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  color: var(--brand-dark) !important;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  transition: all 0.3s ease;
+}
+
+.option-btn:hover {
+  background: var(--brand-bg) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+}
+
+.option-btn.selected {
+  background: var(--brand-accent) !important;
+  color: var(--brand-light) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+}
+
+.option-btn.correct {
+  background: #88B04B !important;
+  color: var(--brand-light) !important;
+  border-color: var(--brand-dark) !important;
+}
+
+.option-btn.wrong {
+  background: #DC3545 !important;
+  color: var(--brand-light) !important;
+  border-color: var(--brand-dark) !important;
+}
+
+/* Logo 樣式 */
+.logo {
+  filter: contrast(110%) saturate(95%);
+  width: 120px;
+  margin: 0 auto;
+  display: block;
+  border: 2px solid var(--brand-dark);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--brand-dark);
+}
+
+/* 等級徽章 */
+.level-badge {
+  background: var(--brand-warm) !important;
+  color: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  box-shadow: 2px 2px 0 var(--brand-dark) !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  font-weight: bold;
+}
+
+/* 進度條 */
+.progress-bar-custom {
+  background: var(--brand-bg) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 15px !important;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 4px rgba(28, 28, 28, 0.1);
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, var(--brand-warm), var(--brand-accent)) !important;
+  color: var(--brand-light) !important;
+  text-shadow: 1px 1px 0 var(--brand-dark);
+}
+
+/* 解釋框 */
+.explanation-box {
+  background: var(--brand-bg) !important;
+  border-left: 5px solid var(--brand-warm) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-left-width: 5px !important;
+  padding: 20px !important;
+  border-radius: 10px !important;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+}
+
+.explanation-box h5 {
+  color: var(--brand-dark);
+}
+
+/* 載入動畫 */
+.spinner {
+  border: 5px solid var(--brand-bg) !important;
+  border-top: 5px solid var(--brand-accent) !important;
+  border-radius: 50%;
+}
+
+/* 結果彈窗 */
+.result-modal {
+  background: rgba(28, 28, 28, 0.85) !important;
+}
+
+.result-content {
+  background: var(--brand-light) !important;
+  border: 3px solid var(--brand-dark) !important;
+  box-shadow: 8px 8px 0 var(--brand-dark) !important;
+  color: var(--brand-dark);
+}
+
+/* Bootstrap 元件覆蓋 */
+.badge {
+  border: 1px solid var(--brand-dark) !important;
+  font-family: var(--brand-font-zh) !important;
+}
+
+.alert {
+  border: 2px solid var(--brand-dark) !important;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  background: var(--brand-bg) !important;
+  color: var(--brand-dark) !important;
+}
+
+/* 輸入框樣式 */
+.form-control {
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 8px !important;
+  background: var(--brand-light) !important;
+  color: var(--brand-dark) !important;
+  padding: 0.75rem !important;
+  font-family: var(--brand-font-zh) !important;
+}
+
+.form-control:focus {
+  border-color: var(--brand-accent) !important;
+  box-shadow: 0 0 0 0.2rem rgba(197, 123, 87, 0.25) !important;
+  outline: none;
+}
+
+/* Icon 顏色調整 */
+.fa, .fas, .fab {
+  color: inherit;
+}
+
+.text-warning {
+  color: var(--brand-warm) !important;
+}
+
+.text-success {
+  color: #88B04B !important;
+}
+
+.text-primary {
+  color: var(--brand-accent) !important;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .game-container {
+    border-width: 2px !important;
+    box-shadow: 4px 4px 0 var(--brand-dark) !important;
+  }
+  
+  button, .action-btn {
+    padding: 0.6rem 1.2rem !important;
+  }
+  
+  .option-btn:hover,
+  .option-btn.selected {
+    transform: none !important;
+    box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  }
+}
+

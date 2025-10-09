@@ -368,6 +368,9 @@ async function lineLogin() {
     }
 }
 
+// 确保 lineLogin 函数是全局可访问的
+window.lineLogin = lineLogin;
+
 // 登出
 function logout() {
     // 清除本地存储
@@ -897,8 +900,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化 LINE 登录
     initLineLogin();
     
-    // 添加事件监听器
-    document.getElementById('line-login-btn').addEventListener('click', lineLogin);
-    document.getElementById('logout-btn').addEventListener('click', logout);
+    // 添加事件监听器（只添加 logout 按钮，LINE 登录按钮使用 onclick）
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    console.log('✅ 页面初始化完成');
 });
 

@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>解剖學測驗機器人 - 即時排行榜</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,8 +16,23 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans TC', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F4E8D8;
+            background-image: 
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(28, 28, 28, 0.02) 2px,
+                  rgba(28, 28, 28, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(28, 28, 28, 0.02) 2px,
+                  rgba(28, 28, 28, 0.02) 4px
+                );
             min-height: 100vh;
             padding: 20px;
         }
@@ -26,19 +45,23 @@
         .header {
             text-align: center;
             margin-bottom: 40px;
-            color: white;
+            color: #1C1C1C;
         }
 
         .header h1 {
+            font-family: 'Playfair Display', serif;
             font-size: 3rem;
             font-weight: 700;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: #1C1C1C;
+            text-shadow: 2px 2px 0 #C57B57;
+            letter-spacing: 0.05em;
         }
 
         .header p {
             font-size: 1.2rem;
-            opacity: 0.9;
+            color: #1C1C1C;
+            opacity: 0.85;
             margin-bottom: 20px;
         }
 
@@ -51,23 +74,25 @@
         }
 
         .stat-item {
-            background: rgba(255, 255, 255, 0.2);
+            background: #fffaf5;
             padding: 15px 25px;
-            border-radius: 15px;
+            border-radius: 12px;
             text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid #1C1C1C;
+            box-shadow: 4px 4px 0 #1C1C1C;
         }
 
         .stat-item .value {
             font-size: 1.8rem;
             font-weight: bold;
-            color: white;
+            color: #1C1C1C;
+            text-shadow: 1px 1px 0 #C57B57;
         }
 
         .stat-item .label {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+            color: #1C1C1C;
+            opacity: 0.8;
             margin-top: 5px;
         }
 
@@ -80,44 +105,52 @@
 
         .period-btn {
             padding: 12px 24px;
-            border: none;
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
+            background: #fffaf5;
+            color: #1C1C1C;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 1rem;
-            backdrop-filter: blur(10px);
+            font-weight: 500;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
 
         .period-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            background: #C57B57;
+            color: #fffaf5;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #1C1C1C;
         }
 
         .period-btn.active {
-            background: rgba(255, 255, 255, 0.9);
-            color: #667eea;
+            background: #B85C38;
+            color: #fffaf5;
             font-weight: bold;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #1C1C1C;
         }
 
         .leaderboard-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            background: #fffaf5;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(20px);
+            border: 3px solid #1C1C1C;
+            box-shadow: 8px 8px 0 #1C1C1C;
         }
 
         .leaderboard-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: #C57B57;
+            color: #fffaf5;
             padding: 25px;
             text-align: center;
+            border-bottom: 3px solid #1C1C1C;
         }
 
         .leaderboard-header h2 {
+            font-family: 'Playfair Display', serif;
             font-size: 2rem;
+            letter-spacing: 0.05em;
             margin-bottom: 10px;
         }
 
@@ -132,22 +165,23 @@
         }
 
         .leaderboard-table th {
-            background: #f8f9fa;
+            background: #F4E8D8;
             padding: 20px 15px;
             text-align: left;
             font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
+            color: #1C1C1C;
+            border-bottom: 2px solid #1C1C1C;
         }
 
         .leaderboard-table td {
             padding: 20px 15px;
-            border-bottom: 1px solid #dee2e6;
-            transition: background-color 0.3s ease;
+            border-bottom: 1px solid #1C1C1C;
+            transition: all 0.3s ease;
+            color: #1C1C1C;
         }
 
         .leaderboard-table tr:hover {
-            background-color: #f8f9fa;
+            background-color: #F4E8D8;
         }
 
         .rank {
@@ -157,29 +191,40 @@
             text-align: center;
         }
 
-        .rank-1 { color: #ffd700; }
-        .rank-2 { color: #c0c0c0; }
-        .rank-3 { color: #cd7f32; }
+        .rank-1 { 
+            color: #B85C38;
+            text-shadow: 1px 1px 0 #1C1C1C;
+        }
+        .rank-2 { 
+            color: #C57B57;
+            text-shadow: 1px 1px 0 #1C1C1C;
+        }
+        .rank-3 { 
+            color: #1C1C1C;
+            text-shadow: 1px 1px 0 #C57B57;
+        }
 
         .player-name {
             font-weight: 600;
-            color: #2c3e50;
+            color: #1C1C1C;
             font-size: 1.1rem;
         }
 
         .score {
             font-weight: bold;
-            color: #27ae60;
+            color: #B85C38;
             font-size: 1.1rem;
         }
 
         .level {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: #B85C38;
+            color: #fffaf5;
             padding: 5px 12px;
             border-radius: 15px;
+            border: 2px solid #1C1C1C;
             font-size: 0.9rem;
             font-weight: 500;
+            box-shadow: 2px 2px 0 #1C1C1C;
         }
 
         .loading {

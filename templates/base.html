@@ -4,18 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}解剖學測驗系統{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F4E8D8;
+            background-image: 
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(28, 28, 28, 0.02) 2px,
+                  rgba(28, 28, 28, 0.02) 4px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(28, 28, 28, 0.02) 2px,
+                  rgba(28, 28, 28, 0.02) 4px
+                );
             min-height: 100vh;
-            font-family: 'Microsoft JhengHei', sans-serif;
+            font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.05em;
         }
         .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: #fffaf5;
+            border-radius: 16px;
+            border: 3px solid #1C1C1C;
+            box-shadow: 8px 8px 0 #1C1C1C;
             margin: 20px auto;
             padding: 30px;
             max-width: 800px;
@@ -24,69 +49,85 @@
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #1C1C1C;
         }
         .header h1 {
-            color: #333;
+            color: #1C1C1C;
             font-weight: bold;
             margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #C57B57;
         }
         .header p {
-            color: #666;
+            color: #1C1C1C;
             font-size: 1.1em;
+            opacity: 0.85;
         }
         .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 25px;
+            background: #C57B57;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
             padding: 12px 30px;
             font-weight: bold;
             transition: all 0.3s ease;
+            color: #fffaf5;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            background: #B85C38;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #1C1C1C;
+            color: #fffaf5;
         }
         .btn-success {
-            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
-            border: none;
-            border-radius: 25px;
+            background: #88B04B;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
             padding: 12px 30px;
             font-weight: bold;
+            color: #fffaf5;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
         .btn-danger {
-            background: linear-gradient(45deg, #ff416c, #ff4b2b);
-            border: none;
-            border-radius: 25px;
+            background: #DC3545;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
             padding: 12px 30px;
             font-weight: bold;
+            color: #fffaf5;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
         .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid #1C1C1C;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 #1C1C1C;
             margin-bottom: 20px;
+            background: #fffaf5;
         }
         .card-header {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
+            background: #C57B57;
+            color: #fffaf5;
+            border-radius: 10px 10px 0 0 !important;
+            border-bottom: 2px solid #1C1C1C;
             font-weight: bold;
         }
         .stats-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border-radius: 15px;
+            background: #B85C38;
+            color: #fffaf5;
+            border: 2px solid #1C1C1C;
+            border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 4px 4px 0 #1C1C1C;
         }
         .level-badge {
-            background: linear-gradient(45deg, #ffd89b, #19547b);
-            color: white;
+            background: #B85C38;
+            color: #fffaf5;
+            border: 2px solid #1C1C1C;
             padding: 8px 16px;
             border-radius: 20px;
             font-weight: bold;
             display: inline-block;
+            box-shadow: 2px 2px 0 #1C1C1C;
         }
         .loading {
             text-align: center;
@@ -100,33 +141,40 @@
             border: none;
         }
         .quiz-option {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
+            background: #fffaf5;
+            border: 2px solid #1C1C1C;
             border-radius: 10px;
             padding: 15px;
             margin: 10px 0;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
         .quiz-option:hover {
-            background: #e9ecef;
-            border-color: #667eea;
+            background: #F4E8D8;
+            border-color: #1C1C1C;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #1C1C1C;
         }
         .quiz-option.selected {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
+            background: #C57B57;
+            color: #fffaf5;
+            border-color: #1C1C1C;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #1C1C1C;
         }
         .leaderboard-item {
-            background: #f8f9fa;
+            background: #fffaf5;
             border-radius: 10px;
             padding: 15px;
             margin: 10px 0;
-            border-left: 5px solid #667eea;
+            border: 2px solid #1C1C1C;
+            border-left: 5px solid #C57B57;
+            box-shadow: 3px 3px 0 #1C1C1C;
         }
-        .rank-1 { border-left-color: #ffd700; }
-        .rank-2 { border-left-color: #c0c0c0; }
-        .rank-3 { border-left-color: #cd7f32; }
+        .rank-1 { border-left-color: #B85C38; }
+        .rank-2 { border-left-color: #C57B57; }
+        .rank-3 { border-left-color: #1C1C1C; }
     </style>
 </head>
 <body>
