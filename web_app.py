@@ -263,7 +263,8 @@ def get_leaderboard_data() -> List[Dict]:
 @app.route('/')
 def index():
     """首頁 - 使用public/index.html"""
-    return send_from_directory('public', 'index.html')
+    public_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
+    return send_from_directory(public_dir, 'index.html')
 
 @app.route('/login')
 def login():
@@ -523,12 +524,14 @@ def logout():
 @app.route('/static/<path:filename>')
 def static_files(filename):
     """服務靜態檔案"""
-    return send_from_directory('static', filename)
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    return send_from_directory(static_dir, filename)
 
 @app.route('/public/<path:filename>')
 def public_files(filename):
     """服務public資料夾檔案"""
-    return send_from_directory('public', filename)
+    public_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
+    return send_from_directory(public_dir, filename)
 
 # Vercel 需要的入口點
 app = app
