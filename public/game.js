@@ -5,14 +5,22 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // 初始化 Supabase 客戶端
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 等級稱號對應
+// 等級稱號對應（與 LINE Bot 保持一致）
 const LEVEL_TITLES = {
-    1: "新手解剖師",
-    2: "初級解剖師", 3: "初級解剖師",
-    4: "中級解剖師", 5: "中級解剖師", 6: "中級解剖師", 7: "中級解剖師",
-    8: "高級解剖師", 9: "高級解剖師", 10: "高級解剖師", 11: "高級解剖師",
-    12: "專家解剖師", 13: "專家解剖師",
-    14: "終極解剖師"
+    1: "解剖新手村",
+    2: "胚體學長",
+    3: "肌肉拆解師",
+    4: "神經探路員",
+    5: "解剖影武者",
+    6: "組織細胞使者",
+    7: "血管引導員",
+    8: "解剖研究員",
+    9: "解剖操盤手",
+    10: "解剖副教授",
+    11: "腦神經導師",
+    12: "人體地圖管理",
+    13: "解剖大魔導",
+    14: "解剖學傳說"
 };
 
 // 遊戲狀態
@@ -35,14 +43,13 @@ let gameState = {
 // LINE 登录功能
 async function initLineLogin() {
     try {
-        // 检查是否有 LINE 登录参数
+        // 检查是否有 LINE 用户信息参数
         const urlParams = new URLSearchParams(window.location.search);
-        const lineCode = urlParams.get('code');
-        const lineState = urlParams.get('state');
+        const lineUser = urlParams.get('line_user');
         
-        if (lineCode) {
+        if (lineUser) {
             // 处理 LINE 登录回调
-            await handleLineCallback(lineCode, lineState);
+            await handleLineCallback(lineUser);
         } else {
             // 检查本地存储的登录状态
             const savedUser = localStorage.getItem('lineUser');
@@ -65,29 +72,26 @@ async function initLineLogin() {
 }
 
 // 处理 LINE 登录回调
-async function handleLineCallback(code, state) {
+async function handleLineCallback(lineUserData) {
     try {
-        // 这里需要后端 API 来交换 access token
-        // 暂时使用模拟数据
-        const mockUser = {
-            userId: 'U' + Math.random().toString(36).substr(2, 32),
-            displayName: 'LINE 用户',
-            pictureUrl: 'https://via.placeholder.com/100'
-        };
+        // 解析用户信息
+        const user = JSON.parse(decodeURIComponent(lineUserData));
         
-        gameState.user = mockUser;
+        gameState.user = user;
         gameState.isLoggedIn = true;
-        gameState.nickname = mockUser.displayName;
-        gameState.userId = mockUser.userId;
+        gameState.nickname = user.displayName;
+        gameState.userId = user.userId;
         
         // 保存到本地存储
-        localStorage.setItem('lineUser', JSON.stringify(mockUser));
+        localStorage.setItem('lineUser', JSON.stringify(user));
         
-        showUserInfo(mockUser);
-        await saveUserToSupabase(mockUser);
+        showUserInfo(user);
+        await saveUserToSupabase(user);
         
         // 清除 URL 参数
         window.history.replaceState({}, document.title, window.location.pathname);
+        
+        console.log('✅ LINE 登录成功:', user.displayName);
         
     } catch (error) {
         console.error('❌ 处理 LINE 回调失败:', error);
@@ -125,9 +129,9 @@ function showManualLogin() {
 // LINE 登录
 async function lineLogin() {
     try {
-        // LINE Login URL (需要配置实际的 Channel ID 和 Callback URL)
-        const channelId = 'YOUR_CHANNEL_ID'; // 需要替换为实际的 Channel ID
-        const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+        // LINE Login URL (使用现有的 LINE Login Channel ID)
+        const channelId = '2004874394'; // 现有的 LINE Login Channel ID
+        const redirectUri = encodeURIComponent(window.location.origin + '/api/line-login');
         const state = 'anatomy_quiz_' + Date.now();
         
         const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${redirectUri}&state=${state}&scope=profile%20openid`;
@@ -285,6 +289,13 @@ function getQuestionDistribution(questions) {
 async function nextQuestion() {
     // 隱藏上一題的結果
     document.getElementById('explanation-area').style.display = 'none';
+    
+    // 清除上一題的圖片
+    const existingAnswerImage = document.querySelector('.answer-image');
+    if (existingAnswerImage) {
+        existingAnswerImage.remove();
+    }
+    
     document.getElementById('submit-btn').style.display = 'inline-block';
     document.getElementById('next-btn').style.display = 'none';
     document.getElementById('submit-btn').disabled = true;
@@ -336,25 +347,11 @@ function displayQuestion() {
     document.getElementById('question-category').textContent = question.category;
     document.getElementById('question-text').textContent = question.question;
     
-    // 顯示題目圖片（如果有）
-    const questionCard = document.querySelector('.question-card .card-body');
-    let imageHtml = '';
-    
-    if (question.qimage_url) {
-        imageHtml = `
-            <div class="question-image mb-3">
-                <img src="${question.qimage_url}" 
-                     alt="題目圖片" 
-                     class="img-fluid rounded"
-                     style="max-width: 100%; height: auto; max-height: 300px;"
-                     onerror="this.style.display='none'">
-            </div>
-        `;
+    // 移除之前可能存在的圖片
+    const existingImage = document.querySelector('.question-image');
+    if (existingImage) {
+        existingImage.remove();
     }
-    
-    // 插入圖片到題目文字後面
-    const questionTextElement = document.getElementById('question-text');
-    questionTextElement.insertAdjacentHTML('afterend', imageHtml);
     
     // 顯示選項
     const optionsContainer = document.getElementById('options-container');
@@ -415,8 +412,9 @@ async function submitAnswer() {
         
         // 檢查是否升級（每5題正確答案升一級）
         if (gameState.correctAnswers % 5 === 0 && gameState.currentLevel < 14) {
+            const oldLevel = gameState.currentLevel;
             gameState.currentLevel++;
-            showLevelUpAnimation();
+            showLevelUpAnimation(oldLevel, gameState.currentLevel);
         }
     } else {
         gameState.streak = 0;
@@ -430,14 +428,17 @@ async function submitAnswer() {
         document.getElementById('explanation-area').style.display = 'block';
     }
     
-    // 顯示答案圖片（如果有）
-    if (question.image_url) {
+    // 顯示圖片（優先使用 image_url，若無則使用 qimage_url）
+    // 根據 Supabase 資料庫欄位：image_url 為答案圖片，qimage_url 為題目圖片
+    const imageUrl = question.image_url || question.qimage_url;
+    
+    if (imageUrl) {
         const explanationArea = document.getElementById('explanation-area');
         const imageHtml = `
             <div class="answer-image mt-3">
-                <h5 class="mb-3"><i class="fas fa-image text-info"></i> 答案圖片：</h5>
-                <img src="${question.image_url}" 
-                     alt="答案圖片" 
+                <h5 class="mb-3"><i class="fas fa-image text-info"></i> 補充圖片：</h5>
+                <img src="${imageUrl}" 
+                     alt="補充圖片" 
                      class="img-fluid rounded"
                      style="max-width: 100%; height: auto; max-height: 400px;"
                      onerror="this.style.display='none'">
@@ -483,26 +484,56 @@ function showResultAnimation(isCorrect) {
     }, 1500);
 }
 
-// 顯示升級動畫
-function showLevelUpAnimation() {
+// 顯示升級動畫（參考 LINE Bot 設計）
+function showLevelUpAnimation(oldLevel, newLevel) {
     const modal = document.getElementById('result-modal');
     const icon = document.getElementById('result-icon');
     const title = document.getElementById('result-title');
     const message = document.getElementById('result-message');
     const stats = document.getElementById('result-stats');
     
-    icon.innerHTML = '<i class="fas fa-trophy fa-5x text-warning"></i>';
-    title.textContent = '恭喜升級！🎊';
+    const oldTitle = LEVEL_TITLES[oldLevel];
+    const newTitle = LEVEL_TITLES[newLevel];
+    
+    // 升級圖片 URL（從 Supabase Storage）
+    const levelPosterUrl = `https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_${newLevel}_poster.png`;
+    
+    // 設置升級圖片
+    icon.innerHTML = `
+        <div class="level-up-image-container">
+            <img src="${levelPosterUrl}" 
+                 alt="等級 ${newLevel} 海報" 
+                 class="level-up-poster"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="level-up-fallback" style="display: none;">
+                <i class="fas fa-trophy fa-5x text-warning"></i>
+            </div>
+        </div>
+    `;
+    
+    title.innerHTML = '🎉 恭喜升級！';
     title.className = 'text-warning';
-    message.textContent = `你已晉升為 ${LEVEL_TITLES[gameState.currentLevel]}！`;
-    stats.innerHTML = `<h3 class="mt-3">等級 ${gameState.currentLevel}</h3>`;
+    
+    // 參考 LINE Bot 的訊息內容
+    message.innerHTML = `
+        <div class="level-up-details">
+            <p class="level-transition">🏆 從 <strong>${oldTitle}</strong></p>
+            <p class="level-transition">晉升為 <strong class="text-warning">${newTitle}</strong>！</p>
+            <hr style="margin: 20px 0; border-color: #ffd700;">
+            <p class="level-description">你已經掌握了等級 ${oldLevel} 的知識，</p>
+            <p class="level-description">現在開始挑戰等級 ${newLevel} 的更高難度！</p>
+            <p class="level-encouragement"><strong>繼續加油，朝著終極解剖師的目標前進！</strong></p>
+        </div>
+    `;
+    
+    stats.innerHTML = `<h3 class="mt-3" style="color: #ffd700;">等級 ${newLevel}</h3>`;
     
     modal.style.display = 'flex';
     
     setTimeout(() => {
         modal.style.display = 'none';
         stats.innerHTML = '';
-    }, 2500);
+    }, 4000); // 延長顯示時間讓用戶欣賞升級圖片
 }
 
 // 更新統計
