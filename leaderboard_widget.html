@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖學測驗 - 排行榜小工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 10px;
+        }
+
+        .widget-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .widget-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .widget-header h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .widget-header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .leaderboard-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .player-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            width: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .rank-1 { color: #ffd700; }
+        .rank-2 { color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; }
+
+        .player-info {
+            flex: 1;
+            margin-left: 10px;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .player-stats {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 1rem;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+            font-size: 0.9rem;
+        }
+
+        .widget-footer {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .last-updated {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .medal-icon {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 480px) {
+            .widget-container {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .player-item {
+                padding: 10px 12px;
+            }
+            
+            .widget-header h3 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="widget-header">
+            <h3>🏆 排行榜</h3>
+            <div class="subtitle">解剖學測驗機器人</div>
+        </div>
+
+        <div id="leaderboardContent">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>載入中...</p>
+            </div>
+        </div>
+
+        <div class="widget-footer">
+            <button class="refresh-btn" onclick="refreshData()">
+                🔄 更新
+            </button>
+            <div class="last-updated">
+                最後更新：<span id="lastUpdated">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置選項
+        const CONFIG = {
+            // API 基礎 URL - 自動檢測或手動設置
+            apiBaseUrl: window.location.origin,
+            
+            // 顯示的排行榜條數
+            maxItems: 10,
+            
+            // 自動更新間隔（毫秒）
+            autoRefreshInterval: 60000, // 1分鐘
+            
+            // 排行榜期間
+            period: 'week'
+        };
+
+        let autoRefreshTimer = null;
+
+        async function fetchLeaderboardData() {
+            try {
+                const response = await fetch(`${CONFIG.apiBaseUrl}/api/leaderboard?period=${CONFIG.period}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('獲取排行榜資料失敗:', error);
+                throw error;
+            }
+        }
+
+        function renderLeaderboard(data) {
+            const content = document.getElementById('leaderboardContent');
+            
+            if (!data || data.length === 0) {
+                content.innerHTML = `
+                    <div class="error">
+                        <p>暫無排行榜資料</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 限制顯示條數
+            const displayData = data.slice(0, CONFIG.maxItems);
+            
+            let html = '<div class="leaderboard-list">';
+            
+            displayData.forEach((player, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let medalIcon = '';
+                
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                    medalIcon = '🥇';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                    medalIcon = '🥈';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                    medalIcon = '🥉';
+                }
+
+                html += `
+                    <div class="player-item">
+                        <div class="rank ${rankClass}">
+                            <span class="medal-icon">${medalIcon}</span>
+                            ${rank}
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">${player.name || '匿名玩家'}</div>
+                            <div class="player-stats">
+                                Lv.${player.level || 1} • ${player.answers || 0}題
+                                ${player.streak ? ` • 連勝${player.streak}` : ''}
+                            </div>
+                        </div>
+                        <div class="score">${player.score || 0}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function showError(message) {
+            const content = document.getElementById('leaderboardContent');
+            content.innerHTML = `
+                <div class="error">
+                    <p>載入失敗</p>
+                    <p style="font-size: 0.8rem; margin-top: 5px;">${message}</p>
+                </div>
+            `;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-TW', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+            document.getElementById('lastUpdated').textContent = timeString;
+        }
+
+        async function refreshData() {
+            try {
+                // 顯示載入狀態
+                document.getElementById('leaderboardContent').innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>更新中...</p>
+                    </div>
+                `;
+
+                // 獲取資料
+                const data = await fetchLeaderboardData();
+                
+                // 渲染排行榜
+                renderLeaderboard(data);
+                
+                // 更新時間
+                updateLastUpdated();
+
+            } catch (error) {
+                console.error('更新資料失敗:', error);
+                showError('無法連接到伺服器');
+            }
+        }
+
+        function startAutoRefresh() {
+            // 清除現有定時器
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            // 設定自動更新
+            if (CONFIG.autoRefreshInterval > 0) {
+                autoRefreshTimer = setInterval(refreshData, CONFIG.autoRefreshInterval);
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+        }
+
+        // 頁面可見性變化處理
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                refreshData();
+                startAutoRefresh();
+            }
+        });
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await refreshData();
+            startAutoRefresh();
+        });
+
+        // 暴露給外部的API（如果需要嵌入到其他頁面）
+        window.LeaderboardWidget = {
+            refresh: refreshData,
+            setConfig: function(newConfig) {
+                Object.assign(CONFIG, newConfig);
+            },
+            startAutoRefresh: startAutoRefresh,
+            stopAutoRefresh: stopAutoRefresh
+        };
+    </script>
+</body>
+</html>

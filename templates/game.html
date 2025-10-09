@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}解剖學測驗 - 遊戲大廳{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- 用戶統計卡片 -->
+        <div class="stats-card">
+            <h4><i class="fas fa-user"></i> 玩家資訊</h4>
+            <p class="mb-2"><strong>暱稱：</strong>{{ nickname }}</p>
+            <p class="mb-2">
+                <strong>等級：</strong>
+                <span class="level-badge">{{ level_title }}</span>
+            </p>
+            <p class="mb-2"><strong>當前等級：</strong>{{ user_stats.level }}</p>
+            <p class="mb-2"><strong>總分：</strong>{{ user_stats.score }}分</p>
+            <p class="mb-0">
+                <strong>答題記錄：</strong>{{ user_stats.correct }}/{{ user_stats.total }}
+                ({{ "%.1f"|format((user_stats.correct / user_stats.total * 100) if user_stats.total > 0 else 0) }}%)
+            </p>
+        </div>
+        
+        <!-- 排行榜 -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-trophy"></i> 排行榜
+            </div>
+            <div class="card-body">
+                <div id="leaderboard">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-2">載入排行榜中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- 遊戲區域 -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-gamepad"></i> 測驗區域
+            </div>
+            <div class="card-body">
+                <div id="game-area">
+                    <div class="text-center">
+                        <h4>準備好挑戰解剖學測驗了嗎？</h4>
+                        <p class="text-muted mb-4">
+                            你目前的等級是 <strong>{{ level_title }}</strong> (等級{{ user_stats.level }})，
+                            系統會為你準備適合難度的題目。
+                        </p>
+                        <button id="start-quiz-btn" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i>
+                            開始測驗
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 登出按鈕 -->
+<div class="text-center mt-4">
+    <a href="/logout" class="btn btn-outline-secondary">
+        <i class="fas fa-sign-out-alt"></i>
+        登出
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentQuestion = null;
+let selectedAnswer = null;
+let userStats = {
+    correct: {{ user_stats.correct }},
+    total: {{ user_stats.total }},
+    level: {{ user_stats.level }},
+    score: {{ user_stats.score }}
+};
+
+// 載入排行榜
+async function loadLeaderboard() {
+    try {
+        const response = await axios.get('/api/leaderboard');
+        const data = response.data;
+        
+        let html = '';
+        if (data.leaderboard && data.leaderboard.length > 0) {
+            data.leaderboard.forEach((entry, index) => {
+                const rankClass = index < 3 ? `rank-${index + 1}` : '';
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                
+                html += `
+                    <div class="leaderboard-item ${rankClass}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">${medal} ${entry.name}</span>
+                                <br>
+                                <small class="text-muted">等級 ${entry.level} - ${getLevelTitle(entry.level)}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-primary">${entry.score}分</span>
+                                <br>
+                                <small class="text-muted">${entry.correct}/${entry.total}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 顯示用戶排名
+            if (data.user_rank && data.user_stats) {
+                html += `
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            你的排名：第 ${data.user_rank} 名 
+                            (${data.user_stats.score}分)
+                        </small>
+                    </div>
+                `;
+            }
+        } else {
+            html = '<p class="text-muted text-center">暫無排行榜數據</p>';
+        }
+        
+        document.getElementById('leaderboard').innerHTML = html;
+    } catch (error) {
+        console.error('載入排行榜失敗:', error);
+        document.getElementById('leaderboard').innerHTML = 
+            '<p class="text-danger text-center">載入排行榜失敗</p>';
+    }
+}
+
+// 更新用戶統計顯示
+function updateUserStats() {
+    const accuracy = userStats.total > 0 ? ((userStats.correct / userStats.total) * 100).toFixed(1) : 0;
+    document.querySelector('.stats-card').innerHTML = `
+        <h4><i class="fas fa-user"></i> 玩家資訊</h4>
+        <p class="mb-2"><strong>暱稱：</strong>{{ nickname }}</p>
+        <p class="mb-2">
+            <strong>等級：</strong>
+            <span class="level-badge">${getLevelTitle(userStats.level)}</span>
+        </p>
+        <p class="mb-2"><strong>當前等級：</strong>${userStats.level}</p>
+        <p class="mb-2"><strong>總分：</strong>${userStats.score}分</p>
+        <p class="mb-0">
+            <strong>答題記錄：</strong>${userStats.correct}/${userStats.total}
+            (${accuracy}%)
+        </p>
+    `;
+}
+
+// 等級稱號對應
+function getLevelTitle(level) {
+    const titles = {
+        1: "新手解剖師",
+        2: "初級解剖師", 3: "初級解剖師",
+        4: "中級解剖師", 5: "中級解剖師", 6: "中級解剖師", 7: "中級解剖師",
+        8: "高級解剖師", 9: "高級解剖師", 10: "高級解剖師", 11: "高級解剖師",
+        12: "專家解剖師", 13: "專家解剖師",
+        14: "終極解剖師"
+    };
+    return titles[level] || "未知等級";
+}
+
+// 開始測驗
+async function startQuiz() {
+    try {
+        const response = await axios.post('/api/quiz/start');
+        const data = response.data;
+        
+        if (data.success) {
+            currentQuestion = data.question;
+            displayQuestion(data.question);
+        } else {
+            alert('開始測驗失敗：' + (data.error || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('開始測驗失敗:', error);
+        alert('開始測驗失敗，請稍後再試');
+    }
+}
+
+// 顯示題目
+function displayQuestion(question) {
+    const gameArea = document.getElementById('game-area');
+    
+    let optionsHtml = '';
+    question.options.forEach((option, index) => {
+        optionsHtml += `
+            <div class="quiz-option" onclick="selectAnswer(${index})" data-answer="${index}">
+                ${index + 1}. ${option}
+            </div>
+        `;
+    });
+    
+    gameArea.innerHTML = `
+        <div class="quiz-container">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-question-circle"></i>
+                    等級 ${question.level} - ${question.category}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">${question.question}</h5>
+                    <div class="options-container">
+                        ${optionsHtml}
+                    </div>
+                    <div class="text-center mt-4">
+                        <button id="submit-btn" class="btn btn-success btn-lg" onclick="submitAnswer()" disabled>
+                            <i class="fas fa-check"></i>
+                            提交答案
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 選擇答案
+function selectAnswer(answerIndex) {
+    selectedAnswer = answerIndex;
+    
+    // 移除所有選中狀態
+    document.querySelectorAll('.quiz-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // 添加選中狀態
+    document.querySelector(`[data-answer="${answerIndex}"]`).classList.add('selected');
+    
+    // 啟用提交按鈕
+    document.getElementById('submit-btn').disabled = false;
+}
+
+// 提交答案
+async function submitAnswer() {
+    if (selectedAnswer === null) {
+        alert('請選擇一個答案');
+        return;
+    }
+    
+    try {
+        const response = await axios.post('/api/quiz/answer', {
+            answer: selectedAnswer
+        });
+        const data = response.data;
+        
+        if (data.success) {
+            showResult(data);
+        } else {
+            alert('提交答案失敗：' + (data.error || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('提交答案失敗:', error);
+        alert('提交答案失敗，請稍後再試');
+    }
+}
+
+// 顯示結果
+function showResult(result) {
+    const gameArea = document.getElementById('game-area');
+    const isCorrect = result.is_correct;
+    const correctAnswer = result.correct_answer;
+    const explanation = result.explanation;
+    
+    // 更新本地統計
+    userStats.total += 1;
+    if (isCorrect) {
+        userStats.correct += 1;
+        userStats.score += 10;
+        
+        // 檢查是否升級 (每5題正確答案升一級)
+        if (userStats.correct % 5 === 0 && userStats.level < 14) {
+            userStats.level += 1;
+        }
+    }
+    
+    // 更新統計顯示
+    updateUserStats();
+    
+    let resultHtml = `
+        <div class="text-center result-animation">
+            <div class="mb-4">
+                ${isCorrect ? 
+                    `<i class="fas fa-check-circle fa-5x text-success"></i>
+                     <h3 class="text-success mt-3">答對了！🎉</h3>
+                     <p class="text-muted">太棒了！你答對了這道題</p>` :
+                    `<i class="fas fa-times-circle fa-5x text-danger"></i>
+                     <h3 class="text-danger mt-3">答錯了 😢</h3>
+                     <p class="text-muted">別灰心，再接再厲！</p>`
+                }
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body text-start">
+                    <h5 class="mb-3"><i class="fas fa-lightbulb text-warning"></i> 正確答案：</h5>
+                    <div class="alert alert-info">
+                        <strong>${currentQuestion.options[correctAnswer]}</strong>
+                    </div>
+                    
+                    ${explanation ? `
+                        <h5 class="mb-3"><i class="fas fa-book text-primary"></i> 詳細解釋：</h5>
+                        <p class="lead">${explanation}</p>
+                    ` : ''}
+                    
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <h4 class="text-primary">${userStats.score}</h4>
+                                <small class="text-muted">總分</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <h4 class="text-success">${userStats.correct}/${userStats.total}</h4>
+                                <small class="text-muted">正確率</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-block">
+                <button class="btn btn-primary btn-lg" onclick="startQuiz()">
+                    <i class="fas fa-play"></i>
+                    繼續挑戰
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" onclick="location.reload()">
+                    <i class="fas fa-home"></i>
+                    返回大廳
+                </button>
+            </div>
+        </div>
+    `;
+    
+    gameArea.innerHTML = resultHtml;
+    
+    // 重新載入排行榜以更新排名
+    setTimeout(() => {
+        loadLeaderboard();
+    }, 1000);
+}
+
+// 頁面載入完成後執行
+document.addEventListener('DOMContentLoaded', function() {
+    // 載入排行榜
+    loadLeaderboard();
+    
+    // 綁定開始測驗按鈕事件
+    document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
+});
+</script>
+{% endblock %}

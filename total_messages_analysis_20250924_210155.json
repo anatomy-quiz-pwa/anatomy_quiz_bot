@@ -1,0 +1,30 @@
+{
+  "analysis_date": "2025-09-23 to 2025-09-24",
+  "analysis_time": "2025-09-24T21:01:55.956682",
+  "yesterday_data": {
+    "date": "2025-09-23",
+    "active_users": 0,
+    "new_users": 49,
+    "total_interactions": 49,
+    "user_messages": 49,
+    "bot_messages": 147,
+    "total_messages": 196
+  },
+  "today_data": {
+    "date": "2025-09-24",
+    "active_users": 0,
+    "new_users": 12,
+    "total_interactions": 12,
+    "user_messages": 12,
+    "bot_messages": 36,
+    "total_messages": 48
+  },
+  "summary": {
+    "total_interactions": 61,
+    "total_user_messages": 61,
+    "total_bot_messages": 183,
+    "total_messages": 244,
+    "avg_messages_per_interaction": 4.0,
+    "avg_messages_per_user": 244.0
+  }
+}

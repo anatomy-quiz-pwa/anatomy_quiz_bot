@@ -1,0 +1,27 @@
+{
+  "analysis_date": "2025-09-23 to 2025-09-24",
+  "analysis_time": "2025-09-24T23:36:36.241035",
+  "today_data": {
+    "total_active_users": 53,
+    "quiz_users": 45,
+    "leaderboard_users": 8,
+    "leaderboard_usage_rate": 15.09433962264151
+  },
+  "yesterday_data": {
+    "total_active_users": 98,
+    "quiz_users": 98,
+    "leaderboard_users": 0,
+    "leaderboard_usage_rate": 0.0
+  },
+  "summary": {
+    "total_active_users": 151,
+    "total_quiz_users": 143,
+    "total_leaderboard_users": 8,
+    "overall_leaderboard_usage_rate": 5.298013245033113,
+    "insights": {
+      "low_usage_rate": true,
+      "most_users_prefer_quiz": true,
+      "leaderboard_awareness": true
+    }
+  }
+}

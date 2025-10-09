@@ -1,0 +1,188 @@
+{
+  "analysis_date": "2025-09-21",
+  "analysis_time": "2025-09-21T22:38:50.020231",
+  "new_registrations": [
+    {
+      "user_id": "Ue3ac1ae657ae44c330ddd43628c98724",
+      "nickname": "Autumn",
+      "created_at": "2025-09-21T07:09:00.254294+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U876d031e1f3b471f3eeb34fc3c18bfe8",
+      "nickname": "晉安",
+      "created_at": "2025-09-21T00:44:57.568619+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Uc7629e31ac45685137a5a0c7c89b2f28",
+      "nickname": "Hank",
+      "created_at": "2025-09-21T00:54:34.345182+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ubd0d06bf407d47ac7f4ba101fd1e3e8b",
+      "nickname": "藝蓁",
+      "created_at": "2025-09-21T01:08:20.896686+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U58239e6571d605a796fbbdb8a869de40",
+      "nickname": "我的暱稱Phoebe",
+      "created_at": "2025-09-21T02:41:18.92133+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ucb303679086ad9799be278bceea666e0",
+      "nickname": "Ki",
+      "created_at": "2025-09-21T03:21:37.831977+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U561117bad4d1cbc57a8791996c203e89",
+      "nickname": "Ann",
+      "created_at": "2025-09-21T04:35:35.617523+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U9bb81080f61f8faa6add3fcc0e64f55c",
+      "nickname": "MT",
+      "created_at": "2025-09-21T05:12:54.3265+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U334dde54e0adaef71dad837eb1834a6a",
+      "nickname": "Leo",
+      "created_at": "2025-09-21T06:03:36.545843+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ucf657af91afbc29faa7d5d644e422975",
+      "nickname": "Jordan",
+      "created_at": "2025-09-21T06:09:48.572167+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Udbce616eca0895e1cc0f5ca751612114",
+      "nickname": "Ginger",
+      "created_at": "2025-09-21T06:57:39.388101+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U5b4f4b9923b212fa5f589679d17edcc8",
+      "nickname": "魟魚",
+      "created_at": "2025-09-21T07:12:39.297345+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U7ef1b5bb95f89753834391752c7ef488",
+      "nickname": "Cindy",
+      "created_at": "2025-09-21T08:58:29.21147+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Udf43b96d06d03a81631020ed46558415",
+      "nickname": "芷7",
+      "created_at": "2025-09-21T09:15:58.615467+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U2d8ae202c466488a6eb7f11935cba7bf",
+      "nickname": "積分",
+      "created_at": "2025-09-21T10:26:28.387108+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U67b19ffb78a98c5122b6de9677cb68fb",
+      "nickname": "開始",
+      "created_at": "2025-09-21T10:27:27.92506+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U44ca38404110ed1ec32a550eee6d1b44",
+      "nickname": "排行榜",
+      "created_at": "2025-09-21T11:18:28.439341+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U266e62f3305140a44b7e8e5564a82b75",
+      "nickname": "Eva",
+      "created_at": "2025-09-21T12:49:03.952749+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ued010757dc3a9d044df17f40f1db801e",
+      "nickname": "Sin",
+      "created_at": "2025-09-21T13:18:41.877888+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ueea55c004e909be83fa3a4fdcf736908",
+      "nickname": "Yam",
+      "created_at": "2025-09-21T13:42:20.20329+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U6bdeac05925c11d927f33d01a12b7671",
+      "nickname": "排行榜",
+      "created_at": "2025-09-21T14:25:42.763073+00:00",
+      "is_admin": false
+    }
+  ],
+  "user_progression": [
+    {
+      "user_id": "U315252475f1e5f7b5ce3681906caa55a",
+      "nickname": "北極熊超爽",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 3,
+      "daily_questions": 1,
+      "level_progress": 0,
+      "last_updated": "2025-09-21"
+    },
+    {
+      "user_id": "U977c24d1fec3a2bf07035504e1444911",
+      "nickname": "開始",
+      "current_level": 1,
+      "total_correct": 0,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-21"
+    },
+    {
+      "user_id": "Ube9bd4eddb61647070198906c292b3dc",
+      "nickname": null,
+      "current_level": 1,
+      "total_correct": 0,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-21"
+    }
+  ],
+  "quiz_attempts": {
+    "total_attempts": 1,
+    "users_with_attempts": [
+      {
+        "user_id": "U315252475f1e5f7b5ce3681906caa55a",
+        "nickname": "北極熊超爽",
+        "questions_attempted": 1,
+        "level": 3
+      }
+    ]
+  },
+  "summary": {
+    "total_active_users": 3,
+    "quiz_users": 1,
+    "new_users": 21,
+    "total_quiz_attempts": 1,
+    "activity_level": "中等活躍",
+    "avg_questions_per_user": 0.3333333333333333
+  },
+  "inferred_interactions": [
+    "🆕 21 次新用戶註冊互動",
+    "📝 1 次答題互動",
+    "👀 2 次查看進度/排行榜互動"
+  ]
+}

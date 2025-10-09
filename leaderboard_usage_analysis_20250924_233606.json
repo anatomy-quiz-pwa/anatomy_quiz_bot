@@ -1,0 +1,72 @@
+{
+  "analysis_date": "2025-09-23 to 2025-09-24",
+  "analysis_time": "2025-09-24T23:36:06.987045",
+  "today_data": {
+    "total_active_users": 64,
+    "quiz_users": 58,
+    "leaderboard_users": 5,
+    "leaderboard_usage_rate": 7.8125,
+    "leaderboard_users_detail": [
+      {
+        "user_id": "U0f1a867f8c90a6c5f212e664b6a794bd",
+        "nickname": "小虎",
+        "level": 2,
+        "total_questions": 3,
+        "correct": 3,
+        "wrong": 0
+      },
+      {
+        "user_id": "Uc6425502d1ef067c75f40402061b904e",
+        "nickname": "子玲",
+        "level": 3,
+        "total_questions": 6,
+        "correct": 6,
+        "wrong": 0
+      },
+      {
+        "user_id": "Ub215f6aac389e98e0dafddf95b4545f5",
+        "nickname": "Queenie",
+        "level": 2,
+        "total_questions": 3,
+        "correct": 3,
+        "wrong": 0
+      },
+      {
+        "user_id": "Ue76f0d0db273b50d09f7c05de8562161",
+        "nickname": "Annie",
+        "level": 1,
+        "total_questions": 3,
+        "correct": 2,
+        "wrong": 1
+      },
+      {
+        "user_id": "U90e4b7d57480765664755bc6809664ef",
+        "nickname": "KC",
+        "level": 2,
+        "total_questions": 3,
+        "correct": 3,
+        "wrong": 0
+      }
+    ]
+  },
+  "yesterday_data": {
+    "total_active_users": 0,
+    "quiz_users": 0,
+    "leaderboard_users": 0,
+    "leaderboard_usage_rate": 0,
+    "leaderboard_users_detail": []
+  },
+  "summary": {
+    "total_active_users": 64,
+    "total_quiz_users": 58,
+    "total_leaderboard_users": 5,
+    "overall_leaderboard_usage_rate": 7.8125,
+    "leaderboard_nickname_users": [
+      {
+        "user_id": "U313cfb77b135e4e2f65a878668041131",
+        "nickname": "排行榜",
+        "level": 2
+      }
+    ]
+  }
+}

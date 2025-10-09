@@ -1,0 +1,898 @@
+{
+  "analysis_date": "2025-09-24",
+  "analysis_time": "2025-09-24T20:58:21.705393",
+  "new_registrations": [
+    {
+      "user_id": "U3115c473f212d414fa3463ed5549ce87",
+      "nickname": "皮卡霖",
+      "created_at": "2025-09-24T00:54:27.331567+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U03951e677dcd961b66a941cbc5a18112",
+      "nickname": "不業餘愛好者",
+      "created_at": "2025-09-24T00:54:59.626424+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U9030eb11782610c577ee5f70d443eb62",
+      "nickname": "琳達",
+      "created_at": "2025-09-24T01:57:29.852381+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U5efa25bd7f0004c1291c5a893a733cd2",
+      "nickname": "CHU",
+      "created_at": "2025-09-24T02:53:59.499551+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ub37a2de7003e31fd7f1797a7b44a4967",
+      "nickname": "Juan",
+      "created_at": "2025-09-24T03:17:01.533713+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U5ab3061370c0dc6f38306dcdada4f531",
+      "nickname": "cin",
+      "created_at": "2025-09-24T04:01:54.660112+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U8d943980c7363d3d61e9e0aecb233a32",
+      "nickname": "if",
+      "created_at": "2025-09-24T04:37:06.588854+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Udc4f6cc301c5721dbcea0695b95de8ed",
+      "nickname": "初學者",
+      "created_at": "2025-09-24T04:54:34.264811+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ucb08f115f5dc4de2e5cf66f158afd63f",
+      "nickname": "Janet",
+      "created_at": "2025-09-24T06:56:16.629776+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "U34f17cf42ab07a4ba508ead3da0d4050",
+      "nickname": "排行榜",
+      "created_at": "2025-09-24T09:50:37.824125+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Uf27c4e9a661b0fb2b2c7ad78490668a7",
+      "nickname": "小棻",
+      "created_at": "2025-09-24T11:41:09.592677+00:00",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ude15d3a81e1f24343110d599efdba2c7",
+      "nickname": "Ying",
+      "created_at": "2025-09-24T12:07:35.480536+00:00",
+      "is_admin": false
+    }
+  ],
+  "user_progression": [
+    {
+      "user_id": "Ubf21db74bbb7c9775335e110b372fa16",
+      "nickname": "PTLearning",
+      "current_level": 4,
+      "total_correct": 11,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U689b79658347c6dfe52228a456dc449d",
+      "nickname": "Ping",
+      "current_level": 3,
+      "total_correct": 8,
+      "total_wrong": 3,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ud762288d8801bcc4cf4d6dd730a90a2b",
+      "nickname": "Kyle",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 3,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U8d943980c7363d3d61e9e0aecb233a32",
+      "nickname": "if",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U90100323fef57f469f77dfb8273a3087",
+      "nickname": "Penny",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 4,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U7d56e811c6201c6a4a5fb9317ffc27b6",
+      "nickname": "郭映涵",
+      "current_level": 5,
+      "total_correct": 13,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U05c58934629701e3f304d920d7557922",
+      "nickname": "未知",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 3,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U36f098fd43356c957e349ef6a170a0a2",
+      "nickname": "未知",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Uf27c4e9a661b0fb2b2c7ad78490668a7",
+      "nickname": "小棻",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ud4c57d576c33ff960edb5ee66d4e62b7",
+      "nickname": "Mo不到頸椎",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U86e30201926fde011fee4512d16c35cd",
+      "nickname": "KW",
+      "current_level": 14,
+      "total_correct": 42,
+      "total_wrong": 11,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U03951e677dcd961b66a941cbc5a18112",
+      "nickname": "不業餘愛好者",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U44dfc9e98febd673cce9b6f3127e3f16",
+      "nickname": "Yonna",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U9c6c996c35f7a2d4a25ad8ea3b5a8c80",
+      "nickname": "道格拉斯",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U3115c473f212d414fa3463ed5549ce87",
+      "nickname": "皮卡霖",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U5efa25bd7f0004c1291c5a893a733cd2",
+      "nickname": "CHU",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U1fb68fcff77e14aab3f6326f8338282c",
+      "nickname": "Evonne",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U5ab3061370c0dc6f38306dcdada4f531",
+      "nickname": "cin",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U2c1c84c589536d46956dc18cb51e3154",
+      "nickname": "未知",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U6c084682d665201a48ddce1eeeacc541",
+      "nickname": "Winnie",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U266e62f3305140a44b7e8e5564a82b75",
+      "nickname": "Eva",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U1f4543a790bebe2b5ec2f2189317ce7d",
+      "nickname": "髮衣夫人",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ub8dbcf74e8345be654dee61e0fc5a9f9",
+      "nickname": "小二",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U67b19ffb78a98c5122b6de9677cb68fb",
+      "nickname": "開始",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U2c246fd2627f8a0b8ba0609b55c85393",
+      "nickname": "Tai",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U58239e6571d605a796fbbdb8a869de40",
+      "nickname": "我的暱稱Phoebe",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U9833a00d16ead81329a42f2db88e9a5b",
+      "nickname": "Siou",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Uc23d6fb400e921b823e907d5e2f21a54",
+      "nickname": "Keter",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ua4c3ca3be4eefd327bd2fe743e12b6bf",
+      "nickname": "丹丹",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U3c8b71685ee58762e374ad8bcfe43b58",
+      "nickname": "mark",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 3,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ude15d3a81e1f24343110d599efdba2c7",
+      "nickname": "Ying",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U9030eb11782610c577ee5f70d443eb62",
+      "nickname": "琳達",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ua37eb5fc718285d6e48b39cccc765ee0",
+      "nickname": "暘暘爸",
+      "current_level": 9,
+      "total_correct": 24,
+      "total_wrong": 3,
+      "daily_questions": 3,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ufb59900d1edf6b4c83714c613a959392",
+      "nickname": "李建勳",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 4,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ub37a2de7003e31fd7f1797a7b44a4967",
+      "nickname": "Juan",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ud85f25dfffecab8d73417a2e141a2d75",
+      "nickname": "LuLu",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U3f5122a69167447b51f24e4ab7394675",
+      "nickname": "小妹",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U876d031e1f3b471f3eeb34fc3c18bfe8",
+      "nickname": "晉安",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Uf10c56df6eca072e02c9acd960bf2188",
+      "nickname": "Iris",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 1,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U85c1c080897c17320f3838ca41d5ee36",
+      "nickname": "White",
+      "current_level": 3,
+      "total_correct": 8,
+      "total_wrong": 4,
+      "daily_questions": 3,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ud8ad9f89f6371927bae9414e96558038",
+      "nickname": "kitty",
+      "current_level": 2,
+      "total_correct": 5,
+      "total_wrong": 0,
+      "daily_questions": 2,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U7d1313533a482478a626ec94047b60ab",
+      "nickname": "未知",
+      "current_level": 1,
+      "total_correct": 1,
+      "total_wrong": 1,
+      "daily_questions": 2,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Uc0b0bd035b7a33cb12a7d53cf7304994",
+      "nickname": "國考榜首",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 1,
+      "daily_questions": 2,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U076552f17197693f8ad064a27d435e1b",
+      "nickname": "馬丁張",
+      "current_level": 3,
+      "total_correct": 7,
+      "total_wrong": 1,
+      "daily_questions": 1,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Udc4f6cc301c5721dbcea0695b95de8ed",
+      "nickname": "初學者",
+      "current_level": 1,
+      "total_correct": 1,
+      "total_wrong": 0,
+      "daily_questions": 1,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U977c24d1fec3a2bf07035504e1444911",
+      "nickname": "開始",
+      "current_level": 1,
+      "total_correct": 0,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ueba98de78bee208ea9969b76211752fc",
+      "nickname": "KAI",
+      "current_level": 2,
+      "total_correct": 4,
+      "total_wrong": 2,
+      "daily_questions": 0,
+      "level_progress": 1,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U0f1a867f8c90a6c5f212e664b6a794bd",
+      "nickname": "小虎",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Uc6425502d1ef067c75f40402061b904e",
+      "nickname": "子玲",
+      "current_level": 3,
+      "total_correct": 6,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ub215f6aac389e98e0dafddf95b4545f5",
+      "nickname": "Queenie",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "Ue76f0d0db273b50d09f7c05de8562161",
+      "nickname": "Annie",
+      "current_level": 1,
+      "total_correct": 2,
+      "total_wrong": 1,
+      "daily_questions": 0,
+      "level_progress": 2,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U334dde54e0adaef71dad837eb1834a6a",
+      "nickname": "Leo",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    },
+    {
+      "user_id": "U90e4b7d57480765664755bc6809664ef",
+      "nickname": "KC",
+      "current_level": 2,
+      "total_correct": 3,
+      "total_wrong": 0,
+      "daily_questions": 0,
+      "level_progress": 0,
+      "last_updated": "2025-09-24"
+    }
+  ],
+  "quiz_attempts": {
+    "total_attempts": 128,
+    "users_with_attempts": [
+      {
+        "user_id": "Ubf21db74bbb7c9775335e110b372fa16",
+        "nickname": "PTLearning",
+        "questions_attempted": 3,
+        "level": 4
+      },
+      {
+        "user_id": "Ud8ad9f89f6371927bae9414e96558038",
+        "nickname": "kitty",
+        "questions_attempted": 2,
+        "level": 2
+      },
+      {
+        "user_id": "U689b79658347c6dfe52228a456dc449d",
+        "nickname": "Ping",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "Ud762288d8801bcc4cf4d6dd730a90a2b",
+        "nickname": "Kyle",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U8d943980c7363d3d61e9e0aecb233a32",
+        "nickname": "if",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U90100323fef57f469f77dfb8273a3087",
+        "nickname": "Penny",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "U7d56e811c6201c6a4a5fb9317ffc27b6",
+        "nickname": "郭映涵",
+        "questions_attempted": 3,
+        "level": 5
+      },
+      {
+        "user_id": "U05c58934629701e3f304d920d7557922",
+        "nickname": "未知",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U7d1313533a482478a626ec94047b60ab",
+        "nickname": "未知",
+        "questions_attempted": 2,
+        "level": 1
+      },
+      {
+        "user_id": "U36f098fd43356c957e349ef6a170a0a2",
+        "nickname": "未知",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "Uf27c4e9a661b0fb2b2c7ad78490668a7",
+        "nickname": "小棻",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "Ud4c57d576c33ff960edb5ee66d4e62b7",
+        "nickname": "Mo不到頸椎",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U86e30201926fde011fee4512d16c35cd",
+        "nickname": "KW",
+        "questions_attempted": 3,
+        "level": 14
+      },
+      {
+        "user_id": "U03951e677dcd961b66a941cbc5a18112",
+        "nickname": "不業餘愛好者",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "U44dfc9e98febd673cce9b6f3127e3f16",
+        "nickname": "Yonna",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U9c6c996c35f7a2d4a25ad8ea3b5a8c80",
+        "nickname": "道格拉斯",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U3115c473f212d414fa3463ed5549ce87",
+        "nickname": "皮卡霖",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "U5efa25bd7f0004c1291c5a893a733cd2",
+        "nickname": "CHU",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "U1fb68fcff77e14aab3f6326f8338282c",
+        "nickname": "Evonne",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U5ab3061370c0dc6f38306dcdada4f531",
+        "nickname": "cin",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U2c1c84c589536d46956dc18cb51e3154",
+        "nickname": "未知",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U6c084682d665201a48ddce1eeeacc541",
+        "nickname": "Winnie",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U266e62f3305140a44b7e8e5564a82b75",
+        "nickname": "Eva",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U1f4543a790bebe2b5ec2f2189317ce7d",
+        "nickname": "髮衣夫人",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "U076552f17197693f8ad064a27d435e1b",
+        "nickname": "馬丁張",
+        "questions_attempted": 1,
+        "level": 3
+      },
+      {
+        "user_id": "Ub8dbcf74e8345be654dee61e0fc5a9f9",
+        "nickname": "小二",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U67b19ffb78a98c5122b6de9677cb68fb",
+        "nickname": "開始",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U2c246fd2627f8a0b8ba0609b55c85393",
+        "nickname": "Tai",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U58239e6571d605a796fbbdb8a869de40",
+        "nickname": "我的暱稱Phoebe",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "U9833a00d16ead81329a42f2db88e9a5b",
+        "nickname": "Siou",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "Uc23d6fb400e921b823e907d5e2f21a54",
+        "nickname": "Keter",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "Ua4c3ca3be4eefd327bd2fe743e12b6bf",
+        "nickname": "丹丹",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U3c8b71685ee58762e374ad8bcfe43b58",
+        "nickname": "mark",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "Ude15d3a81e1f24343110d599efdba2c7",
+        "nickname": "Ying",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U9030eb11782610c577ee5f70d443eb62",
+        "nickname": "琳達",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "Ua37eb5fc718285d6e48b39cccc765ee0",
+        "nickname": "暘暘爸",
+        "questions_attempted": 3,
+        "level": 9
+      },
+      {
+        "user_id": "Ufb59900d1edf6b4c83714c613a959392",
+        "nickname": "李建勳",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "Ub37a2de7003e31fd7f1797a7b44a4967",
+        "nickname": "Juan",
+        "questions_attempted": 3,
+        "level": 1
+      },
+      {
+        "user_id": "Ud85f25dfffecab8d73417a2e141a2d75",
+        "nickname": "LuLu",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U3f5122a69167447b51f24e4ab7394675",
+        "nickname": "小妹",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "Udc4f6cc301c5721dbcea0695b95de8ed",
+        "nickname": "初學者",
+        "questions_attempted": 1,
+        "level": 1
+      },
+      {
+        "user_id": "U876d031e1f3b471f3eeb34fc3c18bfe8",
+        "nickname": "晉安",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "Uf10c56df6eca072e02c9acd960bf2188",
+        "nickname": "Iris",
+        "questions_attempted": 3,
+        "level": 2
+      },
+      {
+        "user_id": "U85c1c080897c17320f3838ca41d5ee36",
+        "nickname": "White",
+        "questions_attempted": 3,
+        "level": 3
+      },
+      {
+        "user_id": "Uc0b0bd035b7a33cb12a7d53cf7304994",
+        "nickname": "國考榜首",
+        "questions_attempted": 2,
+        "level": 2
+      }
+    ]
+  },
+  "summary": {
+    "total_active_users": 53,
+    "quiz_users": 45,
+    "new_users": 12,
+    "total_quiz_attempts": 128,
+    "activity_level": "高活躍",
+    "avg_questions_per_user": 2.4150943396226414
+  },
+  "inferred_interactions": [
+    "🆕 12 次新用戶註冊互動",
+    "📝 128 次答題互動",
+    "👀 8 次查看進度/排行榜互動"
+  ]
+}

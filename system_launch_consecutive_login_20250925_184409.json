@@ -1,0 +1,100 @@
+{
+  "system_launch_date": "2025-09-01",
+  "analysis_end_date": "2025-09-25",
+  "total_days": 25,
+  "analysis_time": "2025-09-25T18:44:12.475092",
+  "summary": {
+    "total_active_users": 329,
+    "total_consecutive_users": 18,
+    "consecutive_login_rate": 5.47112462006079,
+    "max_consecutive_days": 2,
+    "avg_consecutive_days": 2.0,
+    "high_loyalty_users": 0,
+    "medium_loyalty_users": 0,
+    "low_loyalty_users": 18,
+    "avg_daily_active_users": 17.08,
+    "avg_daily_new_users": 12.72,
+    "avg_overlap_rate": 1.2295176631099678
+  },
+  "consecutive_users_by_days": {
+    "2_days": [
+      {
+        "user_id": "Ueda35a803b0a1ef89f6e0f93f0de9bf7",
+        "nickname": "哈維"
+      },
+      {
+        "user_id": "Ud4c57d576c33ff960edb5ee66d4e62b7",
+        "nickname": "Mo不到頸椎"
+      },
+      {
+        "user_id": "U315252475f1e5f7b5ce3681906caa55a",
+        "nickname": "北極熊超爽"
+      },
+      {
+        "user_id": "Uf10c56df6eca072e02c9acd960bf2188",
+        "nickname": "Iris"
+      },
+      {
+        "user_id": "U3f5122a69167447b51f24e4ab7394675",
+        "nickname": "小妹"
+      },
+      {
+        "user_id": "Uad4d6e5ebd755a019e078b34361dd055",
+        "nickname": "排行榜"
+      },
+      {
+        "user_id": "Uada5c05f15f38336b4a05770763cf3e3",
+        "nickname": "排行榜"
+      },
+      {
+        "user_id": "U0f1a867f8c90a6c5f212e664b6a794bd",
+        "nickname": "小虎"
+      },
+      {
+        "user_id": "Uac5f83c58953103b96549933a01090c5",
+        "nickname": "En"
+      },
+      {
+        "user_id": "U7c5f280f48972cd90156c2eb5235dcb1",
+        "nickname": "小AT"
+      },
+      {
+        "user_id": "Ufb59900d1edf6b4c83714c613a959392",
+        "nickname": "李建勳"
+      },
+      {
+        "user_id": "Ub8dbcf74e8345be654dee61e0fc5a9f9",
+        "nickname": "小二"
+      },
+      {
+        "user_id": "Ud85f25dfffecab8d73417a2e141a2d75",
+        "nickname": "LuLu"
+      },
+      {
+        "user_id": "U44dfc9e98febd673cce9b6f3127e3f16",
+        "nickname": "Yonna"
+      },
+      {
+        "user_id": "Ua4c3ca3be4eefd327bd2fe743e12b6bf",
+        "nickname": "丹丹"
+      },
+      {
+        "user_id": "U25daeda97de44bf6898d1b857235e31a",
+        "nickname": "山木林"
+      },
+      {
+        "user_id": "U9c6c996c35f7a2d4a25ad8ea3b5a8c80",
+        "nickname": "道格拉斯"
+      },
+      {
+        "user_id": "U3c8b71685ee58762e374ad8bcfe43b58",
+        "nickname": "mark"
+      }
+    ]
+  },
+  "daily_stats": [
+    {
+      "date": "2025-09-01",
+      "active_users": 1,
+      "new_users": 1,
+      "user_list": 

@@ -17,6 +17,13 @@ RAW_NICK_PATTERN = r'^([A-Za-z0-9\u4e00-\u9fa5]{2,10})$'  # 在等待暱稱狀�
 # 用戶狀態管理（簡化版本，使用記憶體存儲）
 user_states = {}  # { user_id: {"awaiting_nickname": bool, ...} }
 
+# LINE Bot 狀態追蹤
+line_bot_status = {
+    "monthly_limit_reached": False,
+    "last_limit_check": None,
+    "pending_messages": []  # 存儲因限制無法發送的訊息
+}
+
 def set_awaiting_nickname(user_id, val=True):
     """設置用戶等待暱稱狀態"""
     user_states.setdefault(user_id, {})["awaiting_nickname"] = val
@@ -257,6 +264,47 @@ def handle_nickname_input(user_id, text):
                         result = send_message(user_id, flex_message)
                         logger.info(f"✅ 暱稱設定 Flex Message 發送完成給用戶 {user_id}，結果: {result}")
                         
+                        # 暱稱設置成功後，自動發送第一道題目
+                        logger.info(f"🎯 暱稱設置完成，準備為用戶 {user_id} ({nickname}) 自動發送第一道題目")
+                        
+                        try:
+                            # 檢查用戶是否為管理員
+                            admin_info = get_user_admin_permissions(user_id)
+                            
+                            if admin_info and admin_info.get('is_admin'):
+                                # 管理員用戶：自動發送管理員模式的第一道題目
+                                send_admin_quiz_question(user_id)
+                                logger.info(f"✅ 已為管理員用戶 {user_id} ({nickname}) 自動發送第一道題目")
+                            else:
+                                # 普通用戶：檢查每日限制後發送題目
+                                daily_limit_status = check_daily_question_limit(user_id)
+                                
+                                if daily_limit_status['can_answer']:
+                                    # 獲取或創建用戶統計
+                                    user_stats = get_user_stats(user_id)
+                                    if not user_stats:
+                                        user_stats = create_initial_user_stats(user_id)
+                                    
+                                    current_level = user_stats.get('level', 1) if user_stats else 1
+                                    send_normal_quiz_question(user_id, level=current_level)
+                                    logger.info(f"✅ 已為普通用戶 {user_id} ({nickname}) 自動發送第一道題目 (等級 {current_level})")
+                                else:
+                                    # 已達每日限制，發送歡迎但不能答題的訊息
+                                    welcome_message = {
+                                        "text": f"🎉 {nickname}，歡迎加入解剖學學習之旅！\n\n⏰ 今天的答題次數已達上限 ({daily_limit_status['answered_today']}/3 題)\n明天再來挑戰第一道題目吧！\n\n📊 輸入「積分」查看學習進度\n🏆 輸入「排行榜」查看排名"
+                                    }
+                                    send_message(user_id, welcome_message)
+                                    logger.info(f"ℹ️ 用戶 {user_id} ({nickname}) 已達每日答題限制，發送歡迎訊息")
+                                    
+                        except Exception as auto_quiz_error:
+                            logger.error(f"❌ 自動發送第一道題目失敗: {auto_quiz_error}")
+                            # 失敗時發送引導訊息
+                            fallback_message = {
+                                "text": f"🎉 {nickname}，歡迎加入！\n\n🚀 輸入「開始」開始你的解剖學學習之旅！\n📊 輸入「積分」查看學習進度\n🏆 輸入「排行榜」查看排名"
+                            }
+                            send_message(user_id, fallback_message)
+                            logger.info(f"📝 已為用戶 {user_id} ({nickname}) 發送手動開始指引")
+                        
                     except Exception as flex_error:
                         logger.error(f"❌ Flex Message 處理失敗: {flex_error}")
                         # 即使出錯也不發送文字訊息，確保用戶只收到 Flex Message
@@ -424,7 +472,15 @@ def send_message(recipient_id, message_data):
     """發送訊息到 LINE 或 Facebook Messenger"""
     # 檢查是否為 LINE 用戶ID（以 U 開頭）
     if recipient_id.startswith('U'):
-        return send_line_message(recipient_id, message_data)
+        result = send_line_message(recipient_id, message_data)
+        
+        # 如果遇到月度限制，記錄但不中斷用戶體驗
+        if isinstance(result, dict) and result.get("error") == "monthly_limit_reached":
+            logger.warning(f"⚠️ 用戶 {recipient_id} 的訊息因月度限制無法發送，但繼續處理用戶請求")
+            # 可以在這裡添加其他處理邏輯，如存儲未發送的訊息
+            return {"status": "limit_reached", "user_request_processed": True}
+        
+        return result
     else:
         return send_facebook_message(recipient_id, message_data)
 
@@ -476,6 +532,18 @@ def send_line_message(user_id, message_data):
             logger.error(f"❌ LINE 訊息發送失敗 - 狀態碼: {response.status_code}")
             logger.error(f"❌ 響應內容: {response.text}")
             logger.error(f"❌ 發送的數據: {json.dumps(data, ensure_ascii=False)}")
+            
+            # 特殊處理月度限制錯誤
+            if response.status_code == 429:
+                try:
+                    error_response = response.json()
+                    if "monthly limit" in error_response.get("message", "").lower():
+                        logger.warning("⚠️ LINE Bot 已達到月度訊息發送限制")
+                        # 可以在這裡添加通知管理員或記錄特殊處理邏輯
+                        return {"error": "monthly_limit_reached", "details": error_response}
+                except:
+                    pass
+            
             return {"error": f"HTTP {response.status_code}: {response.text}"}
         
         return response.json()
@@ -2087,7 +2155,7 @@ def create_nickname_success_flex_message(nickname):
             "contents": [
                 {
                     "type": "text",
-                    "text": f"🎉 好的，之後就叫你「{nickname}」啦！",
+                    "text": f"🎉 好的，之後就叫你「{nickname}」！",
                     "weight": "bold",
                     "size": "lg",
                     "wrap": True,
@@ -2099,11 +2167,20 @@ def create_nickname_success_flex_message(nickname):
                 },
                 {
                     "type": "text",
-                    "text": "準備好開始你的解剖學學習之旅了嗎？",
+                    "text": "🗺️ 這是整個冒險的第一題",
                     "size": "md",
                     "margin": "md",
                     "wrap": True,
-                    "color": "#333333"
+                    "color": "#333333",
+                    "weight": "bold"
+                },
+                {
+                    "type": "text",
+                    "text": "準備好開始你的解剖學學習之旅了嗎？",
+                    "size": "sm",
+                    "margin": "sm",
+                    "wrap": True,
+                    "color": "#666666"
                 }
             ]
         },
@@ -2113,14 +2190,11 @@ def create_nickname_success_flex_message(nickname):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "style": "primary",
-                    "color": "#B5651D",
-                    "action": {
-                        "type": "message",
-                        "label": "🚀 開始答題",
-                        "text": "開始"
-                    }
+                    "type": "text",
+                    "text": "🚀 第一道題目即將出現...",
+                    "size": "xs",
+                    "color": "#999999",
+                    "align": "center"
                 }
             ]
         }
@@ -3233,375 +3307,40 @@ def handle_postback(sender_id, postback):
         send_message(sender_id, {"text": "好的！讓我們重新開始挑戰，鞏固你的解剖學知識！"})
 
 @app.route('/leaderboard')
-def leaderboard():
-    """排行榜頁面 - 顯示學生排名"""
-    logger.info("🏆 正在獲取排行榜數據...")
+def public_leaderboard():
+    """公開排行榜頁面"""
+    logger.info("🏆 訪問公開排行榜頁面")
     
-    # 優先使用真實數據
-    students_data = get_real_students_data()
-    
-    # 如果沒有真實數據，才使用模擬數據
-    if not students_data:
-        logger.warning("⚠️ 無法獲取真實數據，使用模擬數據")
-        students_data = [
-            {"user_id": "user_008", "name": "吳建國", "level": 8, "score": 2100, "questions_answered": 150, "correct_answers": 135, "last_active": "2024-09-01 18:00"},
-            {"user_id": "user_004", "name": "陳大強", "level": 7, "score": 1800, "questions_answered": 120, "correct_answers": 105, "last_active": "2024-09-01 17:15"},
-            {"user_id": "user_006", "name": "黃志明", "level": 6, "score": 1450, "questions_answered": 89, "correct_answers": 76, "last_active": "2024-09-01 17:30"},
-            {"user_id": "user_002", "name": "李小華", "level": 5, "score": 1200, "questions_answered": 78, "correct_answers": 65, "last_active": "2024-09-01 16:45"},
-            {"user_id": "user_005", "name": "林小芳", "level": 4, "score": 920, "questions_answered": 56, "correct_answers": 48, "last_active": "2024-09-01 16:00"},
-            {"user_id": "user_001", "name": "張小明", "level": 3, "score": 850, "questions_answered": 45, "correct_answers": 38, "last_active": "2024-09-01 15:30"},
-            {"user_id": "user_003", "name": "王美美", "level": 2, "score": 450, "questions_answered": 23, "correct_answers": 18, "last_active": "2024-09-01 14:20"},
-            {"user_id": "user_007", "name": "劉雅婷", "level": 1, "score": 200, "questions_answered": 12, "correct_answers": 8, "last_active": "2024-09-01 13:45"}
-        ]
-    
-    logger.info(f"📊 排行榜數據準備完成，共 {len(students_data)} 條記錄")
-    
-    html_content = """
-    <!DOCTYPE html>
-    <html lang="zh-TW">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>What's Up Anatomy X 每日咬一口解剖 - 排行榜</title>
-        <style>
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 0;
-                padding: 20px;
-                background: linear-gradient(135deg, #f5f5dc 0%, #d2b48c 100%);
-                min-height: 100vh;
-                color: #2c1810;
-            }
-            .container {
-                max-width: 1000px;
-                margin: 0 auto;
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                background: rgba(210, 180, 140, 0.9);
-                border-radius: 20px;
-                padding: 30px;
-                box-shadow: 0 8px 32px rgba(44, 24, 16, 0.1);
-                border: 2px solid #8b4513;
-            }
-            .logo-section {
-                margin-bottom: 20px;
-            }
-            .logo {
-                width: 80px;
-                height: 80px;
-                margin: 0 auto 15px;
-                background: linear-gradient(45deg, #d2b48c, #8b4513);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 40px;
-                color: #2c1810;
-                border: 3px solid #8b4513;
-                box-shadow: 0 4px 15px rgba(44, 24, 16, 0.3);
-            }
-            .header h1 {
-                font-size: 2.5em;
-                margin-bottom: 10px;
-                text-shadow: 2px 2px 4px rgba(44, 24, 16, 0.2);
-                color: #2c1810;
-                font-weight: bold;
-            }
-            .nav {
-                display: flex;
-                justify-content: center;
-                gap: 20px;
-                margin-bottom: 30px;
-            }
-            .nav a {
-                background: rgba(139, 69, 19, 0.8);
-                padding: 12px 24px;
-                border-radius: 25px;
-                text-decoration: none;
-                color: #f5f5dc;
-                transition: all 0.3s;
-                border: 2px solid #8b4513;
-                font-weight: bold;
-            }
-            .nav a:hover {
-                background: rgba(139, 69, 19, 1);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(44, 24, 16, 0.3);
-            }
-            .nav a.active {
-                background: #d2b48c;
-                color: #2c1810;
-                border-color: #8b4513;
-            }
-            .leaderboard {
-                background: rgba(245, 245, 220, 0.9);
-                backdrop-filter: blur(10px);
-                border-radius: 20px;
-                padding: 30px;
-                margin-bottom: 30px;
-                border: 2px solid #8b4513;
-                box-shadow: 0 8px 32px rgba(44, 24, 16, 0.1);
-            }
-            .rank-item {
-                display: flex;
-                align-items: center;
-                padding: 20px;
-                margin: 10px 0;
-                background: rgba(210, 180, 140, 0.3);
-                border-radius: 15px;
-                transition: all 0.3s;
-                border: 1px solid #d2b48c;
-            }
-            .rank-item:hover {
-                transform: translateX(10px);
-                background: rgba(210, 180, 140, 0.5);
-                box-shadow: 0 4px 15px rgba(44, 24, 16, 0.2);
-            }
-            .rank-number {
-                font-size: 2em;
-                font-weight: bold;
-                width: 80px;
-                text-align: center;
-            }
-            .rank-1 { color: #d4af37; }
-            .rank-2 { color: #c0c0c0; }
-            .rank-3 { color: #cd7f32; }
-            .rank-other { color: #8b4513; }
-            .student-info {
-                flex: 1;
-                margin-left: 20px;
-            }
-            .student-name {
-                font-size: 1.3em;
-                font-weight: bold;
-                margin-bottom: 5px;
-                color: #2c1810;
-            }
-            .student-details {
-                display: flex;
-                gap: 20px;
-                font-size: 0.9em;
-                opacity: 0.8;
-                color: #8b4513;
-            }
-            .score-section {
-                text-align: right;
-                margin-left: 20px;
-            }
-            .score {
-                font-size: 2em;
-                font-weight: bold;
-                color: #d4af37;
-            }
-            .level-badge {
-                background: #8b4513;
-                color: #f5f5dc;
-                padding: 4px 12px;
-                border-radius: 15px;
-                font-size: 0.9em;
-                font-weight: bold;
-                display: inline-block;
-                margin-top: 5px;
-            }
-            .accuracy {
-                font-size: 0.9em;
-                opacity: 0.8;
-                margin-top: 5px;
-                color: #8b4513;
-            }
-            .stats-summary {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
-                margin-bottom: 30px;
-            }
-            .stat-card {
-                background: rgba(245, 245, 220, 0.9);
-                backdrop-filter: blur(10px);
-                border-radius: 15px;
-                padding: 20px;
-                text-align: center;
-                border-left: 5px solid #8b4513;
-                border: 2px solid #d2b48c;
-                box-shadow: 0 4px 15px rgba(44, 24, 16, 0.1);
-            }
-            .stat-number {
-                font-size: 2em;
-                font-weight: bold;
-                color: #d4af37;
-                margin-bottom: 10px;
-            }
-            .stat-label {
-                font-size: 1em;
-                opacity: 0.9;
-                color: #2c1810;
-            }
-            .score-explanation {
-                background: rgba(245, 245, 220, 0.9);
-                backdrop-filter: blur(10px);
-                border-radius: 15px;
-                padding: 25px;
-                margin-bottom: 30px;
-                border-left: 5px solid #d4af37;
-                border: 2px solid #d2b48c;
-                box-shadow: 0 4px 15px rgba(44, 24, 16, 0.1);
-            }
-            .score-explanation h3 {
-                margin: 0 0 20px 0;
-                color: #8b4513;
-                font-size: 1.4em;
-                text-align: center;
-            }
-            .explanation-content {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px;
-            }
-            .explanation-item {
-                display: flex;
-                align-items: center;
-                padding: 12px 15px;
-                background: rgba(210, 180, 140, 0.3);
-                border-radius: 10px;
-                transition: all 0.3s ease;
-                border: 1px solid #d2b48c;
-            }
-            .explanation-item:hover {
-                background: rgba(210, 180, 140, 0.5);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(44, 24, 16, 0.2);
-            }
-            .explanation-icon {
-                font-size: 1.5em;
-                margin-right: 12px;
-                min-width: 30px;
-                text-align: center;
-            }
-            .explanation-text {
-                font-size: 0.95em;
-                line-height: 1.4;
-                color: #2c1810;
-            }
-            .explanation-text strong {
-                color: #8b4513;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo-section">
-                    <div class="logo">💀📚</div>
-                </div>
-                <h1>🏆 What's Up Anatomy<br>X<br>解剖咬一口排行榜</h1>
-                <p>每天累積一點點；解剖力提高一點點</p>
-            </div>
-            
-            <div class="nav">
-                <a href="/">🏠 首頁</a>
-                <a href="/dashboard">📊 數據儀表板</a>
-                <a href="/leaderboard" class="active">🏆 排行榜</a>
-                <a href="/score_manager">🎯 積分管理</a>
-                <a href="/webhook">🔗 Webhook</a>
-            </div>
-    """
-    
-    # 添加統計摘要
-    if students_data:
-        total_students = len(students_data)
-        top_score = students_data[0]["score"] if students_data else 0
-        avg_score = sum(s["score"] for s in students_data) / total_students if total_students > 0 else 0
-        total_questions = sum(s["questions_answered"] for s in students_data)
-        total_correct = sum(s["correct_answers"] for s in students_data)
-        accuracy_rate = (total_correct / total_questions * 100) if total_questions > 0 else 0
+    try:
+        # 讀取公開排行榜HTML文件
+        with open('public_leaderboard.html', 'r', encoding='utf-8') as f:
+            html_content = f.read()
         
-        html_content += f"""
-            <div class="stats-summary">
-                <div class="stat-card">
-                    <div class="stat-number">{total_students}</div>
-                    <div class="stat-label">參與學生</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{top_score}</div>
-                    <div class="stat-label">最高分數</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{avg_score:.0f}</div>
-                    <div class="stat-label">平均分數</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{accuracy_rate:.1f}%</div>
-                    <div class="stat-label">整體正確率</div>
-                </div>
-            </div>
-            
-            <div class="score-explanation">
-                <h3>📊 分數計算方法</h3>
-                <div class="explanation-content">
-                    <div class="explanation-item">
-                        <span class="explanation-icon">✅</span>
-                        <span class="explanation-text"><strong>正確答案</strong>：每題 +10 分</span>
-                    </div>
-                    <div class="explanation-item">
-                        <span class="explanation-icon">❌</span>
-                        <span class="explanation-text"><strong>錯誤答案</strong>：0 分</span>
-                    </div>
-                    <div class="explanation-item">
-                        <span class="explanation-icon">📈</span>
-                        <span class="explanation-text"><strong>等級提升</strong>：每提升一級 +50 分獎勵</span>
-                    </div>
-                    <div class="explanation-item">
-                        <span class="explanation-icon">🔥</span>
-                        <span class="explanation-text"><strong>連續答對</strong>：連續答對 5 題 +20 分獎勵</span>
-                    </div>
-                    <div class="explanation-item">
-                        <span class="explanation-icon">🎯</span>
-                        <span class="explanation-text"><strong>總分公式</strong>：正確題數 × 10 + 等級獎勵 + 連續獎勵</span>
-                    </div>
-                </div>
-            </div>
-        """
-    
-    html_content += """
-            <div class="leaderboard">
-                <h2>🏅 分數排行榜</h2>
-    """
-    
-    # 添加排行榜項目
-    for i, student in enumerate(students_data, 1):
-        rank_class = f"rank-{i}" if i <= 3 else "rank-other"
-        accuracy = (student["correct_answers"] / student["questions_answered"] * 100) if student["questions_answered"] > 0 else 0
+        return html_content
         
-        html_content += f"""
-                <div class="rank-item">
-                    <div class="rank-number {rank_class}">{i}</div>
-                    <div class="student-info">
-                        <div class="student-name">{student["name"]}</div>
-                        <div class="student-details">
-                            <span>答題: {student["questions_answered"]} 題</span>
-                            <span>正確: {student["correct_answers"]} 題</span>
-                            <span>最後活躍: {student["last_active"]}</span>
-                        </div>
-                        <div class="level-badge">等級 {student["level"]}</div>
-                        <div class="accuracy">正確率: {accuracy:.1f}%</div>
-                    </div>
-                    <div class="score-section">
-                        <div class="score">{student["score"]}</div>
-                        <div>分數</div>
-                    </div>
-                </div>
-        """
-    
-    html_content += """
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
+    except FileNotFoundError:
+        logger.error("❌ 公開排行榜HTML文件未找到")
+        return """
+        <html>
+        <head><title>排行榜 - 文件未找到</title></head>
+        <body>
+            <h1>排行榜頁面暫時無法使用</h1>
+            <p>請聯繫管理員修復此問題。</p>
+        </body>
+        </html>
+        """, 404
+        
+    except Exception as e:
+        logger.error(f"❌ 載入公開排行榜頁面失敗: {e}")
+        return """
+        <html>
+        <head><title>排行榜 - 載入錯誤</title></head>
+        <body>
+            <h1>排行榜頁面載入失敗</h1>
+            <p>請稍後再試或聯繫管理員。</p>
+        </body>
+        </html>
+        """, 500
 
 @app.route('/dashboard')
 def dashboard():
@@ -4544,6 +4283,42 @@ def api_questions():
     except Exception as e:
         logger.error(f"❌ API: 獲取題目列表失敗: {e}")
         return jsonify({"error": "獲取題目列表失敗"}), 500
+
+@app.route('/leaderboard/widget')
+def leaderboard_widget():
+    """排行榜小工具頁面 - 適合嵌入其他網站"""
+    logger.info("📱 訪問排行榜小工具頁面")
+    
+    try:
+        # 讀取排行榜小工具HTML文件
+        with open('leaderboard_widget.html', 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        return html_content
+        
+    except FileNotFoundError:
+        logger.error("❌ 排行榜小工具HTML文件未找到")
+        return """
+        <html>
+        <head><title>排行榜小工具 - 文件未找到</title></head>
+        <body>
+            <h1>排行榜小工具暫時無法使用</h1>
+            <p>請聯繫管理員修復此問題。</p>
+        </body>
+        </html>
+        """, 404
+        
+    except Exception as e:
+        logger.error(f"❌ 載入排行榜小工具頁面失敗: {e}")
+        return """
+        <html>
+        <head><title>排行榜小工具 - 載入錯誤</title></head>
+        <body>
+            <h1>排行榜小工具載入失敗</h1>
+            <p>請稍後再試或聯繫管理員。</p>
+        </body>
+        </html>
+        """, 500
 
 # --- ASGI 兼容：把 Flask(WGSI) 包成 ASGI，給 Render 目前的 `uvicorn app_supabase:app` 使用 ---
 try:

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖學測驗機器人 - 即時排行榜</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-item .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .stat-item .label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+        }
+
+        .period-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .period-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .period-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .period-btn.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .leaderboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .leaderboard-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .leaderboard-header h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .last-updated {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th {
+            background: #f8f9fa;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .leaderboard-table td {
+            padding: 20px 15px;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaderboard-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .rank {
+            font-weight: bold;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: center;
+        }
+
+        .rank-1 { color: #ffd700; }
+        .rank-2 { color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; }
+
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 1.1rem;
+        }
+
+        .level {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+            border-radius: 10px;
+            margin: 20px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .auto-refresh {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-bar {
+                gap: 15px;
+            }
+            
+            .stat-item {
+                padding: 10px 15px;
+                min-width: 120px;
+            }
+            
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 15px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .period-selector {
+                flex-wrap: wrap;
+            }
+        }
+
+        .trophy {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .medal-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 解剖學測驗機器人</h1>
+            <p>即時排行榜 - 挑戰你的解剖學知識！</p>
+            <div class="auto-refresh">
+                <span id="autoRefreshStatus">自動更新：每30秒</span>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="value" id="totalPlayers">-</div>
+                <div class="label">活躍玩家</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="todayAnswers">-</div>
+                <div class="label">今日答題</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="accuracy">-</div>
+                <div class="label">平均正確率</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="maxStreak">-</div>
+                <div class="label">最高連勝</div>
+            </div>
+        </div>
+
+        <div class="period-selector">
+            <button class="period-btn active" data-period="week">本週</button>
+            <button class="period-btn" data-period="month">本月</button>
+            <button class="period-btn" data-period="all">全部</button>
+        </div>
+
+        <div class="leaderboard-card">
+            <div class="leaderboard-header">
+                <h2><span class="trophy">🏆</span>排行榜</h2>
+                <div class="last-updated">最後更新：<span id="lastUpdated">載入中...</span></div>
+            </div>
+            
+            <div id="leaderboardContent">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>正在載入排行榜資料...</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="refreshData()" title="手動更新">
+            🔄
+        </button>
+    </div>
+
+    <script>
+        let currentPeriod = 'week';
+        let autoRefreshInterval;
+
+        // API 基礎 URL - 請根據實際部署調整
+        const API_BASE_URL = window.location.origin;
+
+        async function fetchLeaderboardData(period = 'week') {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/leaderboard?period=${period}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('獲取排行榜資料失敗:', error);
+                throw error;
+            }
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/dashboard`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('獲取儀表板資料失敗:', error);
+                throw error;
+            }
+        }
+
+        function updateStats(dashboardData) {
+            document.getElementById('totalPlayers').textContent = dashboardData.activeStudents || 0;
+            document.getElementById('todayAnswers').textContent = dashboardData.answersToday || 0;
+            document.getElementById('accuracy').textContent = 
+                Math.round((dashboardData.accuracy || 0) * 100) + '%';
+            document.getElementById('maxStreak').textContent = dashboardData.maxStreak || 0;
+        }
+
+        function renderLeaderboard(data) {
+            const content = document.getElementById('leaderboardContent');
+            
+            if (!data || data.length === 0) {
+                content.innerHTML = `
+                    <div class="error">
+                        <h3>暫無排行榜資料</h3>
+                        <p>目前還沒有玩家資料，快來挑戰解剖學測驗吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>玩家</th>
+                            <th>等級</th>
+                            <th>答題數</th>
+                            <th>分數</th>
+                            <th>連勝</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach((player, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let medalIcon = '';
+                
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                    medalIcon = '🥇';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                    medalIcon = '🥈';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                    medalIcon = '🥉';
+                }
+
+                tableHTML += `
+                    <tr>
+                        <td class="rank ${rankClass}">
+                            <span class="medal-icon">${medalIcon}</span>
+                            ${rank}
+                        </td>
+                        <td class="player-name">${player.name || '匿名玩家'}</td>
+                        <td><span class="level">Lv.${player.level || 1}</span></td>
+                        <td>${player.answers || 0}</td>
+                        <td class="score">${player.score || 0}</td>
+                        <td>${player.streak || 0}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            content.innerHTML = tableHTML;
+        }
+
+        function showError(message) {
+            const content = document.getElementById('leaderboardContent');
+            content.innerHTML = `
+                <div class="error">
+                    <h3>載入失敗</h3>
+                    <p>${message}</p>
+                    <button onclick="refreshData()" style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        重新載入
+                    </button>
+                </div>
+            `;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-TW', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('lastUpdated').textContent = timeString;
+        }
+
+        async function refreshData() {
+            try {
+                // 顯示載入狀態
+                document.getElementById('leaderboardContent').innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>正在更新資料...</p>
+                    </div>
+                `;
+
+                // 並行獲取資料
+                const [leaderboardData, dashboardData] = await Promise.all([
+                    fetchLeaderboardData(currentPeriod),
+                    fetchDashboardData()
+                ]);
+
+                // 更新統計資料
+                updateStats(dashboardData);
+                
+                // 更新排行榜
+                renderLeaderboard(leaderboardData);
+                
+                // 更新時間
+                updateLastUpdated();
+
+            } catch (error) {
+                console.error('更新資料失敗:', error);
+                showError('無法連接到伺服器，請稍後再試。');
+            }
+        }
+
+        function setupPeriodSelector() {
+            const buttons = document.querySelectorAll('.period-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    // 更新按鈕狀態
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // 更新當前期間
+                    currentPeriod = button.dataset.period;
+                    
+                    // 重新載入資料
+                    await refreshData();
+                });
+            });
+        }
+
+        function startAutoRefresh() {
+            // 清除現有的定時器
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // 設定自動更新（每30秒）
+            autoRefreshInterval = setInterval(refreshData, 30000);
+            
+            // 更新狀態顯示
+            document.getElementById('autoRefreshStatus').textContent = '自動更新：每30秒';
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupPeriodSelector();
+            await refreshData();
+            startAutoRefresh();
+        });
+
+        // 頁面可見性變化時處理自動更新
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // 頁面隱藏時停止自動更新
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                }
+            } else {
+                // 頁面顯示時重新開始自動更新
+                refreshData();
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+{
+  "analysis_date": "2025-09-21",
+  "analysis_time": "2025-09-21T22:37:38.938105",
+  "total_active_users": 3,
+  "users_behavior": [
+    {
+      "user_id": "U315252475f1e5f7b5ce3681906caa55a",
+      "nickname": "北極熊超爽",
+      "user_type": "一般用戶",
+      "level": 3,
+      "level_progress": 0,
+      "total_correct": 6,
+      "total_wrong": 3,
+      "total_questions": 9,
+      "accuracy": 66.7,
+      "daily_quota": 1,
+      "activity_level": "低度活動",
+      "last_updated": "2025-09-21",
+      "is_admin": false
+    },
+    {
+      "user_id": "U977c24d1fec3a2bf07035504e1444911",
+      "nickname": "開始",
+      "user_type": "新手",
+      "level": 1,
+      "level_progress": 0,
+      "total_correct": 0,
+      "total_wrong": 0,
+      "total_questions": 0,
+      "accuracy": 0.0,
+      "daily_quota": 0,
+      "activity_level": "輕微活動",
+      "last_updated": "2025-09-21",
+      "is_admin": false
+    },
+    {
+      "user_id": "Ube9bd4eddb61647070198906c292b3dc",
+      "nickname": null,
+      "user_type": "新手",
+      "level": 1,
+      "level_progress": 0,
+      "total_correct": 0,
+      "total_wrong": 0,
+      "total_questions": 0,
+      "accuracy": 0.0,
+      "daily_quota": 0,
+      "activity_level": "輕微活動",
+      "last_updated": "2025-09-21",
+      "is_admin": false
+    }
+  ],
+  "behavior_patterns": {
+    "activity_distribution": {
+      "低度活動": 1,
+      "輕微活動": 2
+    },
+    "user_type_distribution": {
+      "一般用戶": 1,
+      "新手": 2
+    },
+    "level_distribution": {
+      "等級3": 1,
+      "等級1": 2
+    },
+    "total_questions_today": 1,
+    "avg_level": 1.7,
+    "avg_accuracy": 22.2,
+    "avg_daily_questions": 0.3
+  },
+  "summary": {
+    "most_active_user": {
+      "user_id": "U315252475f1e5f7b5ce3681906caa55a",
+      "nickname": "北極熊超爽",
+      "user_type": "一般用戶",
+      "level": 3,
+      "level_progress": 0,
+      "total_correct": 6,
+      "total_wrong": 3,
+      "total_questions": 9,
+      "accuracy": 66.7,
+      "daily_quota": 1,
+      "activity_level": "低度活動",
+      "last_updated": "2025-09-21",
+      "is_admin": false
+    },
+    "total_questions_today": 1,
+    "avg_accuracy": 22.2,
+    "dominant_activity_level": "輕微活動",
+    "dominant_user_type": "新手"
+  }
+}

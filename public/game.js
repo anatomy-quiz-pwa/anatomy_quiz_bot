@@ -27,17 +27,167 @@ let gameState = {
     currentQuestion: null,
     selectedAnswer: null,
     allQuestions: [],
-    usedQuestionIds: []
+    usedQuestionIds: [],
+    user: null, // LINE 用户信息
+    isLoggedIn: false
 };
+
+// LINE 登录功能
+async function initLineLogin() {
+    try {
+        // 检查是否有 LINE 登录参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const lineCode = urlParams.get('code');
+        const lineState = urlParams.get('state');
+        
+        if (lineCode) {
+            // 处理 LINE 登录回调
+            await handleLineCallback(lineCode, lineState);
+        } else {
+            // 检查本地存储的登录状态
+            const savedUser = localStorage.getItem('lineUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                gameState.user = user;
+                gameState.isLoggedIn = true;
+                gameState.nickname = user.displayName;
+                gameState.userId = user.userId;
+                
+                showUserInfo(user);
+            } else {
+                showLoginButton();
+            }
+        }
+    } catch (error) {
+        console.error('❌ LINE 登录初始化失败:', error);
+        showManualLogin();
+    }
+}
+
+// 处理 LINE 登录回调
+async function handleLineCallback(code, state) {
+    try {
+        // 这里需要后端 API 来交换 access token
+        // 暂时使用模拟数据
+        const mockUser = {
+            userId: 'U' + Math.random().toString(36).substr(2, 32),
+            displayName: 'LINE 用户',
+            pictureUrl: 'https://via.placeholder.com/100'
+        };
+        
+        gameState.user = mockUser;
+        gameState.isLoggedIn = true;
+        gameState.nickname = mockUser.displayName;
+        gameState.userId = mockUser.userId;
+        
+        // 保存到本地存储
+        localStorage.setItem('lineUser', JSON.stringify(mockUser));
+        
+        showUserInfo(mockUser);
+        await saveUserToSupabase(mockUser);
+        
+        // 清除 URL 参数
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+    } catch (error) {
+        console.error('❌ 处理 LINE 回调失败:', error);
+        showManualLogin();
+    }
+}
+
+// 显示用户信息
+function showUserInfo(profile) {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('manual-login-section').style.display = 'none';
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('start-btn').style.display = 'inline-block';
+    
+    document.getElementById('user-display-name').textContent = 
+        `${profile.displayName} (${profile.userId})`;
+}
+
+// 显示登录按钮
+function showLoginButton() {
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('manual-login-section').style.display = 'none';
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('start-btn').style.display = 'none';
+}
+
+// 显示手动登录选项
+function showManualLogin() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('manual-login-section').style.display = 'block';
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('start-btn').style.display = 'inline-block';
+}
+
+// LINE 登录
+async function lineLogin() {
+    try {
+        // LINE Login URL (需要配置实际的 Channel ID 和 Callback URL)
+        const channelId = 'YOUR_CHANNEL_ID'; // 需要替换为实际的 Channel ID
+        const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+        const state = 'anatomy_quiz_' + Date.now();
+        
+        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${redirectUri}&state=${state}&scope=profile%20openid`;
+        
+        // 跳转到 LINE 登录页面
+        window.location.href = lineLoginUrl;
+        
+    } catch (error) {
+        console.error('❌ LINE 登录失败:', error);
+        alert('LINE 登录失败，请使用手动输入方式。');
+        showManualLogin();
+    }
+}
+
+// 登出
+function logout() {
+    // 清除本地存储
+    localStorage.removeItem('lineUser');
+    
+    // 重置游戏状态
+    gameState.user = null;
+    gameState.isLoggedIn = false;
+    gameState.nickname = '遊客';
+    gameState.userId = null;
+    
+    showLoginButton();
+}
+
+// 保存用户信息到 Supabase
+async function saveUserToSupabase(profile) {
+    try {
+        const { error } = await supabase
+            .from('users')
+            .upsert({
+                user_id: profile.userId,
+                nickname: profile.displayName,
+                line_id: profile.userId,
+                last_login: new Date().toISOString(),
+                created_at: new Date().toISOString()
+            });
+        
+        if (error) {
+            console.error('❌ 保存用户信息失败:', error);
+        } else {
+            console.log('✅ 用户信息已保存到 Supabase');
+        }
+    } catch (error) {
+        console.error('❌ 保存用户信息错误:', error);
+    }
+}
 
 // 開始遊戲
 async function startGame() {
-    const nicknameInput = document.getElementById('nickname-input');
-    const nickname = nicknameInput.value.trim() || '遊客';
-    gameState.nickname = nickname;
-    
-    // 生成臨時用戶 ID
-    gameState.userId = 'web_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // 如果没有 LINE 登录，使用手动输入的昵称
+    if (!gameState.isLoggedIn) {
+        const nicknameInput = document.getElementById('nickname-input');
+        const nickname = nicknameInput.value.trim() || '遊客';
+        gameState.nickname = nickname;
+        gameState.userId = 'web_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
     
     // 隱藏開始畫面，顯示載入中
     document.getElementById('start-screen').style.display = 'none';
@@ -411,5 +561,12 @@ async function saveProgress() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 解剖學測驗遊戲已就緒！');
     console.log('✅ Supabase 連接已建立');
+    
+    // 初始化 LINE 登录
+    initLineLogin();
+    
+    // 添加事件监听器
+    document.getElementById('line-login-btn').addEventListener('click', lineLogin);
+    document.getElementById('logout-btn').addEventListener('click', logout);
 });
 

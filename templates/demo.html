@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}演示模式 - 解剖學測驗系統{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title mb-4">
+                    <i class="fas fa-play-circle text-success"></i>
+                    演示模式
+                </h2>
+                <p class="card-text lead mb-4">
+                    無需登入，立即體驗解剖學測驗遊戲！<br>
+                    這裡有基礎的解剖學題目供您練習。
+                </p>
+                
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> 演示模式說明</h5>
+                    <ul class="text-start">
+                        <li>這是一個簡化的演示版本</li>
+                        <li>題目難度固定為基礎等級</li>
+                        <li>不會保存您的成績記錄</li>
+                        <li>如需完整功能，請使用LINE登入</li>
+                    </ul>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-block mb-4">
+                    <button id="startDemoBtn" class="btn btn-success btn-lg">
+                        <i class="fas fa-play"></i>
+                        開始演示測驗
+                    </button>
+                    <a href="/login" class="btn btn-primary btn-lg">
+                        <i class="fab fa-line"></i>
+                        使用LINE登入（完整功能）
+                    </a>
+                </div>
+                
+                <!-- 測驗區域 -->
+                <div id="quizArea" class="d-none">
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-question-circle"></i> 測驗題目</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 id="questionText" class="mb-4"></h6>
+                            <div id="optionsContainer" class="mb-4"></div>
+                            <button id="submitAnswerBtn" class="btn btn-primary" disabled>
+                                <i class="fas fa-check"></i> 提交答案
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 結果區域 -->
+                <div id="resultArea" class="d-none">
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h5 id="resultTitle"></h5>
+                            <p id="resultExplanation" class="mb-4"></p>
+                            <div class="d-grid gap-2 d-md-block">
+                                <button id="nextQuestionBtn" class="btn btn-success">
+                                    <i class="fas fa-forward"></i> 下一題
+                                </button>
+                                <button id="endDemoBtn" class="btn btn-secondary">
+                                    <i class="fas fa-stop"></i> 結束演示
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuestion = null;
+let selectedAnswer = null;
+
+document.getElementById('startDemoBtn').addEventListener('click', startDemo);
+document.getElementById('submitAnswerBtn').addEventListener('click', submitAnswer);
+document.getElementById('nextQuestionBtn').addEventListener('click', startDemo);
+document.getElementById('endDemoBtn').addEventListener('click', endDemo);
+
+function startDemo() {
+    // 隱藏結果區域，顯示測驗區域
+    document.getElementById('resultArea').classList.add('d-none');
+    document.getElementById('quizArea').classList.remove('d-none');
+    document.getElementById('startDemoBtn').style.display = 'none';
+    
+    // 重置狀態
+    selectedAnswer = null;
+    document.getElementById('submitAnswerBtn').disabled = true;
+    
+    // 獲取題目
+    fetch('/api/demo/quiz/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentQuestion = data.question;
+            displayQuestion(currentQuestion);
+        } else {
+            alert('獲取題目失敗：' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('獲取題目時發生錯誤');
+    });
+}
+
+function displayQuestion(question) {
+    document.getElementById('questionText').textContent = question.question;
+    
+    const optionsContainer = document.getElementById('optionsContainer');
+    optionsContainer.innerHTML = '';
+    
+    question.options.forEach((option, index) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'form-check mb-2';
+        optionDiv.innerHTML = `
+            <input class="form-check-input" type="radio" name="answer" value="${index}" id="option${index}">
+            <label class="form-check-label" for="option${index}">
+                ${option}
+            </label>
+        `;
+        
+        optionDiv.querySelector('input').addEventListener('change', function() {
+            selectedAnswer = parseInt(this.value);
+            document.getElementById('submitAnswerBtn').disabled = false;
+        });
+        
+        optionsContainer.appendChild(optionDiv);
+    });
+}
+
+function submitAnswer() {
+    if (selectedAnswer === null) {
+        alert('請選擇一個答案');
+        return;
+    }
+    
+    fetch('/api/demo/quiz/answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            answer: selectedAnswer
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showResult(data);
+        } else {
+            alert('提交答案失敗：' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('提交答案時發生錯誤');
+    });
+}
+
+function showResult(data) {
+    document.getElementById('quizArea').classList.add('d-none');
+    document.getElementById('resultArea').classList.remove('d-none');
+    
+    const resultTitle = document.getElementById('resultTitle');
+    const resultExplanation = document.getElementById('resultExplanation');
+    
+    if (data.is_correct) {
+        resultTitle.innerHTML = '<i class="fas fa-check-circle text-success"></i> 答對了！🎉';
+        resultTitle.className = 'text-success';
+        resultExplanation.innerHTML = `
+            <div class="alert alert-success">
+                <h6><i class="fas fa-lightbulb"></i> 正確答案：</h6>
+                <p><strong>${currentQuestion.options[data.correct_answer]}</strong></p>
+            </div>
+            ${data.explanation ? `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-book"></i> 解釋：</h6>
+                    <p>${data.explanation}</p>
+                </div>
+            ` : ''}
+            <p class="text-muted">太棒了！繼續挑戰下一題吧！</p>
+        `;
+    } else {
+        resultTitle.innerHTML = '<i class="fas fa-times-circle text-danger"></i> 答錯了 😢';
+        resultTitle.className = 'text-danger';
+        resultExplanation.innerHTML = `
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-lightbulb"></i> 正確答案：</h6>
+                <p><strong>${currentQuestion.options[data.correct_answer]}</strong></p>
+            </div>
+            ${data.explanation ? `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-book"></i> 解釋：</h6>
+                    <p>${data.explanation}</p>
+                </div>
+            ` : ''}
+            <p class="text-muted">別灰心，再接再厲！繼續挑戰下一題吧！</p>
+        `;
+    }
+}
+
+function endDemo() {
+    document.getElementById('resultArea').classList.add('d-none');
+    document.getElementById('quizArea').classList.add('d-none');
+    document.getElementById('startDemoBtn').style.display = 'inline-block';
+}
+</script>
+{% endblock %}
+

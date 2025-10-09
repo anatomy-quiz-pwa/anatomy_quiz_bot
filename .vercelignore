@@ -1,12 +1,56 @@
-# Vercel 忽略文件
-node_modules
-.next
-.git
-.env.local
-.env.*.local
-*.log
-.DS_Store
-README.md
-DEPLOYMENT.md
-scripts/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv311/
+env/
+ENV/
+.env
+.venv
 
+# Node
+node_modules/
+anatomy_admin_panel/node_modules/
+
+# Logs
+*.log
+app.log
+
+# Backups
+backup_*/
+*_backup_*/
+
+# Test and analysis files
+test_*.py
+analyze_*.py
+check_*.py
+debug_*.py
+diagnose_*.py
+investigate_*.py
+calculate_*.py
+verify_*.py
+apply_*.py
+create_*.py
+fix_*.py
+demo_*.py
+setup_*.py
+
+# JSON reports
+*.json
+!vercel.json
+!package.json
+
+# Documentation
+*.md
+!README.md
+
+# Scripts
+scripts/
+*.sh
+
+# Build artifacts
+build/
+dist/

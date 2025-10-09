@@ -1,0 +1,38 @@
+{
+  "analysis_date": "2025-09-23 to 2025-09-24",
+  "analysis_time": "2025-09-24T21:02:50.512390",
+  "yesterday_data": {
+    "date": "2025-09-23",
+    "active_users": 96,
+    "new_users": 49,
+    "total_interactions": 145,
+    "user_messages": 767,
+    "bot_messages": 1146,
+    "total_messages": 1913
+  },
+  "today_data": {
+    "date": "2025-09-24",
+    "active_users": 55,
+    "new_users": 12,
+    "total_interactions": 67,
+    "user_messages": 667,
+    "bot_messages": 869,
+    "total_messages": 1536
+  },
+  "corrected_estimation": {
+    "yesterday_actual_users": 98,
+    "today_actual_users": 53,
+    "yesterday_actual_questions": 743,
+    "today_actual_questions": 128,
+    "total_estimated_messages": 2613
+  },
+  "summary": {
+    "total_interactions": 212,
+    "total_user_messages": 1434,
+    "total_bot_messages": 2015,
+    "total_messages": 3449,
+    "corrected_total_messages": 2613,
+    "avg_messages_per_interaction": 16.2688679245283,
+    "avg_messages_per_user": 22.841059602649008
+  }
+}

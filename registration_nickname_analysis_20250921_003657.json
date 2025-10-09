@@ -1,0 +1,570 @@
+{
+  "analysis_date": "2025-09-21T00:36:57.242953",
+  "total_zero_answer_users": 101,
+  "nickname_analysis": {
+    "has_nickname": 42,
+    "no_nickname": 59,
+    "nickname_users": [
+      {
+        "user_id": "U1e856e3a9b70881447aa55d38bc160de",
+        "nickname": "Hc",
+        "created_at": "2025-09-20T13:54:06.971604+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U977c24d1fec3a2bf07035504e1444911",
+        "nickname": "開始",
+        "created_at": "2025-09-20T14:27:31.031138+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U9a9df49945755ef651d067743f3c7ea7",
+        "nickname": "蘇測測",
+        "created_at": "2025-09-01T06:39:37.377+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uddae8475d30fd8691c811ecef7737890",
+        "nickname": "神秘小檬檬",
+        "created_at": "2025-09-17T14:01:49.982033+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U02f22399f452c5a47e25ab99db8dca7c",
+        "nickname": "123",
+        "created_at": "2025-09-10T16:03:51.396244+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U9740d22589c00cae0e575a908d7c50a1",
+        "nickname": "積分",
+        "created_at": "2025-09-20T13:53:14.968314+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U836ca795a87f1df28dfd2e57685c1098",
+        "nickname": "解剖中醫師",
+        "created_at": "2025-09-20T13:54:43.044362+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud8ad9f89f6371927bae9414e96558038",
+        "nickname": "kitty",
+        "created_at": "2025-09-20T13:53:25.777132+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U16b7f70b683294b2a2f4702537053ad6",
+        "nickname": "Ava寶貝",
+        "created_at": "2025-09-20T13:53:46.039224+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ubeed443b911b237f4cd83f6c262ea9ef",
+        "nickname": "卡蜜拉",
+        "created_at": "2025-09-20T13:55:29.65524+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U4ec855c257c2bbaf298832e63de01a04",
+        "nickname": "共出來",
+        "created_at": "2025-09-20T13:54:21.114491+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud51157e294dca3311eb706757102006a",
+        "nickname": "魚魚",
+        "created_at": "2025-09-20T13:54:22.304173+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U8d943980c7363d3d61e9e0aecb233a32",
+        "nickname": "if",
+        "created_at": "2025-09-20T16:10:56.520733+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U95fb1fa3a16740ad3447cbed3b0d1fc7",
+        "nickname": "積分",
+        "created_at": "2025-09-20T14:31:29.235656+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U26055698ee10f2d6811354a680c3f59f",
+        "nickname": "Papa",
+        "created_at": "2025-09-20T14:25:33.610929+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U30382722a459c580fee185c0e07fbc1e",
+        "nickname": "米米",
+        "created_at": "2025-09-20T15:01:28.36036+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U4b1ccb950d4b4a1f32dbc61ff547d582",
+        "nickname": "安安",
+        "created_at": "2025-09-20T14:35:17.185882+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U17e01b0fac4e0c8d3e27141c6c0e2484",
+        "nickname": "雪力",
+        "created_at": "2025-09-20T16:00:46.062628+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub8751fbfe3c7fcd07d3a6b501f909f27",
+        "nickname": "排行榜",
+        "created_at": "2025-09-20T14:08:24.432121+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U481111e25ff42e1824bdd9405fd52e0a",
+        "nickname": "Nap",
+        "created_at": "2025-09-20T13:55:19.740706+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ue4af4045cea3ce81c89ed53e0dd82ca2",
+        "nickname": "積分",
+        "created_at": "2025-09-20T13:55:28.453124+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U673c163fcb37c664f7f53096f50e2cef",
+        "nickname": "周大熊",
+        "created_at": "2025-09-20T14:22:53.861834+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U513733254aa9c61c38749f73aef63b45",
+        "nickname": "Angelica",
+        "created_at": "2025-09-20T14:24:44.357617+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ubdef92ef7801c589c99e0020edaa5f49",
+        "nickname": "En",
+        "created_at": "2025-09-20T14:32:52.893316+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U6759048a7644e106d9f985754246a83e",
+        "nickname": "芳芳",
+        "created_at": "2025-09-20T14:20:21.872075+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud0385adff71fd9dd1d56fa63cac7a7d7",
+        "nickname": "joy",
+        "created_at": "2025-09-20T14:23:32.426371+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U3ebb21ca3b3b5a38944efcff64a54e6c",
+        "nickname": "Willy",
+        "created_at": "2025-09-20T14:28:35.671958+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uf8a5055f1693afcbbde5fc333a59eb8b",
+        "nickname": "積分",
+        "created_at": "2025-09-20T15:02:05.312614+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U059865868c11dfb6e7890d802dda5af9",
+        "nickname": "洪大胃",
+        "created_at": "2025-09-20T15:05:25.577383+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub4ea56f09500a1f5eaf1a907b5c968e6",
+        "nickname": "Howei",
+        "created_at": "2025-09-20T15:23:28.132141+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud6ca627c75d89730618fff38fdd678cd",
+        "nickname": "zhen",
+        "created_at": "2025-09-20T15:31:19.264271+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U6c084682d665201a48ddce1eeeacc541",
+        "nickname": "Winnie",
+        "created_at": "2025-09-20T15:39:01.128049+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U0e7c74a27b062936d7ff58f576dbd4c9",
+        "nickname": "chiu",
+        "created_at": "2025-09-20T15:32:02.850511+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ue436480d914d37b9d42c255ba32c2ae8",
+        "nickname": "聰蛋",
+        "created_at": "2025-09-20T15:18:41.558892+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U9695a077296acf5b5dd70b3a58f032bb",
+        "nickname": "Beverly",
+        "created_at": "2025-09-20T15:35:17.915731+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U60c77395e8e8c8a84b6775e12b2040c5",
+        "nickname": "Ashley",
+        "created_at": "2025-09-20T15:35:46.762394+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U434412ff502339ac18f2fb4f39a498a8",
+        "nickname": "Nia",
+        "created_at": "2025-09-20T15:33:16.482428+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uf8097ec0bfc8d5bd16b24dcc5afb396f",
+        "nickname": "木木",
+        "created_at": "2025-09-20T15:33:12.25644+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uf8432006e9b7c88b8cc69f5e70f173fb",
+        "nickname": "Brandon",
+        "created_at": "2025-09-20T15:36:56.98641+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uc2cac41bca282b48b4652a4cd3f332de",
+        "nickname": "Kyle",
+        "created_at": "2025-09-20T15:59:05.58899+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U1fb68fcff77e14aab3f6326f8338282c",
+        "nickname": "Evonne",
+        "created_at": "2025-09-20T16:18:16.940927+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ucb8c0f9c5e1db666ec2dafd567861f42",
+        "nickname": "Yvette",
+        "created_at": "2025-09-20T16:24:40.576026+00:00",
+        "last_update": "2025-09-20"
+      }
+    ],
+    "no_nickname_users": [
+      {
+        "user_id": "U4b3e12a193415ae8bfa296631946cdb1",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud2e02ab3981ac014dbd19673b77a286b",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uce4c448e348ceeae0e04f6d85b22df27",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U1b0775580b7749201cbdce81f23ff54c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ua225f2fa3bfe9480bbeb97b97e3a6d08",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ube9bd4eddb61647070198906c292b3dc",
+        "created_at": "2025-09-12T05:42:45.602848+00:00",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U412cc08015b8c879fcc1fe2524c2901c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U14b5b6bb625105e4f36d0007b059b9de",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U8f4e47e651f437610a34b540d0c9eff3",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U70412a7918eb9403285b879292252c2b",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ua6e0cbd4a257a677de35bf503c381513",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud018aef6cc06a55bcf81d0ee108940ec",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub60aedd3e1203efc5025db4bdefae19f",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U393539b45d2694e80405738911f8b61c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U0caa4f6860dff366af2ee5c26f41e1bf",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uf75a0855c01da74a23e96d00aab0fa10",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U37af7485769bc2042e4815a5cc13e83e",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ue2873763c824f68e31a684e0ce9ccffb",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U3085795f151644da2e902410aeec9591",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ua4cc01424750f17059df76151c68a360",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U85558f5e2d45a64fe37f5ab5a300999e",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U86276e4279e413dff3c97c0ebf3ecc85",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U9bb81080f61f8faa6add3fcc0e64f55c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub215f6aac389e98e0dafddf95b4545f5",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub34f5cac9a75525fcef3490ee924c439",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Udd1afe7c4c0a45f2dbe8468449fe56fe",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uc001c280eb3e84360be073a73a615491",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U75b84131bf36dca7d646f98e426ef255",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U46f8835750e69eb50af092f8ef16f2a7",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U7d1313533a482478a626ec94047b60ab",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U05c58934629701e3f304d920d7557922",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U37daff016d4efb29fb8c8f9edf863d4c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U2ddc79b6a18e8316707f445e4314a334",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U3985367ecbfb3aa8caa6da6d20455a0b",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U3ce694208910a5f7f330eb8853b1f528",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud094921a00a62e95cedf4928145587ea",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uc5cd1225a2bc9aa2d77bf005af3eb751",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U60c9144e113daa7956b6331ce7997417",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ua56164504cb417de7cfdea271c6d6967",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Udbfbe03fcf02f4344034064a46afeab5",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U2e8c507cebd2e8ff3207f1c9c6bec65d",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U36f098fd43356c957e349ef6a170a0a2",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uc9927aec568091a0c9e1cf2272ca37cf",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U57f475651145f9582ff613fdda6afdda",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U1a990c1c2d6f1dfb043837ce516898f9",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U7098017c9e5eac2403077cac90c899d2",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ufccf07d5e54c121dfbebae750e54fcc6",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U959ba7d09efa29f95c87292b64e405dd",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ud6c37af95c0bd57401ea4f5fa669a9ac",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U2c1c84c589536d46956dc18cb51e3154",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U07d6de61e9b62bcca22a4fd2c9a0a62b",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub1113ee30ced756f87bb4eb55e4fd79f",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ufa3ef952dbc6c54118ace8cb60e1e343",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uc26e9018f581f0e44f6c5306c7b64c66",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ub552fee89f9c9fc060843ddcc0756bd9",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U76194613dbf79c7f5c5cabfd2422bd96",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Ue53cb98ceeff8e029d6f068961bd4ef0",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "U3b325a97651f42544898d6973e1a364c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      },
+      {
+        "user_id": "Uf3c1b52b0c64fb9b5cae326c1aa4836c",
+        "created_at": "",
+        "last_update": "2025-09-20"
+      }
+    ]
+  },
+  "timing_analysis": {
+    "same_day_registration": 0,
+    "old_registrations": 0,
+    "recent_registrations": 0,
+    "timing_details": []
+  },
+  "system_delay_indicators": {
+    "quick_nickname_setup": 0,
+    "potential_system_issues": [],
+    "normal_abandonment": 0
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "analysis_date_range": "2025-09-22 to 2025-09-24",
+  "analysis_time": "2025-09-25T18:39:14.197180",
+  "analysis_result": {
+    "three_days_data": [
+      {
+        "date": "2025-09-22",
+        "active_users": 45,
+        "new_users": 35,
+        "quiz_attempts": 120,
+        "estimated_messages": 360
+      },
+      {
+        "date": "2025-09-23",
+        "active_users": 98,
+        "new_users": 49,
+        "quiz_attempts": 743,
+        "estimated_messages": 2229
+      },
+      {
+        "date": "2025-09-24",
+        "active_users": 53,
+        "new_users": 12,
+        "quiz_attempts": 128,
+        "estimated_messages": 384
+      }
+    ],
+    "summary": {
+      "total_active_users": 196,
+      "total_new_users": 96,
+      "total_quiz_attempts": 991,
+      "total_messages": 2973,
+      "avg_active_users": 65.33333333333333,
+      "avg_new_users": 32.0,
+      "avg_quiz_attempts": 330.3333333333333,
+      "avg_messages": 991.0,
+      "avg_questions_per_user": 5.0561224489795915,
+      "activity_level": "高活躍",
+      "engagement_level": "高參與",
+      "trend": "上升趨勢",
+      "quiz_trend": "上升趨勢"
+    }
+  }
+}

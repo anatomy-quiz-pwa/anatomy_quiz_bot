@@ -1,0 +1,9 @@
+{
+  "2025-09-21": {
+    "timestamp": "2025-09-21T00:15:30.232977",
+    "total_usage": 6000,
+    "total_quota": 6000,
+    "quota_type": "limited",
+    "remaining": 0
+  }
+}

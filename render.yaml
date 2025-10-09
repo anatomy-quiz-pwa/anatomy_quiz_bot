@@ -16,7 +16,7 @@ services:
       pathlib.Path(".build_id").write_text(f"{ts}-{sha}")
       print("Wrote .build_id =", f"{ts}-{sha}")
       PY
-    startCommand: gunicorn app_supabase:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    startCommand: gunicorn web_app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
     healthCheckPath: /__health
     envVars:
       - key: LINE_CHANNEL_SECRET
@@ -26,4 +26,12 @@ services:
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: LINE_LOGIN_CHANNEL_ID
+        sync: false
+      - key: LINE_LOGIN_CHANNEL_SECRET
+        sync: false
+      - key: LINE_LOGIN_REDIRECT_URI
+        sync: false
+      - key: FLASK_SECRET_KEY
         sync: false
