@@ -549,6 +549,50 @@ button:active {
             alert('測試功能已觸發！按鈕可以正常點擊。');
         };
         
+        // 開始遊戲函數
+        window.startGame = function() {
+            console.log('🎮 開始遊戲按鈕被點擊');
+            
+            // 獲取暱稱
+            const nicknameInput = document.getElementById('nickname-input');
+            const nickname = nicknameInput ? nicknameInput.value.trim() : '遊客';
+            
+            alert('🎮 開始遊戲！\n\n暱稱：' + nickname + '\n\n遊戲功能正在開發中，敬請期待！');
+            
+            // 隱藏開始畫面，顯示載入中
+            const startScreen = document.getElementById('start-screen');
+            const loadingScreen = document.getElementById('loading-screen');
+            const gameScreen = document.getElementById('game-screen');
+            
+            if (startScreen) startScreen.style.display = 'none';
+            if (loadingScreen) {
+                loadingScreen.style.display = 'block';
+                
+                // 模擬載入過程
+                setTimeout(() => {
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                    if (gameScreen) {
+                        gameScreen.style.display = 'block';
+                        // 顯示統計欄
+                        const statsBar = document.getElementById('stats-bar');
+                        if (statsBar) statsBar.style.display = 'flex';
+                    }
+                }, 2000);
+            }
+        };
+        
+        // 提交答案函數
+        window.submitAnswer = function() {
+            console.log('📝 提交答案按鈕被點擊');
+            alert('提交答案功能正在開發中...');
+        };
+        
+        // 下一題函數
+        window.nextQuestion = function() {
+            console.log('➡️ 下一題按鈕被點擊');
+            alert('下一題功能正在開發中...');
+        };
+        
         function showNicknameInput() {
             // 隱藏登入按鈕
             const loginSection = document.getElementById('login-section');
