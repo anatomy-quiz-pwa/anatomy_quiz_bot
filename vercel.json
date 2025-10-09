@@ -24,7 +24,7 @@
     "web_app.py": {
       "maxDuration": 30,
       "memory": 1024,
-      "includeFiles": "templates/**,static/**"
+      "includeFiles": "templates/**,static/**,public/**"
     }
   }
 }

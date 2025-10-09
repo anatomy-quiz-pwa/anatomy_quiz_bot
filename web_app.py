@@ -262,8 +262,8 @@ def get_leaderboard_data() -> List[Dict]:
 
 @app.route('/')
 def index():
-    """首頁"""
-    return render_template('index.html')
+    """首頁 - 使用public/index.html"""
+    return send_from_directory('public', 'index.html')
 
 @app.route('/login')
 def login():
@@ -524,6 +524,11 @@ def logout():
 def static_files(filename):
     """服務靜態檔案"""
     return send_from_directory('static', filename)
+
+@app.route('/public/<path:filename>')
+def public_files(filename):
+    """服務public資料夾檔案"""
+    return send_from_directory('public', filename)
 
 # Vercel 需要的入口點
 app = app
