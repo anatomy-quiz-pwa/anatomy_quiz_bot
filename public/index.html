@@ -175,7 +175,8 @@ button, .action-btn, .btn-primary-custom {
   font-weight: bold;
   padding: 15px 40px !important;
   font-size: 1.2rem !important;
-  cursor: pointer;
+  cursor: pointer !important;
+  pointer-events: auto !important;
   transition: all 0.2s ease;
   box-shadow: 3px 3px 0 #1C1C1C !important;
   font-family: 'Noto Sans TC', sans-serif !important;
@@ -436,8 +437,12 @@ button:active {
                     <!-- LINE 登录区域 -->
                     <div id="login-section" class="mb-4">
                         <div class="mb-3">
-                            <button id="line-login-btn" class="action-btn btn-success" style="background: linear-gradient(135deg, #00C300, #00A000);" onclick="lineLogin()">
+                            <button id="line-login-btn" class="action-btn btn-success" style="background: linear-gradient(135deg, #00C300, #00A000); pointer-events: auto; cursor: pointer;" onclick="lineLogin()">
                                 <i class="fab fa-line"></i> 使用 LINE 登入
+                            </button>
+                            <!-- 測試按鈕 -->
+                            <button onclick="testLineLogin()" class="btn btn-sm btn-outline-info ms-2">
+                                🧪 測試
                             </button>
                         </div>
                         <p class="text-muted small">或</p>

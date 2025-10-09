@@ -926,12 +926,24 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', logout);
     }
     
-    console.log('✅ 页面初始化完成');
+    // 確保 LINE 登入按鈕可以點擊
+    const lineLoginBtn = document.getElementById('line-login-btn');
+    if (lineLoginBtn) {
+        console.log('✅ 找到 LINE 登入按鈕，添加點擊事件監聽器');
+        lineLoginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🖱️ LINE 登入按鈕被點擊');
+            lineLogin();
+        });
+        
+        // 確保按鈕可以點擊
+        lineLoginBtn.style.pointerEvents = 'auto';
+        lineLoginBtn.style.cursor = 'pointer';
+        lineLoginBtn.disabled = false;
+    } else {
+        console.error('❌ 找不到 LINE 登入按鈕');
+    }
     
-    // 测试：3秒后自动显示昵称输入界面
-    setTimeout(() => {
-        console.log('🧪 3秒后自动测试显示昵称输入界面');
-        showUserIdInput();
-    }, 3000);
+    console.log('✅ 页面初始化完成');
 });
 

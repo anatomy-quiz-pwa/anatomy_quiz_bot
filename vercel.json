@@ -2,33 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "web_app.py",
-      "use": "@vercel/python"
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "web_app.py"
+      "src": "/public/(.*)",
+      "dest": "/public/$1"
     },
     {
-      "src": "/public/(.*)",
-      "dest": "web_app.py"
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "web_app.py"
+      "dest": "/$1"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "/var/task",
-    "FLASK_ENV": "production"
-  },
-  "functions": {
-    "web_app.py": {
-      "maxDuration": 30,
-      "memory": 1024,
-      "includeFiles": "templates/**,static/**,public/**"
-    }
-  }
+  ]
 }
