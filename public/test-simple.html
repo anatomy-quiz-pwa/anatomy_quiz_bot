@@ -96,7 +96,17 @@
             <p>測試 Supabase 題目載入</p>
         </div>
 
-        <div id="status" class="loading">
+        <!-- 登入畫面 -->
+        <div id="login-screen">
+            <div class="question-card">
+                <h2>🎮 歡迎來到解剖咬一口！</h2>
+                <p>請輸入您的暱稱開始遊戲：</p>
+                <input type="text" id="nickname-input" placeholder="請輸入暱稱（選填）" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #1C1C1C; border-radius: 8px;">
+                <button class="btn" onclick="startGame()">🚀 開始遊戲</button>
+            </div>
+        </div>
+
+        <div id="status" class="loading" style="display: none;">
             正在初始化...
         </div>
 
@@ -106,10 +116,28 @@
                     <span id="question-level">等級 1</span>
                     <span id="question-category">解剖學</span>
                 </div>
+                
+                <!-- 題目圖片 -->
+                <div id="question-image-container" style="text-align: center; margin: 20px 0;">
+                    <img id="question-image" src="" alt="題目圖片" style="max-width: 100%; max-height: 300px; border: 2px solid #1C1C1C; border-radius: 8px; display: none;">
+                </div>
+                
                 <div id="question-text">題目載入中...</div>
                 <div id="options-container"></div>
                 <button id="submit-btn" class="btn" onclick="submitAnswer()" disabled>提交答案</button>
                 <button id="next-btn" class="btn" onclick="loadNextQuestion()" style="display: none;">下一題</button>
+            </div>
+        </div>
+
+        <!-- 解釋區域 -->
+        <div id="explanation-area" style="display: none;">
+            <div class="question-card">
+                <h3>💡 詳細解釋</h3>
+                <div id="explanation-image-container" style="text-align: center; margin: 20px 0;">
+                    <img id="explanation-image" src="" alt="解釋圖片" style="max-width: 100%; max-height: 300px; border: 2px solid #1C1C1C; border-radius: 8px; display: none;">
+                </div>
+                <div id="explanation-text"></div>
+                <button class="btn" onclick="loadNextQuestion()">➡️ 下一題</button>
             </div>
         </div>
 
@@ -128,6 +156,8 @@
         let currentQuestion = null;
         let selectedAnswer = null;
         let allQuestions = [];
+        let userNickname = '遊客';
+        let gameStarted = false;
 
         // 調試函數
         function debugLog(message) {
@@ -141,6 +171,24 @@
             const statusEl = document.getElementById('status');
             statusEl.innerHTML = message;
             statusEl.className = type;
+        }
+
+        // 開始遊戲
+        function startGame() {
+            const nicknameInput = document.getElementById('nickname-input');
+            userNickname = nicknameInput.value.trim() || '遊客';
+            
+            debugLog('🎮 開始遊戲，玩家暱稱: ' + userNickname);
+            
+            // 隱藏登入畫面
+            document.getElementById('login-screen').style.display = 'none';
+            
+            // 顯示載入狀態
+            document.getElementById('status').style.display = 'block';
+            updateStatus('正在初始化...', 'loading');
+            
+            // 開始初始化
+            init();
         }
 
         // 初始化
@@ -162,6 +210,7 @@
                     debugLog('🎮 顯示第一題...');
                     showQuestion(allQuestions[0]);
                     updateStatus('✅ 題目載入成功！', 'success');
+                    document.getElementById('status').style.display = 'none';
                 } else {
                     updateStatus('❌ 沒有找到題目', 'error');
                 }
@@ -205,7 +254,8 @@
                     explanation: item.explanation || '',
                     level: item.level || 1,
                     category: '解剖學',
-                    image_url: item.image_url || ''
+                    image_url: item.image_url || '',  // 解釋圖片
+                    qimage_url: item.qimage_url || ''  // 題目圖片
                 }));
 
                 debugLog('✅ 數據格式轉換完成');
@@ -223,10 +273,26 @@
             currentQuestion = question;
             selectedAnswer = null;
 
+            // 隱藏解釋區域
+            document.getElementById('explanation-area').style.display = 'none';
+
             // 更新題目信息
             document.getElementById('question-level').textContent = `等級 ${question.level}`;
             document.getElementById('question-category').textContent = question.category;
             document.getElementById('question-text').textContent = question.question;
+
+            // 顯示題目圖片
+            const questionImage = document.getElementById('question-image');
+            const questionImageContainer = document.getElementById('question-image-container');
+            
+            if (question.qimage_url && question.qimage_url.trim()) {
+                questionImage.src = question.qimage_url;
+                questionImage.style.display = 'block';
+                debugLog('🖼️ 顯示題目圖片: ' + question.qimage_url);
+            } else {
+                questionImage.style.display = 'none';
+                debugLog('⚠️ 題目沒有圖片');
+            }
 
             // 創建選項
             const optionsContainer = document.getElementById('options-container');
@@ -296,11 +362,43 @@
                 btn.disabled = true;
             });
 
-            // 顯示下一題按鈕
+            // 隱藏提交按鈕
             document.getElementById('submit-btn').style.display = 'none';
-            document.getElementById('next-btn').style.display = 'inline-block';
+
+            // 顯示解釋
+            setTimeout(() => {
+                showExplanation();
+            }, 1000);
 
             debugLog('✅ 答案提交完成');
+        }
+
+        // 顯示解釋
+        function showExplanation() {
+            debugLog('💡 顯示解釋...');
+            
+            // 隱藏題目區域
+            document.getElementById('question-area').style.display = 'none';
+            
+            // 顯示解釋區域
+            const explanationArea = document.getElementById('explanation-area');
+            explanationArea.style.display = 'block';
+            
+            // 設置解釋文字
+            document.getElementById('explanation-text').textContent = currentQuestion.explanation || '暫無詳細解釋';
+            
+            // 顯示解釋圖片
+            const explanationImage = document.getElementById('explanation-image');
+            if (currentQuestion.image_url && currentQuestion.image_url.trim()) {
+                explanationImage.src = currentQuestion.image_url;
+                explanationImage.style.display = 'block';
+                debugLog('🖼️ 顯示解釋圖片: ' + currentQuestion.image_url);
+            } else {
+                explanationImage.style.display = 'none';
+                debugLog('⚠️ 沒有解釋圖片');
+            }
+            
+            debugLog('✅ 解釋顯示完成');
         }
 
         // 載入下一題
@@ -311,8 +409,11 @@
             showQuestion(allQuestions[randomIndex]);
         }
 
-        // 頁面載入完成後初始化
-        document.addEventListener('DOMContentLoaded', init);
+        // 頁面載入完成後顯示登入畫面
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('📱 頁面載入完成，顯示登入畫面');
+            document.getElementById('login-screen').style.display = 'block';
+        });
     </script>
 </body>
 </html>
