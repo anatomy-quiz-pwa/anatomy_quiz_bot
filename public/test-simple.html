@@ -261,12 +261,13 @@
         
         .leaderboard-item {
             display: flex;
-            align-items: center;
-            padding: 10px;
+            align-items: flex-start;
+            padding: 12px;
             margin: 8px 0;
             background: #fffaf5;
             border-radius: 8px;
             border: 1px solid #F4E8D8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .rank-badge {
@@ -294,6 +295,7 @@
             justify-content: center;
             margin-right: 12px;
             font-size: 16px;
+            flex-shrink: 0;
         }
         
         .leaderboard-info {
@@ -303,11 +305,31 @@
         .leaderboard-name {
             font-weight: bold;
             color: #8B4513;
+            margin-bottom: 8px;
+            font-size: 16px;
         }
         
-        .leaderboard-score {
+        .leaderboard-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .stat-label {
             color: #666;
-            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            color: #8B4513;
+            font-weight: 600;
         }
         
         .view-full-btn {
@@ -1024,7 +1046,7 @@
             return '👩‍🎓';
         }
 
-        // 顯示排行榜
+        // 顯示排行榜（參考 LINE Bot 設計）
         function displayLeaderboard() {
             const leaderboardList = document.getElementById('leaderboard-list');
             leaderboardList.innerHTML = '';
@@ -1036,13 +1058,31 @@
                 item.className = 'leaderboard-item';
                 
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : 'rank-3';
+                const accuracy = user.total > 0 ? Math.round((user.correct / user.total) * 100 * 10) / 10 : 0;
                 
                 item.innerHTML = `
                     <div class="rank-badge ${rankClass}">${index + 1}</div>
                     <div class="leaderboard-avatar">${user.avatar}</div>
                     <div class="leaderboard-info">
                         <div class="leaderboard-name">${user.name}${user.name === userNickname ? ' (你)' : ''}</div>
-                        <div class="leaderboard-score">${user.score} 分</div>
+                        <div class="leaderboard-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">答對:</span>
+                                <span class="stat-value">${user.correct} 題</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">等級:</span>
+                                <span class="stat-value">${user.level}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">準確率:</span>
+                                <span class="stat-value">${accuracy}%</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">總題數:</span>
+                                <span class="stat-value">${user.total}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
                 
@@ -1053,9 +1093,30 @@
         // 模擬排行榜數據（備用）
         function getMockLeaderboard() {
             return [
-                { name: '李醫師', score: 2456, avatar: '👩‍⚕️' },
-                { name: '王護士', score: 2103, avatar: '👨‍⚕️' },
-                { name: '陳醫師', score: 1234, avatar: '👨‍⚕️' }
+                { 
+                    name: 'KW', 
+                    score: 450, 
+                    correct: 45, 
+                    total: 56, 
+                    level: 14, 
+                    avatar: '👨‍⚕️' 
+                },
+                { 
+                    name: 'Mo不到頸椎', 
+                    score: 450, 
+                    correct: 45, 
+                    total: 51, 
+                    level: 14, 
+                    avatar: '👩‍⚕️' 
+                },
+                { 
+                    name: '暘暘爸', 
+                    score: 410, 
+                    correct: 41, 
+                    total: 51, 
+                    level: 14, 
+                    avatar: '👨‍⚕️' 
+                }
             ];
         }
 
