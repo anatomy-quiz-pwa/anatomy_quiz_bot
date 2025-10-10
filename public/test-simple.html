@@ -957,17 +957,24 @@
         // 獲取用戶暱稱（參考 LINE Bot 邏輯）
         async function getUserNickname(userId) {
             try {
+                // 使用正確的欄位名稱：line_user_id 和 game_nickname
                 const { data, error } = await supabase
                     .from('users')
-                    .select('nickname')
-                    .eq('user_id', userId)
+                    .select('game_nickname')
+                    .eq('line_user_id', userId)
                     .single();
 
                 if (error || !data) {
-                    return `用戶_${userId.slice(-4)}`; // 使用用戶ID後4位作為備用名稱
+                    // 使用用戶ID後4位作為備用名稱（參考 LINE Bot 邏輯）
+                    return `用戶_${userId.slice(-4)}`;
                 }
 
-                return data.nickname || `用戶_${userId.slice(-4)}`;
+                const nickname = data.game_nickname;
+                if (nickname && nickname.trim()) {
+                    return nickname;
+                }
+
+                return `用戶_${userId.slice(-4)}`;
             } catch (error) {
                 console.warn(`獲取用戶 ${userId} 暱稱失敗:`, error);
                 return `用戶_${userId.slice(-4)}`;
