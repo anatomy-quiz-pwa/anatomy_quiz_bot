@@ -580,20 +580,24 @@ button:active {
             if (startScreen) startScreen.style.display = 'none';
             if (loadingScreen) {
                 loadingScreen.style.display = 'block';
+                console.log('📱 顯示載入畫面');
                 
-                // 模擬載入過程
-                setTimeout(() => {
+                // 立即開始載入題目，不等待 2 秒
+                loadQuestion().then(() => {
+                    console.log('✅ 題目載入完成，切換到遊戲畫面');
                     if (loadingScreen) loadingScreen.style.display = 'none';
                     if (gameScreen) {
                         gameScreen.style.display = 'block';
                         // 顯示統計欄
                         const statsBar = document.getElementById('stats-bar');
                         if (statsBar) statsBar.style.display = 'flex';
-                        
-                        // 載入第一題
-                        loadQuestion();
+                        console.log('🎮 遊戲畫面已顯示');
                     }
-                }, 2000);
+                }).catch((error) => {
+                    console.error('❌ 題目載入失敗:', error);
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                    alert('載入題目失敗：' + error.message);
+                });
             }
         };
 
@@ -604,6 +608,7 @@ button:active {
             try {
                 // 如果還沒載入題庫，先載入
                 if (!gameState.allQuestions || gameState.allQuestions.length === 0) {
+                    console.log('🔄 首次載入，從 Supabase 獲取題庫...');
                     await loadQuestionsFromSupabase();
                 }
                 
@@ -612,16 +617,18 @@ button:active {
                     const randomIndex = Math.floor(Math.random() * gameState.allQuestions.length);
                     gameState.currentQuestion = gameState.allQuestions[randomIndex];
                     console.log(`✅ 使用 Supabase 題目 (共 ${gameState.allQuestions.length} 題)`);
+                    console.log('📝 當前題目:', gameState.currentQuestion.question);
                 } else {
                     throw new Error('Supabase 題庫為空');
                 }
             } catch (error) {
                 console.error('❌ 載入 Supabase 題目失敗:', error);
                 alert('無法載入題目，請檢查網絡連接或刷新頁面重試。\n\n錯誤: ' + error.message);
-                return;
+                throw error; // 重新拋出錯誤以便上層處理
             }
             
             // 顯示題目
+            console.log('🎨 開始顯示題目...');
             displayQuestion();
         }
 
@@ -727,13 +734,17 @@ button:active {
 
         // 顯示題目函數
         function displayQuestion() {
+            console.log('🎨 displayQuestion 函數開始執行');
+            
             const question = gameState.currentQuestion;
             if (!question) {
-                console.error('沒有題目可以顯示');
+                console.error('❌ 沒有題目可以顯示');
+                alert('沒有題目可以顯示，請重新載入頁面');
                 return;
             }
 
-            console.log('顯示題目：', question.question);
+            console.log('📝 顯示題目：', question.question);
+            console.log('🔍 題目選項：', question.options);
 
             // 更新等級和類別
             const levelElement = document.getElementById('question-level');
@@ -741,13 +752,37 @@ button:active {
             const questionTextElement = document.getElementById('question-text');
             const optionsContainer = document.getElementById('options-container');
 
-            if (levelElement) levelElement.textContent = `等級 ${question.level}`;
-            if (categoryElement) categoryElement.textContent = question.category;
-            if (questionTextElement) questionTextElement.textContent = question.question;
+            console.log('🔍 查找 DOM 元素...');
+            console.log('levelElement:', levelElement);
+            console.log('categoryElement:', categoryElement);
+            console.log('questionTextElement:', questionTextElement);
+            console.log('optionsContainer:', optionsContainer);
+
+            if (levelElement) {
+                levelElement.textContent = `等級 ${question.level}`;
+                console.log('✅ 等級已更新');
+            } else {
+                console.error('❌ 找不到等級元素');
+            }
+            
+            if (categoryElement) {
+                categoryElement.textContent = question.category || '解剖學';
+                console.log('✅ 類別已更新');
+            } else {
+                console.error('❌ 找不到類別元素');
+            }
+            
+            if (questionTextElement) {
+                questionTextElement.textContent = question.question;
+                console.log('✅ 題目文字已更新');
+            } else {
+                console.error('❌ 找不到題目文字元素');
+            }
 
             // 清空選項容器
             if (optionsContainer) {
                 optionsContainer.innerHTML = '';
+                console.log('🧹 選項容器已清空');
                 
                 // 創建選項按鈕
                 question.options.forEach((option, index) => {
@@ -757,30 +792,42 @@ button:active {
                     button.onclick = () => selectAnswer(index);
                     button.id = `option-${index}`;
                     optionsContainer.appendChild(button);
+                    console.log(`✅ 選項 ${index + 1} 已創建: ${option}`);
                 });
+                console.log(`✅ 共創建 ${question.options.length} 個選項按鈕`);
+            } else {
+                console.error('❌ 找不到選項容器');
             }
 
             // 重置選擇狀態
             gameState.selectedAnswer = null;
+            console.log('🔄 選擇狀態已重置');
             
             // 啟用提交按鈕
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.style.display = 'inline-block';
+                console.log('✅ 提交按鈕已啟用');
+            } else {
+                console.error('❌ 找不到提交按鈕');
             }
 
             // 隱藏下一題按鈕
             const nextBtn = document.getElementById('next-btn');
             if (nextBtn) {
                 nextBtn.style.display = 'none';
+                console.log('✅ 下一題按鈕已隱藏');
             }
 
             // 隱藏解釋區域
             const explanationArea = document.getElementById('explanation-area');
             if (explanationArea) {
                 explanationArea.style.display = 'none';
+                console.log('✅ 解釋區域已隱藏');
             }
+            
+            console.log('🎉 displayQuestion 函數執行完成');
         }
 
         // 選擇答案函數
