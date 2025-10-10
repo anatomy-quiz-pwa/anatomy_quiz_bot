@@ -17,8 +17,9 @@ export default function LiffPage() {
       try {
         setStatus("init LIFF...");
         if (!window.liff) {
-          // @ts-ignore
-          await import("@line/liff");
+          // LIFF SDK 將通過 script 標籤載入
+          setStatus("LIFF SDK not loaded");
+          return;
         }
         await window.liff.init({ liffId: LIFF_ID });
 
