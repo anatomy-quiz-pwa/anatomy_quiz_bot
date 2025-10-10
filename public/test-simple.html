@@ -10,140 +10,557 @@
             font-family: 'Microsoft JhengHei', sans-serif;
             background-color: #F4E8D8;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border: 3px solid #1C1C1C;
-            border-radius: 16px;
-            padding: 20px;
-        }
-        .header {
-            background: #C57B57;
+        
+        /* 頂部導航欄 */
+        .top-nav {
+            background: #8B4513;
             color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            text-align: center;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .question-card {
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* 主內容區域 */
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .left-column {
+            flex: 2;
+            padding: 20px;
+        }
+        
+        .right-column {
+            flex: 1;
             background: #fffaf5;
-            border: 2px solid #1C1C1C;
+            padding: 20px;
+            border-left: 2px solid #8B4513;
+        }
+        
+        /* 卡片樣式 */
+        .card {
+            background: white;
+            border: 2px solid #8B4513;
             border-radius: 12px;
             padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* 進度卡片 */
+        .progress-card {
+            background: linear-gradient(135deg, #F4E8D8, #fffaf5);
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            background: #F4E8D8;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #C57B57, #B85C38);
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        /* 題目卡片 */
+        .question-card {
+            background: white;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .question-number {
+            background: #8B4513;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        
+        .timer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #8B4513;
+            font-weight: bold;
+        }
+        
+        .question-image {
+            text-align: center;
             margin: 20px 0;
         }
+        
+        .question-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+        }
+        
+        .question-text {
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        
         .option-btn {
             width: 100%;
             padding: 15px;
-            margin: 10px 0;
+            margin: 8px 0;
             background: #fffaf5;
-            border: 2px solid #1C1C1C;
+            border: 2px solid #8B4513;
             border-radius: 8px;
             cursor: pointer;
             text-align: left;
             font-size: 16px;
+            transition: all 0.3s;
         }
+        
         .option-btn:hover {
             background: #F4E8D8;
+            transform: translateY(-2px);
         }
+        
         .option-btn.selected {
             background: #C57B57;
             color: white;
+            border-color: #8B4513;
         }
-        .btn {
+        
+        /* 用戶資料卡片 */
+        .user-card {
+            text-align: center;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #8B4513;
+            margin: 0 auto 15px;
+            background: #F4E8D8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 5px;
+        }
+        
+        .user-level {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 排行榜卡片 */
+        .leaderboard-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            color: #8B4513;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: #fffaf5;
+            border-radius: 8px;
+            border: 1px solid #F4E8D8;
+        }
+        
+        .rank-badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .rank-1 { background: #FFD700; color: #8B4513; }
+        .rank-2 { background: #C0C0C0; color: #8B4513; }
+        .rank-3 { background: #CD7F32; color: white; }
+        
+        .leaderboard-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #F4E8D8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+        
+        .leaderboard-info {
+            flex: 1;
+        }
+        
+        .leaderboard-name {
+            font-weight: bold;
+            color: #8B4513;
+        }
+        
+        .leaderboard-score {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .view-full-btn {
+            width: 100%;
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        /* 學習統計卡片 */
+        .stats-card h3 {
+            color: #8B4513;
+            margin-bottom: 15px;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #F4E8D8;
+        }
+        
+        /* 底部導航 */
+        .bottom-nav {
+            background: #8B4513;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .submit-btn {
             background: #C57B57;
             color: white;
-            border: 2px solid #1C1C1C;
-            border-radius: 8px;
-            padding: 15px 30px;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
         }
-        .btn:hover {
+        
+        .submit-btn:hover {
             background: #B85C38;
         }
-        .loading {
-            text-align: center;
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 登入畫面 */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #F4E8D8;
+        }
+        
+        .login-card {
+            background: white;
+            border: 3px solid #8B4513;
+            border-radius: 16px;
             padding: 40px;
-            font-size: 18px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
         }
-        .error {
-            background: #ffebee;
-            border: 2px solid #f44336;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            color: #c62828;
+        
+        .login-title {
+            color: #8B4513;
+            margin-bottom: 20px;
         }
-        .success {
-            background: #e8f5e8;
-            border: 2px solid #4caf50;
+        
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #8B4513;
             border-radius: 8px;
-            padding: 15px;
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .login-btn:hover {
+            background: #6B3410;
+        }
+        
+        /* 解釋區域 */
+        .explanation-card {
+            background: white;
+        }
+        
+        .explanation-image {
+            text-align: center;
             margin: 20px 0;
-            color: #2e7d32;
+        }
+        
+        .explanation-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+        }
+        
+        .explanation-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        
+        /* 隱藏元素 */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🧠 解剖咬一口 - 簡化測試版</h1>
-            <p>測試 Supabase 題目載入</p>
+    <!-- 登入畫面 -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <h1 class="login-title">🧠 解剖咬一口</h1>
+            <p>歡迎來到解剖學問答遊戲！</p>
+            <input type="text" id="nickname-input" placeholder="請輸入暱稱（選填）" class="login-input">
+            <button class="login-btn" onclick="startGame()">🚀 開始遊戲</button>
         </div>
+    </div>
 
-        <!-- 登入畫面 -->
-        <div id="login-screen">
-            <div class="question-card">
-                <h2>🎮 歡迎來到解剖咬一口！</h2>
-                <p>請輸入您的暱稱開始遊戲：</p>
-                <input type="text" id="nickname-input" placeholder="請輸入暱稱（選填）" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #1C1C1C; border-radius: 8px;">
-                <button class="btn" onclick="startGame()">🚀 開始遊戲</button>
+    <!-- 主應用界面 -->
+    <div id="main-app" class="hidden">
+        <!-- 頂部導航欄 -->
+        <div class="top-nav">
+            <div class="logo">
+                🦷 解剖咬一口
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">❓ 練習</a>
+                <a href="#" class="nav-link">🏆 排行榜</a>
+                <a href="#" class="nav-link">👤 個人檔案</a>
             </div>
         </div>
 
-        <div id="status" class="loading" style="display: none;">
-            正在初始化...
-        </div>
+        <!-- 主內容區域 -->
+        <div class="main-content">
+            <!-- 左側：題目區域 -->
+            <div class="left-column">
+                <!-- 今日進度 -->
+                <div class="card progress-card">
+                    <div class="progress-info">
+                        <span>今日進度</span>
+                        <span id="progress-text">0 / 20 題</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; color: #666;">
+                        <span id="progress-percent">已完成 0%</span>
+                        <span id="progress-remaining">還需 20 題達成目標</span>
+                    </div>
+                </div>
 
-        <div id="question-area" style="display: none;">
-            <div class="question-card">
-                <div id="question-info">
-                    <span id="question-level">等級 1</span>
-                    <span id="question-category">解剖學</span>
+                <!-- 題目卡片 -->
+                <div id="question-area" class="card question-card hidden">
+                    <div class="question-header">
+                        <div class="question-number" id="question-info">1 解剖學</div>
+                        <div class="timer">
+                            ⏰ <span id="timer">02:45</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 題目圖片 -->
+                    <div class="question-image">
+                        <img id="question-image" src="" alt="題目圖片" style="display: none;">
+                    </div>
+                    
+                    <div class="question-text" id="question-text">題目載入中...</div>
+                    <div id="options-container"></div>
                 </div>
-                
-                <!-- 題目圖片 -->
-                <div id="question-image-container" style="text-align: center; margin: 20px 0;">
-                    <img id="question-image" src="" alt="題目圖片" style="max-width: 100%; max-height: 300px; border: 2px solid #1C1C1C; border-radius: 8px; display: none;">
+
+                <!-- 解釋區域 -->
+                <div id="explanation-area" class="card explanation-card hidden">
+                    <h3>💡 詳細解釋</h3>
+                    <div class="explanation-image">
+                        <img id="explanation-image" src="" alt="解釋圖片" style="display: none;">
+                    </div>
+                    <div class="explanation-text" id="explanation-text"></div>
                 </div>
-                
-                <div id="question-text">題目載入中...</div>
-                <div id="options-container"></div>
-                <button id="submit-btn" class="btn" onclick="submitAnswer()" disabled>提交答案</button>
-                <button id="next-btn" class="btn" onclick="loadNextQuestion()" style="display: none;">下一題</button>
+            </div>
+
+            <!-- 右側：用戶信息和排行榜 -->
+            <div class="right-column">
+                <!-- 用戶資料 -->
+                <div class="card user-card">
+                    <div class="user-avatar">👨‍⚕️</div>
+                    <div class="user-name" id="user-name">遊客</div>
+                    <div class="user-level" id="user-level">等級 1 • 解剖學新手</div>
+                    <div class="user-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="consecutive-days">0</div>
+                            <div class="stat-label">連續天數</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-score">0</div>
+                            <div class="stat-label">總分數</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本週排行榜 -->
+                <div class="card leaderboard-card">
+                    <h3>🏆 本週排行榜</h3>
+                    <div id="leaderboard-list">
+                        <!-- 排行榜項目將在這裡動態生成 -->
+                    </div>
+                    <button class="view-full-btn" onclick="showFullLeaderboard()">查看完整排行榜</button>
+                </div>
+
+                <!-- 學習統計 -->
+                <div class="card stats-card">
+                    <h3>📊 學習統計</h3>
+                    <div class="stats-item">
+                        <span>本週答題</span>
+                        <span id="weekly-questions">0 題</span>
+                    </div>
+                    <div class="stats-item">
+                        <span>正確率</span>
+                        <span id="accuracy-rate">0%</span>
+                    </div>
+                    <div class="stats-item">
+                        <span>最高等級</span>
+                        <span id="max-level">1</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 解釋區域 -->
-        <div id="explanation-area" style="display: none;">
-            <div class="question-card">
-                <h3>💡 詳細解釋</h3>
-                <div id="explanation-image-container" style="text-align: center; margin: 20px 0;">
-                    <img id="explanation-image" src="" alt="解釋圖片" style="max-width: 100%; max-height: 300px; border: 2px solid #1C1C1C; border-radius: 8px; display: none;">
-                </div>
-                <div id="explanation-text"></div>
-                <button class="btn" onclick="loadNextQuestion()">➡️ 下一題</button>
-            </div>
-        </div>
-
-        <div id="debug-info" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-            <h3>調試信息</h3>
-            <div id="debug-content"></div>
+        <!-- 底部導航 -->
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="goHome()">🏠 主頁</button>
+            <button class="nav-btn" onclick="showHint()">💡 提示</button>
+            <button class="submit-btn" id="submit-btn" onclick="submitAnswer()" disabled>
+                📤 提交答案 →
+            </button>
         </div>
     </div>
 
@@ -158,34 +575,37 @@
         let allQuestions = [];
         let userNickname = '遊客';
         let gameStarted = false;
+        let currentQuestionNumber = 1;
+        let totalQuestions = 20;
+        let correctAnswers = 0;
+        let userLevel = 1;
+        let userScore = 0;
+        let consecutiveDays = 0;
+        let weeklyQuestions = 0;
 
-        // 調試函數
-        function debugLog(message) {
-            console.log(message);
-            const debugContent = document.getElementById('debug-content');
-            debugContent.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
-        }
-
-        // 更新狀態
-        function updateStatus(message, type = 'loading') {
-            const statusEl = document.getElementById('status');
-            statusEl.innerHTML = message;
-            statusEl.className = type;
-        }
+        // 模擬排行榜數據
+        const mockLeaderboard = [
+            { name: '李醫師', score: 2456, avatar: '👩‍⚕️' },
+            { name: '王護士', score: 2103, avatar: '👨‍⚕️' },
+            { name: '陳醫師', score: 1234, avatar: '👨‍⚕️' },
+            { name: '張醫師', score: 1156, avatar: '👩‍⚕️' },
+            { name: '劉護士', score: 987, avatar: '👨‍⚕️' }
+        ];
 
         // 開始遊戲
         function startGame() {
             const nicknameInput = document.getElementById('nickname-input');
             userNickname = nicknameInput.value.trim() || '遊客';
             
-            debugLog('🎮 開始遊戲，玩家暱稱: ' + userNickname);
+            // 隱藏登入畫面，顯示主應用
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
             
-            // 隱藏登入畫面
-            document.getElementById('login-screen').style.display = 'none';
+            // 更新用戶信息
+            updateUserInfo();
             
-            // 顯示載入狀態
-            document.getElementById('status').style.display = 'block';
-            updateStatus('正在初始化...', 'loading');
+            // 載入排行榜
+            loadLeaderboard();
             
             // 開始初始化
             init();
@@ -193,42 +613,33 @@
 
         // 初始化
         async function init() {
-            debugLog('🚀 開始初始化...');
-            
             try {
                 // 初始化 Supabase
-                debugLog('🔧 初始化 Supabase 客戶端...');
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                debugLog('✅ Supabase 客戶端初始化成功');
 
                 // 載入題目
-                debugLog('📚 開始載入題目...');
                 await loadQuestions();
                 
                 // 顯示第一題
                 if (allQuestions.length > 0) {
-                    debugLog('🎮 顯示第一題...');
                     showQuestion(allQuestions[0]);
-                    updateStatus('✅ 題目載入成功！', 'success');
-                    document.getElementById('status').style.display = 'none';
                 } else {
-                    updateStatus('❌ 沒有找到題目', 'error');
+                    alert('沒有找到題目，請刷新頁面重試');
                 }
 
             } catch (error) {
-                debugLog('❌ 初始化失敗: ' + error.message);
-                updateStatus('❌ 初始化失敗: ' + error.message, 'error');
+                console.error('初始化失敗:', error);
+                alert('載入失敗: ' + error.message);
             }
         }
 
         // 載入題目
         async function loadQuestions() {
             try {
-                debugLog('🔄 查詢 Supabase 題庫...');
                 const { data, error } = await supabase
                     .from('anatomy_questions_v2')
                     .select('*')
-                    .limit(10);
+                    .limit(20);
 
                 if (error) {
                     throw new Error('Supabase 查詢錯誤: ' + error.message);
@@ -237,8 +648,6 @@
                 if (!data || data.length === 0) {
                     throw new Error('題庫為空');
                 }
-
-                debugLog(`✅ 成功載入 ${data.length} 道題目`);
                 
                 // 轉換數據格式
                 allQuestions = data.map(item => ({
@@ -258,40 +667,32 @@
                     qimage_url: item.qimage_url || ''  // 題目圖片
                 }));
 
-                debugLog('✅ 數據格式轉換完成');
-
             } catch (error) {
-                debugLog('❌ 載入題目失敗: ' + error.message);
+                console.error('載入題目失敗:', error);
                 throw error;
             }
         }
 
         // 顯示題目
         function showQuestion(question) {
-            debugLog('🎨 顯示題目: ' + question.question);
-            
             currentQuestion = question;
             selectedAnswer = null;
 
             // 隱藏解釋區域
-            document.getElementById('explanation-area').style.display = 'none';
+            document.getElementById('explanation-area').classList.add('hidden');
 
             // 更新題目信息
-            document.getElementById('question-level').textContent = `等級 ${question.level}`;
-            document.getElementById('question-category').textContent = question.category;
+            document.getElementById('question-info').textContent = `${currentQuestionNumber} ${question.category}`;
             document.getElementById('question-text').textContent = question.question;
 
             // 顯示題目圖片
             const questionImage = document.getElementById('question-image');
-            const questionImageContainer = document.getElementById('question-image-container');
             
             if (question.qimage_url && question.qimage_url.trim()) {
                 questionImage.src = question.qimage_url;
                 questionImage.style.display = 'block';
-                debugLog('🖼️ 顯示題目圖片: ' + question.qimage_url);
             } else {
                 questionImage.style.display = 'none';
-                debugLog('⚠️ 題目沒有圖片');
             }
 
             // 創建選項
@@ -309,19 +710,13 @@
 
             // 重置按鈕狀態
             document.getElementById('submit-btn').disabled = true;
-            document.getElementById('submit-btn').style.display = 'inline-block';
-            document.getElementById('next-btn').style.display = 'none';
 
             // 顯示題目區域
-            document.getElementById('question-area').style.display = 'block';
-
-            debugLog('✅ 題目顯示完成');
+            document.getElementById('question-area').classList.remove('hidden');
         }
 
         // 選擇答案
         function selectAnswer(index) {
-            debugLog('👆 選擇答案: ' + index);
-            
             selectedAnswer = index;
 
             // 移除所有選中狀態
@@ -334,8 +729,6 @@
 
             // 啟用提交按鈕
             document.getElementById('submit-btn').disabled = false;
-
-            debugLog('✅ 答案選擇完成');
         }
 
         // 提交答案
@@ -345,10 +738,15 @@
                 return;
             }
 
-            debugLog('📤 提交答案: ' + selectedAnswer);
-
             const isCorrect = selectedAnswer === currentQuestion.correct_answer;
-            debugLog('🎯 答案' + (isCorrect ? '正確' : '錯誤'));
+
+            // 更新統計
+            if (isCorrect) {
+                correctAnswers++;
+                userScore += 10;
+            }
+            weeklyQuestions++;
+            currentQuestionNumber++;
 
             // 顯示結果
             document.querySelectorAll('.option-btn').forEach((btn, index) => {
@@ -362,27 +760,26 @@
                 btn.disabled = true;
             });
 
-            // 隱藏提交按鈕
-            document.getElementById('submit-btn').style.display = 'none';
+            // 禁用提交按鈕
+            document.getElementById('submit-btn').disabled = true;
+
+            // 更新進度和統計
+            updateProgress();
+            updateUserInfo();
 
             // 顯示解釋
             setTimeout(() => {
                 showExplanation();
             }, 1000);
-
-            debugLog('✅ 答案提交完成');
         }
 
         // 顯示解釋
         function showExplanation() {
-            debugLog('💡 顯示解釋...');
-            
             // 隱藏題目區域
-            document.getElementById('question-area').style.display = 'none';
+            document.getElementById('question-area').classList.add('hidden');
             
             // 顯示解釋區域
-            const explanationArea = document.getElementById('explanation-area');
-            explanationArea.style.display = 'block';
+            document.getElementById('explanation-area').classList.remove('hidden');
             
             // 設置解釋文字
             document.getElementById('explanation-text').textContent = currentQuestion.explanation || '暫無詳細解釋';
@@ -392,27 +789,84 @@
             if (currentQuestion.image_url && currentQuestion.image_url.trim()) {
                 explanationImage.src = currentQuestion.image_url;
                 explanationImage.style.display = 'block';
-                debugLog('🖼️ 顯示解釋圖片: ' + currentQuestion.image_url);
             } else {
                 explanationImage.style.display = 'none';
-                debugLog('⚠️ 沒有解釋圖片');
             }
-            
-            debugLog('✅ 解釋顯示完成');
         }
 
         // 載入下一題
         function loadNextQuestion() {
-            debugLog('➡️ 載入下一題...');
+            if (currentQuestionNumber > totalQuestions) {
+                alert('恭喜！您已完成今日的所有題目！');
+                return;
+            }
             
             const randomIndex = Math.floor(Math.random() * allQuestions.length);
             showQuestion(allQuestions[randomIndex]);
         }
 
+        // 更新用戶信息
+        function updateUserInfo() {
+            document.getElementById('user-name').textContent = userNickname;
+            document.getElementById('user-level').textContent = `等級 ${userLevel} • 解剖學愛好者`;
+            document.getElementById('consecutive-days').textContent = consecutiveDays;
+            document.getElementById('total-score').textContent = userScore;
+            document.getElementById('weekly-questions').textContent = `${weeklyQuestions} 題`;
+            
+            const accuracy = weeklyQuestions > 0 ? Math.round((correctAnswers / weeklyQuestions) * 100) : 0;
+            document.getElementById('accuracy-rate').textContent = `${accuracy}%`;
+            document.getElementById('max-level').textContent = userLevel;
+        }
+
+        // 更新進度
+        function updateProgress() {
+            const progress = Math.round((currentQuestionNumber - 1) / totalQuestions * 100);
+            document.getElementById('progress-text').textContent = `${currentQuestionNumber - 1} / ${totalQuestions} 題`;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-percent').textContent = `已完成 ${progress}%`;
+            document.getElementById('progress-remaining').textContent = `還需 ${totalQuestions - (currentQuestionNumber - 1)} 題達成目標`;
+        }
+
+        // 載入排行榜
+        function loadLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+
+            mockLeaderboard.slice(0, 3).forEach((user, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : 'rank-3';
+                
+                item.innerHTML = `
+                    <div class="rank-badge ${rankClass}">${index + 1}</div>
+                    <div class="leaderboard-avatar">${user.avatar}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${user.name}${user.name === userNickname ? ' (你)' : ''}</div>
+                        <div class="leaderboard-score">${user.score} 分</div>
+                    </div>
+                `;
+                
+                leaderboardList.appendChild(item);
+            });
+        }
+
+        // 其他功能函數
+        function showFullLeaderboard() {
+            alert('完整排行榜功能開發中...');
+        }
+
+        function goHome() {
+            alert('主頁功能開發中...');
+        }
+
+        function showHint() {
+            alert('提示功能開發中...');
+        }
+
         // 頁面載入完成後顯示登入畫面
         document.addEventListener('DOMContentLoaded', function() {
-            debugLog('📱 頁面載入完成，顯示登入畫面');
-            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('login-screen').classList.remove('hidden');
         });
     </script>
 </body>
