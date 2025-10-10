@@ -560,36 +560,7 @@ button:active {
             allQuestions: [] // 從 Supabase 載入的題目
         };
 
-        // 示例題目數據
-        const sampleQuestions = [
-            {
-                id: 1,
-                level: 1,
-                category: "解剖學基礎",
-                question: "人體有多少塊骨頭？",
-                options: ["206塊", "208塊", "204塊", "210塊"],
-                correct_answer: 0,
-                explanation: "成人人體共有206塊骨頭，這些骨頭組成了人體的骨骼系統。"
-            },
-            {
-                id: 2,
-                level: 1,
-                category: "解剖學基礎", 
-                question: "人體最大的器官是什麼？",
-                options: ["心臟", "肝臟", "皮膚", "肺"],
-                correct_answer: 2,
-                explanation: "皮膚是人體最大的器官，成年人的皮膚總面積約為1.5-2平方米。"
-            },
-            {
-                id: 3,
-                level: 1,
-                category: "解剖學基礎",
-                question: "人體有多少個心腔？",
-                options: ["2個", "3個", "4個", "5個"],
-                correct_answer: 2,
-                explanation: "人體心臟有4個心腔：左心房、右心房、左心室、右心室。"
-            }
-        ];
+        // 不再使用本地示例題目 - 只從 Supabase 載入
 
         // 開始遊戲函數
         window.startGame = function() {
@@ -626,30 +597,28 @@ button:active {
             }
         };
 
-        // 載入題目函數
+        // 載入題目函數 - 只使用 Supabase 題庫
         async function loadQuestion() {
-            console.log('📚 載入題目');
+            console.log('📚 載入題目（只從 Supabase）');
             
             try {
-                // 首先嘗試從 Supabase 載入題目
-                await loadQuestionsFromSupabase();
+                // 如果還沒載入題庫，先載入
+                if (!gameState.allQuestions || gameState.allQuestions.length === 0) {
+                    await loadQuestionsFromSupabase();
+                }
                 
                 if (gameState.allQuestions && gameState.allQuestions.length > 0) {
                     // 從 Supabase 題目隨機選擇
                     const randomIndex = Math.floor(Math.random() * gameState.allQuestions.length);
                     gameState.currentQuestion = gameState.allQuestions[randomIndex];
-                    console.log('✅ 使用 Supabase 題目');
+                    console.log(`✅ 使用 Supabase 題目 (共 ${gameState.allQuestions.length} 題)`);
                 } else {
-                    // 如果 Supabase 沒有題目，使用示例題目
-                    const randomIndex = Math.floor(Math.random() * sampleQuestions.length);
-                    gameState.currentQuestion = sampleQuestions[randomIndex];
-                    console.log('⚠️ 使用示例題目（Supabase 無題目）');
+                    throw new Error('Supabase 題庫為空');
                 }
             } catch (error) {
-                console.error('❌ 載入 Supabase 題目失敗，使用示例題目:', error);
-                // 使用示例題目作為備用
-                const randomIndex = Math.floor(Math.random() * sampleQuestions.length);
-                gameState.currentQuestion = sampleQuestions[randomIndex];
+                console.error('❌ 載入 Supabase 題目失敗:', error);
+                alert('無法載入題目，請檢查網絡連接或刷新頁面重試。\n\n錯誤: ' + error.message);
+                return;
             }
             
             // 顯示題目
@@ -714,6 +683,11 @@ button:active {
         async function loadSupabaseClient() {
             return new Promise((resolve, reject) => {
                 try {
+                    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                        reject(new Error('Supabase SDK 未正確載入'));
+                        return;
+                    }
+                    
                     // Supabase 腳本已經在 HTML 中載入，直接初始化客戶端
                     window.supabase = window.supabase.createClient(
                         'https://ciqlfqfgzqqgdrogedxg.supabase.co',

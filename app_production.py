@@ -86,7 +86,7 @@ def get_real_students_data():
         return []
     
     try:
-        # 獲取用戶統計數據
+        # 獲取用戶統計數據 - 使用正確的列名: correct, wrong (不是 total)
         response = supabase.table('user_stats').select('*').order('correct', desc=True).execute()
         
         if not response.data:
@@ -101,11 +101,15 @@ def get_real_students_data():
             user_id = item.get('user_id', '')
             nickname = get_user_nickname(user_id)
             
+            correct = item.get('correct', 0)
+            wrong = item.get('wrong', 0)
+            total = correct + wrong  # 計算總題數
+            
             student = {
                 'name': nickname,
-                'score': item.get('correct', 0) * 10,  # 分數 = 正確題數 * 10
-                'correct': item.get('correct', 0),
-                'total': item.get('total', 0),
+                'score': correct * 10,  # 分數 = 正確題數 * 10
+                'correct': correct,
+                'total': total,
                 'level': item.get('level', 1),
                 'user_id': user_id
             }
