@@ -44,7 +44,7 @@ export default function Page() {
             </a>
             
             <a 
-              href="/game-direct" 
+              href="/index.html" 
               style={{
                 display: "inline-block",
                 padding: "15px 30px",
@@ -56,7 +56,7 @@ export default function Page() {
                 marginRight: "10px"
               }}
             >
-              🎯 修復版遊戲
+              🎮 開始遊戲 (Supabase 題庫)
             </a>
             
             <a 

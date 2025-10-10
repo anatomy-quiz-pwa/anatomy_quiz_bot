@@ -11,6 +11,10 @@ const nextConfig = {
         source: '/static/:path*',
         destination: '/static/:path*',
       },
+      {
+        source: '/index.html',
+        destination: '/public/index.html',
+      },
     ];
   },
   async headers() {
