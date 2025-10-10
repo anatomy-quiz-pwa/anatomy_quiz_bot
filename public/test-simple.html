@@ -57,7 +57,7 @@
         }
         
         .left-column {
-            flex: 2;
+            flex: 3;
             padding: 20px;
         }
         
@@ -139,27 +139,28 @@
         
         .question-image img {
             max-width: 100%;
-            max-height: 300px;
+            max-height: 400px;
             border: 2px solid #8B4513;
             border-radius: 8px;
         }
         
         .question-text {
-            font-size: 18px;
-            margin: 20px 0;
-            line-height: 1.6;
+            font-size: 24px;
+            margin: 30px 0;
+            line-height: 1.8;
+            font-weight: 500;
         }
         
         .option-btn {
             width: 100%;
-            padding: 15px;
-            margin: 8px 0;
+            padding: 20px;
+            margin: 12px 0;
             background: #fffaf5;
             border: 2px solid #8B4513;
             border-radius: 8px;
             cursor: pointer;
             text-align: left;
-            font-size: 16px;
+            font-size: 20px;
             transition: all 0.3s;
         }
         
@@ -557,7 +558,6 @@
         <!-- 底部導航 -->
         <div class="bottom-nav">
             <button class="nav-btn" onclick="goHome()">🏠 主頁</button>
-            <button class="nav-btn" onclick="showHint()">💡 提示</button>
             <button class="submit-btn" id="submit-btn" onclick="submitAnswer()" disabled>
                 📤 提交答案 →
             </button>
@@ -583,14 +583,8 @@
         let consecutiveDays = 0;
         let weeklyQuestions = 0;
 
-        // 模擬排行榜數據
-        const mockLeaderboard = [
-            { name: '李醫師', score: 2456, avatar: '👩‍⚕️' },
-            { name: '王護士', score: 2103, avatar: '👨‍⚕️' },
-            { name: '陳醫師', score: 1234, avatar: '👨‍⚕️' },
-            { name: '張醫師', score: 1156, avatar: '👩‍⚕️' },
-            { name: '劉護士', score: 987, avatar: '👨‍⚕️' }
-        ];
+        // 真實排行榜數據
+        let realLeaderboard = [];
 
         // 開始遊戲
         function startGame() {
@@ -604,9 +598,6 @@
             // 更新用戶信息
             updateUserInfo();
             
-            // 載入排行榜
-            loadLeaderboard();
-            
             // 開始初始化
             init();
         }
@@ -619,6 +610,9 @@
 
                 // 載入題目
                 await loadQuestions();
+                
+                // 載入排行榜
+                await loadRealLeaderboard();
                 
                 // 顯示第一題
                 if (allQuestions.length > 0) {
@@ -827,12 +821,74 @@
             document.getElementById('progress-remaining').textContent = `還需 ${totalQuestions - (currentQuestionNumber - 1)} 題達成目標`;
         }
 
-        // 載入排行榜
-        function loadLeaderboard() {
+        // 載入真實排行榜數據
+        async function loadRealLeaderboard() {
+            try {
+                console.log('🔄 載入真實排行榜數據...');
+                
+                // 從 Supabase 獲取用戶統計數據
+                const { data, error } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .order('correct', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    console.error('載入排行榜失敗:', error);
+                    // 使用模擬數據作為備用
+                    loadMockLeaderboard();
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    console.log('沒有排行榜數據，使用模擬數據');
+                    loadMockLeaderboard();
+                    return;
+                }
+
+                // 轉換數據格式
+                realLeaderboard = data.map(item => {
+                    const correct = item.correct || 0;
+                    const wrong = item.wrong || 0;
+                    const total = correct + wrong;
+                    const score = correct * 10; // 分數 = 正確題數 * 10
+                    
+                    return {
+                        name: item.nickname || '匿名用戶',
+                        score: score,
+                        correct: correct,
+                        total: total,
+                        level: item.level || 1,
+                        user_id: item.user_id,
+                        avatar: getAvatarByLevel(item.level || 1)
+                    };
+                });
+
+                console.log(`✅ 成功載入 ${realLeaderboard.length} 條排行榜數據`);
+                displayLeaderboard();
+
+            } catch (error) {
+                console.error('載入排行榜錯誤:', error);
+                loadMockLeaderboard();
+            }
+        }
+
+        // 根據等級獲取頭像
+        function getAvatarByLevel(level) {
+            if (level >= 10) return '👨‍⚕️';
+            if (level >= 5) return '👩‍⚕️';
+            if (level >= 3) return '👨‍🎓';
+            return '👩‍🎓';
+        }
+
+        // 顯示排行榜
+        function displayLeaderboard() {
             const leaderboardList = document.getElementById('leaderboard-list');
             leaderboardList.innerHTML = '';
 
-            mockLeaderboard.slice(0, 3).forEach((user, index) => {
+            const displayData = realLeaderboard.length > 0 ? realLeaderboard : getMockLeaderboard();
+            
+            displayData.slice(0, 3).forEach((user, index) => {
                 const item = document.createElement('div');
                 item.className = 'leaderboard-item';
                 
@@ -851,6 +907,22 @@
             });
         }
 
+        // 模擬排行榜數據（備用）
+        function getMockLeaderboard() {
+            return [
+                { name: '李醫師', score: 2456, avatar: '👩‍⚕️' },
+                { name: '王護士', score: 2103, avatar: '👨‍⚕️' },
+                { name: '陳醫師', score: 1234, avatar: '👨‍⚕️' }
+            ];
+        }
+
+        // 載入模擬排行榜（備用）
+        function loadMockLeaderboard() {
+            console.log('使用模擬排行榜數據');
+            realLeaderboard = getMockLeaderboard();
+            displayLeaderboard();
+        }
+
         // 其他功能函數
         function showFullLeaderboard() {
             alert('完整排行榜功能開發中...');
@@ -860,9 +932,6 @@
             alert('主頁功能開發中...');
         }
 
-        function showHint() {
-            alert('提示功能開發中...');
-        }
 
         // 頁面載入完成後顯示登入畫面
         document.addEventListener('DOMContentLoaded', function() {
