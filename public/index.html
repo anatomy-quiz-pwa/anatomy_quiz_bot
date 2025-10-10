@@ -630,13 +630,18 @@ button:active {
             try {
                 console.log('🔄 正在從 Supabase 載入題目...');
                 
-                // 檢查 Supabase 客戶端是否可用
-                if (typeof window.supabase === 'undefined') {
-                    console.log('⚠️ Supabase 客戶端未載入，載入中...');
-                    // 動態載入 Supabase
+                // 確保 Supabase 客戶端已初始化
+                if (!window.supabase || typeof window.supabase.from !== 'function') {
+                    console.log('⚠️ Supabase 客戶端未正確初始化，重新初始化...');
                     await loadSupabaseClient();
                 }
                 
+                // 再次檢查
+                if (!window.supabase || typeof window.supabase.from !== 'function') {
+                    throw new Error('Supabase 客戶端初始化失敗');
+                }
+                
+                console.log('🔍 開始查詢 Supabase 題庫...');
                 const { data, error } = await window.supabase
                     .from('anatomy_questions_v2')
                     .select('*')
@@ -683,17 +688,35 @@ button:active {
         async function loadSupabaseClient() {
             return new Promise((resolve, reject) => {
                 try {
-                    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-                        reject(new Error('Supabase SDK 未正確載入'));
+                    console.log('🔧 開始初始化 Supabase 客戶端...');
+                    
+                    // 檢查 Supabase SDK 是否載入
+                    if (typeof window.supabase === 'undefined') {
+                        console.error('❌ Supabase SDK 未載入');
+                        reject(new Error('Supabase SDK 未載入，請檢查網絡連接'));
                         return;
                     }
                     
-                    // Supabase 腳本已經在 HTML 中載入，直接初始化客戶端
-                    window.supabase = window.supabase.createClient(
+                    if (typeof window.supabase.createClient !== 'function') {
+                        console.error('❌ window.supabase.createClient 不是函數');
+                        console.log('window.supabase 內容:', window.supabase);
+                        reject(new Error('Supabase createClient 方法不可用'));
+                        return;
+                    }
+                    
+                    console.log('🔧 創建 Supabase 客戶端...');
+                    // 創建新的 Supabase 客戶端實例
+                    const supabaseClient = window.supabase.createClient(
                         'https://ciqlfqfgzqqgdrogedxg.supabase.co',
                         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA'
                     );
+                    
+                    // 將客戶端設置到 window 對象
+                    window.supabase = supabaseClient;
+                    
                     console.log('✅ Supabase 客戶端初始化成功');
+                    console.log('🔍 客戶端方法:', Object.getOwnPropertyNames(window.supabase));
+                    
                     resolve();
                 } catch (error) {
                     console.error('❌ Supabase 客戶端初始化失敗:', error);
@@ -884,8 +907,17 @@ button:active {
         }
         
         // 確保頁面載入完成後函數可用
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ 頁面載入完成，LINE 登入函數已準備就緒');
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('✅ 頁面載入完成，開始初始化...');
+            
+            // 預先初始化 Supabase 客戶端
+            try {
+                console.log('🔧 預先初始化 Supabase 客戶端...');
+                await loadSupabaseClient();
+                console.log('✅ Supabase 客戶端預先初始化成功');
+            } catch (error) {
+                console.warn('⚠️ Supabase 預先初始化失敗，將在需要時重試:', error);
+            }
             
             // 確保按鈕可以點擊
             const lineLoginBtn = document.getElementById('line-login-btn');
@@ -895,6 +927,8 @@ button:active {
                 lineLoginBtn.disabled = false;
                 console.log('✅ LINE 登入按鈕已啟用');
             }
+            
+            console.log('✅ 頁面初始化完成');
         });
     </script>
 </body>
