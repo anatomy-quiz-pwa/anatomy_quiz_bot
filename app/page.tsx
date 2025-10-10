@@ -100,10 +100,26 @@ export default function Page() {
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "8px",
-                fontWeight: "bold"
+                fontWeight: "bold",
+                marginRight: "10px"
               }}
             >
               🚀 完整功能版本
+            </a>
+            
+            <a 
+              href="/game-simple" 
+              style={{
+                display: "inline-block",
+                padding: "15px 30px",
+                backgroundColor: "#FF6B35",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "8px",
+                fontWeight: "bold"
+              }}
+            >
+              🎯 簡化版本 (直接顯示題目)
             </a>
           </div>
         </div>
