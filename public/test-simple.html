@@ -456,6 +456,31 @@
             margin: 20px 0;
         }
         
+        /* 下一題按鈕 */
+        .next-question-btn {
+            background: linear-gradient(135deg, #C57B57, #B85C38);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(197, 123, 87, 0.3);
+        }
+        
+        .next-question-btn:hover {
+            background: linear-gradient(135deg, #B85C38, #A04A2A);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(197, 123, 87, 0.4);
+        }
+        
+        .next-question-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(197, 123, 87, 0.3);
+        }
+        
         /* 隱藏元素 */
         .hidden {
             display: none !important;
@@ -591,6 +616,11 @@
                         <img id="explanation-image" src="" alt="解釋圖片" style="display: none;">
                     </div>
                     <div class="explanation-text" id="explanation-text"></div>
+                    <div class="explanation-actions" style="margin-top: 24px; text-align: center;">
+                        <button class="next-question-btn" onclick="loadNextQuestion()">
+                            ➡️ 下一題
+                        </button>
+                    </div>
                 </div>
             </div>
 
