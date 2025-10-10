@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定義字體 */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+/* 品牌主題變量 */
+:root {
+  --brand-bg: #F4E8D8;
+  --brand-dark: #1C1C1C;
+  --brand-accent: #C57B57;
+  --brand-warm: #B85C38;
+  --brand-light: #fffaf5;
+  
+  --brand-font-en: 'Playfair Display', serif;
+  --brand-font-zh: 'Noto Sans TC', sans-serif;
+  
+  --shadow-soft: 4px 4px 8px rgba(28, 28, 28, 0.15);
+  --shadow-hover: 7px 7px 12px rgba(28, 28, 28, 0.2);
+}
+
+/* 基礎樣式 */
+html, body {
+  background-color: var(--brand-bg) !important;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(28, 28, 28, 0.02) 2px,
+      rgba(28, 28, 28, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(28, 28, 28, 0.02) 2px,
+      rgba(28, 28, 28, 0.02) 4px
+    ) !important;
+  background-size: 100% 100% !important;
+  background-attachment: fixed !important;
+  color: var(--brand-dark) !important;
+  font-family: var(--brand-font-zh) !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 標題字體 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--brand-font-en) !important;
+  letter-spacing: 0.05em;
+  color: var(--brand-dark);
+}
+
+/* 美式復古按鈕效果 */
+.btn-retro {
+  background-color: var(--brand-accent) !important;
+  color: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 8px !important;
+  font-weight: bold;
+  padding: 15px 40px !important;
+  font-size: 1.2rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  font-family: var(--brand-font-zh) !important;
+}
+
+.btn-retro:hover {
+  background-color: var(--brand-warm) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+  color: var(--brand-light) !important;
+}
+
+.btn-retro:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 2px 2px 0 var(--brand-dark) !important;
+}
+
+/* 卡片樣式 */
+.card-retro {
+  background: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  box-shadow: 4px 4px 0 var(--brand-dark) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+}
+
+.card-retro:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--brand-dark) !important;
+}
+
+/* 進度條樣式 */
+.progress-retro {
+  background: var(--brand-bg) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 15px !important;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 4px rgba(28, 28, 28, 0.1);
+}
+
+.progress-fill-retro {
+  background: linear-gradient(90deg, var(--brand-warm), var(--brand-accent)) !important;
+  color: var(--brand-light) !important;
+  text-shadow: 1px 1px 0 var(--brand-dark);
+}
+
+/* 選項按鈕樣式 */
+.option-btn-retro {
+  width: 100% !important;
+  padding: 20px !important;
+  margin: 10px 0 !important;
+  background: var(--brand-light) !important;
+  border: 2px solid var(--brand-dark) !important;
+  border-radius: 15px !important;
+  color: var(--brand-dark) !important;
+  text-align: left !important;
+  font-size: 1.1rem !important;
+  font-weight: 500 !important;
+  box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  transition: all 0.3s ease;
+  cursor: pointer !important;
+}
+
+.option-btn-retro:hover {
+  background: var(--brand-bg) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+}
+
+.option-btn-retro.selected {
+  background: var(--brand-accent) !important;
+  color: var(--brand-light) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 5px 5px 0 var(--brand-dark) !important;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .card-retro {
+    border-width: 2px !important;
+    box-shadow: 4px 4px 0 var(--brand-dark) !important;
+  }
+  
+  .btn-retro {
+    padding: 0.6rem 1.2rem !important;
+  }
+  
+  .option-btn-retro:hover,
+  .option-btn-retro.selected {
+    transform: none !important;
+    box-shadow: 3px 3px 0 var(--brand-dark) !important;
+  }
+}
+
+/* 動畫效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 載入動畫 */
+.spinner-retro {
+  border: 5px solid var(--brand-bg) !important;
+  border-top: 5px solid var(--brand-accent) !important;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

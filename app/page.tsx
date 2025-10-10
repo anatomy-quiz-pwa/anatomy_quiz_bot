@@ -68,10 +68,42 @@ export default function Page() {
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "8px",
-                fontWeight: "bold"
+                fontWeight: "bold",
+                marginRight: "10px"
               }}
             >
               🔧 備用版本
+            </a>
+            
+            <a 
+              href="/game-redesign" 
+              style={{
+                display: "inline-block",
+                padding: "15px 30px",
+                backgroundColor: "#8B4513",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "8px",
+                fontWeight: "bold",
+                marginRight: "10px"
+              }}
+            >
+              🎨 新設計版本
+            </a>
+            
+            <a 
+              href="/game-complete" 
+              style={{
+                display: "inline-block",
+                padding: "15px 30px",
+                backgroundColor: "#DC143C",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "8px",
+                fontWeight: "bold"
+              }}
+            >
+              🚀 完整功能版本
             </a>
           </div>
         </div>
