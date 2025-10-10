@@ -116,10 +116,26 @@ export default function Page() {
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "8px",
-                fontWeight: "bold"
+                fontWeight: "bold",
+                marginRight: "10px"
               }}
             >
               🎯 簡化版本 (直接顯示題目)
+            </a>
+            
+            <a 
+              href="/game-test" 
+              style={{
+                display: "inline-block",
+                padding: "15px 30px",
+                backgroundColor: "#9B59B6",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "8px",
+                fontWeight: "bold"
+              }}
+            >
+              🧪 測試版本 (無組件依賴)
             </a>
           </div>
         </div>
