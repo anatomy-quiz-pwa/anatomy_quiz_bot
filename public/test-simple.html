@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖咬一口 - 簡化測試版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background-color: #F4E8D8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid #1C1C1C;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .header {
+            background: #C57B57;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .question-card {
+            background: #fffaf5;
+            border: 2px solid #1C1C1C;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .option-btn {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: #fffaf5;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+        }
+        .option-btn:hover {
+            background: #F4E8D8;
+        }
+        .option-btn.selected {
+            background: #C57B57;
+            color: white;
+        }
+        .btn {
+            background: #C57B57;
+            color: white;
+            border: 2px solid #1C1C1C;
+            border-radius: 8px;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #B85C38;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
+        .error {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 解剖咬一口 - 簡化測試版</h1>
+            <p>測試 Supabase 題目載入</p>
+        </div>
+
+        <div id="status" class="loading">
+            正在初始化...
+        </div>
+
+        <div id="question-area" style="display: none;">
+            <div class="question-card">
+                <div id="question-info">
+                    <span id="question-level">等級 1</span>
+                    <span id="question-category">解剖學</span>
+                </div>
+                <div id="question-text">題目載入中...</div>
+                <div id="options-container"></div>
+                <button id="submit-btn" class="btn" onclick="submitAnswer()" disabled>提交答案</button>
+                <button id="next-btn" class="btn" onclick="loadNextQuestion()" style="display: none;">下一題</button>
+            </div>
+        </div>
+
+        <div id="debug-info" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+            <h3>調試信息</h3>
+            <div id="debug-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase 配置
+        const SUPABASE_URL = 'https://ciqlfqfgzqqgdrogedxg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA';
+
+        let supabase;
+        let currentQuestion = null;
+        let selectedAnswer = null;
+        let allQuestions = [];
+
+        // 調試函數
+        function debugLog(message) {
+            console.log(message);
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        // 更新狀態
+        function updateStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = message;
+            statusEl.className = type;
+        }
+
+        // 初始化
+        async function init() {
+            debugLog('🚀 開始初始化...');
+            
+            try {
+                // 初始化 Supabase
+                debugLog('🔧 初始化 Supabase 客戶端...');
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                debugLog('✅ Supabase 客戶端初始化成功');
+
+                // 載入題目
+                debugLog('📚 開始載入題目...');
+                await loadQuestions();
+                
+                // 顯示第一題
+                if (allQuestions.length > 0) {
+                    debugLog('🎮 顯示第一題...');
+                    showQuestion(allQuestions[0]);
+                    updateStatus('✅ 題目載入成功！', 'success');
+                } else {
+                    updateStatus('❌ 沒有找到題目', 'error');
+                }
+
+            } catch (error) {
+                debugLog('❌ 初始化失敗: ' + error.message);
+                updateStatus('❌ 初始化失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 載入題目
+        async function loadQuestions() {
+            try {
+                debugLog('🔄 查詢 Supabase 題庫...');
+                const { data, error } = await supabase
+                    .from('anatomy_questions_v2')
+                    .select('*')
+                    .limit(10);
+
+                if (error) {
+                    throw new Error('Supabase 查詢錯誤: ' + error.message);
+                }
+
+                if (!data || data.length === 0) {
+                    throw new Error('題庫為空');
+                }
+
+                debugLog(`✅ 成功載入 ${data.length} 道題目`);
+                
+                // 轉換數據格式
+                allQuestions = data.map(item => ({
+                    id: item.id,
+                    question: item.question,
+                    options: [
+                        item.option_1,
+                        item.option_2,
+                        item.option_3,
+                        item.option_4
+                    ].filter(opt => opt && opt.trim()),
+                    correct_answer: (item.correct_option || 1) - 1,
+                    explanation: item.explanation || '',
+                    level: item.level || 1,
+                    category: '解剖學',
+                    image_url: item.image_url || ''
+                }));
+
+                debugLog('✅ 數據格式轉換完成');
+
+            } catch (error) {
+                debugLog('❌ 載入題目失敗: ' + error.message);
+                throw error;
+            }
+        }
+
+        // 顯示題目
+        function showQuestion(question) {
+            debugLog('🎨 顯示題目: ' + question.question);
+            
+            currentQuestion = question;
+            selectedAnswer = null;
+
+            // 更新題目信息
+            document.getElementById('question-level').textContent = `等級 ${question.level}`;
+            document.getElementById('question-category').textContent = question.category;
+            document.getElementById('question-text').textContent = question.question;
+
+            // 創建選項
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                button.onclick = () => selectAnswer(index);
+                button.id = `option-${index}`;
+                optionsContainer.appendChild(button);
+            });
+
+            // 重置按鈕狀態
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').style.display = 'inline-block';
+            document.getElementById('next-btn').style.display = 'none';
+
+            // 顯示題目區域
+            document.getElementById('question-area').style.display = 'block';
+
+            debugLog('✅ 題目顯示完成');
+        }
+
+        // 選擇答案
+        function selectAnswer(index) {
+            debugLog('👆 選擇答案: ' + index);
+            
+            selectedAnswer = index;
+
+            // 移除所有選中狀態
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // 添加選中狀態
+            document.getElementById(`option-${index}`).classList.add('selected');
+
+            // 啟用提交按鈕
+            document.getElementById('submit-btn').disabled = false;
+
+            debugLog('✅ 答案選擇完成');
+        }
+
+        // 提交答案
+        function submitAnswer() {
+            if (selectedAnswer === null) {
+                alert('請先選擇一個答案！');
+                return;
+            }
+
+            debugLog('📤 提交答案: ' + selectedAnswer);
+
+            const isCorrect = selectedAnswer === currentQuestion.correct_answer;
+            debugLog('🎯 答案' + (isCorrect ? '正確' : '錯誤'));
+
+            // 顯示結果
+            document.querySelectorAll('.option-btn').forEach((btn, index) => {
+                if (index === currentQuestion.correct_answer) {
+                    btn.style.background = '#4caf50';
+                    btn.style.color = 'white';
+                } else if (index === selectedAnswer && !isCorrect) {
+                    btn.style.background = '#f44336';
+                    btn.style.color = 'white';
+                }
+                btn.disabled = true;
+            });
+
+            // 顯示下一題按鈕
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'inline-block';
+
+            debugLog('✅ 答案提交完成');
+        }
+
+        // 載入下一題
+        function loadNextQuestion() {
+            debugLog('➡️ 載入下一題...');
+            
+            const randomIndex = Math.floor(Math.random() * allQuestions.length);
+            showQuestion(allQuestions[randomIndex]);
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
