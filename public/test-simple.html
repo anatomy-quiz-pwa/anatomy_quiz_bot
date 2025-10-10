@@ -932,12 +932,32 @@
             document.getElementById('progress-remaining').textContent = `還需 ${totalQuestions - (currentQuestionNumber - 1)} 題達成目標`;
         }
 
-        // 載入真實排行榜數據
+        // 獲取用戶暱稱（參考 LINE Bot 邏輯）
+        async function getUserNickname(userId) {
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('nickname')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (error || !data) {
+                    return `用戶_${userId.slice(-4)}`; // 使用用戶ID後4位作為備用名稱
+                }
+
+                return data.nickname || `用戶_${userId.slice(-4)}`;
+            } catch (error) {
+                console.warn(`獲取用戶 ${userId} 暱稱失敗:`, error);
+                return `用戶_${userId.slice(-4)}`;
+            }
+        }
+
+        // 載入真實排行榜數據（參考 LINE Bot 邏輯）
         async function loadRealLeaderboard() {
             try {
                 console.log('🔄 載入真實排行榜數據...');
                 
-                // 從 Supabase 獲取用戶統計數據
+                // 從 Supabase 獲取用戶統計數據 - 使用正確的列名和排序
                 const { data, error } = await supabase
                     .from('user_stats')
                     .select('*')
@@ -946,7 +966,6 @@
 
                 if (error) {
                     console.error('載入排行榜失敗:', error);
-                    // 使用模擬數據作為備用
                     loadMockLeaderboard();
                     return;
                 }
@@ -957,25 +976,38 @@
                     return;
                 }
 
-                // 轉換數據格式
-                realLeaderboard = data.map(item => {
+                console.log(`✅ 成功獲取 ${data.length} 條原始數據`);
+
+                // 轉換數據格式（參考 LINE Bot 邏輯）
+                realLeaderboard = [];
+                for (const item of data) {
+                    const userId = item.user_id || '';
+                    const nickname = await getUserNickname(userId);
+                    
                     const correct = item.correct || 0;
                     const wrong = item.wrong || 0;
                     const total = correct + wrong;
                     const score = correct * 10; // 分數 = 正確題數 * 10
                     
-                    return {
-                        name: item.nickname || '匿名用戶',
+                    realLeaderboard.push({
+                        name: nickname,
                         score: score,
                         correct: correct,
                         total: total,
                         level: item.level || 1,
-                        user_id: item.user_id,
+                        user_id: userId,
                         avatar: getAvatarByLevel(item.level || 1)
-                    };
-                });
+                    });
+                }
 
                 console.log(`✅ 成功載入 ${realLeaderboard.length} 條排行榜數據`);
+                
+                // 記錄前3名（參考 LINE Bot 邏輯）
+                for (let i = 0; i < Math.min(3, realLeaderboard.length); i++) {
+                    const student = realLeaderboard[i];
+                    console.log(`🏆 第${i+1}名: ${student.name} - ${student.score}分 (正確:${student.correct}, 總題:${student.total})`);
+                }
+                
                 displayLeaderboard();
 
             } catch (error) {
