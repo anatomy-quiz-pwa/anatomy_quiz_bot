@@ -3,8 +3,8 @@ import { useEffect } from "react";
 
 export default function HomePage() {
   useEffect(() => {
-    // 自動重定向到遊戲頁面
-    window.location.href = "/game";
+    // 直接重定向到根目錄（會被 next.config.mjs 重寫為 public/index.html）
+    window.location.href = "/";
   }, []);
 
   return (
@@ -51,7 +51,7 @@ export default function HomePage() {
           fontSize: "0.875rem",
           color: "#999"
         }}>
-          如果頁面沒有自動跳轉，請點擊 <a href="/game" style={{ color: "#C57B57", textDecoration: "underline" }}>這裡</a>
+          如果頁面沒有自動跳轉，請點擊 <a href="/" style={{ color: "#C57B57", textDecoration: "underline" }}>這裡</a>
         </p>
       </div>
       <style jsx>{`

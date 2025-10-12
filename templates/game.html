@@ -188,9 +188,65 @@ async function startQuiz() {
     }
 }
 
+// 獲取題目 Hero 圖片 URL（與 LINE Bot 邏輯一致）
+function getQuestionHeroImageUrl(question, userLevel = null) {
+    console.log('🖼️ 開始獲取 Hero 圖片 URL...');
+    
+    // 優先順序1: 使用題目特定的圖片 URL
+    const questionImageUrl = question.qimage_url || question.image_url;
+    
+    if (questionImageUrl && questionImageUrl.trim() !== '') {
+        console.log('✅ 使用題目特定圖片:', questionImageUrl);
+        return questionImageUrl;
+    }
+    
+    // 優先順序2: 使用用戶當前等級海報圖片（如果提供），否則使用題目等級
+    const level = userLevel !== null ? userLevel : (question.level || 1);
+    const levelPosterUrl = getLevelPosterUrl(level);
+    
+    console.log(`🎯 題目圖片為空，使用等級 ${level} 海報: ${levelPosterUrl}`);
+    return levelPosterUrl;
+}
+
+// 獲取等級海報圖片 URL
+function getLevelPosterUrl(level) {
+    const baseUrl = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot";
+    
+    // 等級海報映射（支援 level 1-14）
+    const levelPosters = {
+        1: `${baseUrl}/level_1_poster.png`,
+        2: `${baseUrl}/level_2_poster.png`,
+        3: `${baseUrl}/level_3_poster.png`,
+        4: `${baseUrl}/level_4_poster.png`,
+        5: `${baseUrl}/level_5_poster.png`,
+        6: `${baseUrl}/level_6_poster.png`,
+        7: `${baseUrl}/level_7_poster.png`,
+        8: `${baseUrl}/level_8_poster.png`,
+        9: `${baseUrl}/level_9_poster.png`,
+        10: `${baseUrl}/level_10_poster.png`,
+        11: `${baseUrl}/level_11_poster.png`,
+        12: `${baseUrl}/level_12_poster.png`,
+        13: `${baseUrl}/level_13_poster.png`,
+        14: `${baseUrl}/level_14_poster.png`,
+    };
+    
+    // 所有 level 都有對應 poster，直接使用
+    const posterUrl = levelPosters[level];
+    if (posterUrl) {
+        return posterUrl;
+    } else {
+        // 如果等級超過14或不在映射中，使用 level 1 作為預設
+        console.warn(`⚠️ 等級 ${level} 超出範圍，使用 level 1 poster`);
+        return levelPosters[1];
+    }
+}
+
 // 顯示題目
 function displayQuestion(question) {
     const gameArea = document.getElementById('game-area');
+    
+    // 獲取 Hero 圖片 URL（與 LINE Bot 邏輯一致）
+    const heroImageUrl = getQuestionHeroImageUrl(question, userStats.level);
     
     let optionsHtml = '';
     question.options.forEach((option, index) => {
@@ -204,9 +260,14 @@ function displayQuestion(question) {
     gameArea.innerHTML = `
         <div class="quiz-container">
             <div class="card mb-3">
+                <!-- Hero 圖片區域 -->
+                <div class="card-img-top">
+                    <img src="${heroImageUrl}" alt="題目圖片" 
+                         style="width: 100%; max-height: 400px; object-fit: cover;">
+                </div>
                 <div class="card-header">
                     <i class="fas fa-question-circle"></i>
-                    等級 ${question.level} - ${question.category}
+                    等級 ${question.level} - ${question.category || '解剖學'}
                 </div>
                 <div class="card-body">
                     <h5 class="card-title">${question.question}</h5>

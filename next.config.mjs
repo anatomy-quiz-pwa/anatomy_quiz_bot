@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // 簡化配置，讓 public/index.html 成為默認首頁
   async rewrites() {
     return [
       {
@@ -10,10 +11,6 @@ const nextConfig = {
       {
         source: '/static/:path*',
         destination: '/static/:path*',
-      },
-      {
-        source: '/game',
-        destination: '/public/game.html',
       },
     ];
   },

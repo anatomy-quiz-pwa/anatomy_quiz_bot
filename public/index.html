@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖咬一口 - 簡化測試版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background-color: #F4E8D8;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        /* 頂部導航欄 */
+        .top-nav {
+            background: #8B4513;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* 主內容區域 - 使用 Grid 布局 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        /* 卡片樣式 - 現代化設計 */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(139, 69, 19, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        
+        /* 進度卡片 */
+        .progress-card {
+            background: linear-gradient(135deg, #F4E8D8, #fffaf5);
+            margin-bottom: 24px;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            background: #F4E8D8;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #C57B57, #B85C38);
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        /* 題目卡片 */
+        .question-card {
+            background: white;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .question-number {
+            background: #8B4513;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        
+        .timer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #8B4513;
+            font-weight: bold;
+        }
+        
+        .question-image {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .question-image img {
+            max-width: 100%;
+            max-height: 450px;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-text {
+            font-size: 28px;
+            margin: 32px 0;
+            line-height: 1.8;
+            font-weight: 500;
+            color: #2D3748;
+        }
+        
+        .option-btn {
+            width: 100%;
+            padding: 24px;
+            margin: 16px 0;
+            background: #fffaf5;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 22px;
+            transition: all 0.3s ease;
+            color: #2D3748;
+        }
+        
+        .option-btn:hover {
+            background: #F4E8D8;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(139, 69, 19, 0.15);
+        }
+        
+        .option-btn.selected {
+            background: #C57B57;
+            color: white;
+            border-color: #8B4513;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(197, 123, 87, 0.3);
+        }
+        
+        /* 用戶資料卡片 */
+        .user-card {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #8B4513;
+            margin: 0 auto 15px;
+            background: #F4E8D8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 5px;
+        }
+        
+        .user-level {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 排行榜卡片 */
+        .leaderboard-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            color: #8B4513;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin: 8px 0;
+            background: #fffaf5;
+            border-radius: 8px;
+            border: 1px solid #F4E8D8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .rank-badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .rank-1 { background: #FFD700; color: #8B4513; }
+        .rank-2 { background: #C0C0C0; color: #8B4513; }
+        .rank-3 { background: #CD7F32; color: white; }
+        
+        .leaderboard-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #F4E8D8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .leaderboard-info {
+            flex: 1;
+        }
+        
+        .leaderboard-name {
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .leaderboard-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            color: #8B4513;
+            font-weight: 600;
+        }
+        
+        .view-full-btn {
+            width: 100%;
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        /* 學習統計卡片 */
+        .stats-card h3 {
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #F4E8D8;
+        }
+        
+        /* 底部導航 */
+        .bottom-nav {
+            background: #8B4513;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .submit-btn {
+            background: #C57B57;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+        
+        .submit-btn:hover {
+            background: #B85C38;
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 登入畫面 */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #F4E8D8;
+        }
+        
+        .login-card {
+            background: white;
+            border: 3px solid #8B4513;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-title {
+            color: #8B4513;
+            margin-bottom: 20px;
+        }
+        
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .login-btn:hover {
+            background: #6B3410;
+        }
+        
+        /* 解釋區域 */
+        .explanation-card {
+            background: white;
+        }
+        
+        .explanation-image {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .explanation-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+        }
+        
+        .explanation-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        
+        /* 下一題按鈕 */
+        .next-question-btn {
+            background: linear-gradient(135deg, #C57B57, #B85C38);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(197, 123, 87, 0.3);
+        }
+        
+        .next-question-btn:hover {
+            background: linear-gradient(135deg, #B85C38, #A04A2A);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(197, 123, 87, 0.4);
+        }
+        
+        .next-question-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(197, 123, 87, 0.3);
+        }
+        
+        /* 隱藏元素 */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .right-column {
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 12px;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+            
+            .question-text {
+                font-size: 24px;
+            }
+            
+            .option-btn {
+                font-size: 18px;
+                padding: 16px;
+            }
+            
+            .top-nav {
+                padding: 12px 16px;
+            }
+            
+            .nav-links {
+                gap: 12px;
+            }
+            
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .question-text {
+                font-size: 20px;
+            }
+            
+            .option-btn {
+                font-size: 16px;
+                padding: 12px;
+            }
+            
+            .question-image img {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登入畫面 -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <h1 class="login-title">🧠 解剖咬一口</h1>
+            <p>歡迎來到解剖學問答遊戲！</p>
+            <input type="text" id="nickname-input" placeholder="請輸入暱稱（選填）" class="login-input">
+            <button class="login-btn" onclick="startGame()">🚀 開始遊戲</button>
+        </div>
+    </div>
+
+    <!-- 主應用界面 -->
+    <div id="main-app" class="hidden">
+        <!-- 頂部導航欄 -->
+        <div class="top-nav">
+            <div class="logo">
+                🦷 解剖咬一口
+            </div>
+        </div>
+
+        <!-- 主內容區域 -->
+        <div class="main-content">
+            <!-- 左側：題目區域 -->
+            <div class="left-column">
+                <!-- 今日進度 -->
+                <div class="card progress-card">
+                    <div class="progress-info">
+                        <span>今日進度</span>
+                        <span id="progress-text">0 / 20 題</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; color: #666;">
+                        <span id="progress-percent">已完成 0%</span>
+                        <span id="progress-remaining">還需 20 題達成目標</span>
+                    </div>
+                </div>
+
+                <!-- 題目卡片 -->
+                <div id="question-area" class="card question-card hidden">
+                    <div class="question-header">
+                        <div class="question-number" id="question-info">1 解剖學</div>
+                        <div class="timer">
+                            ⏰ <span id="timer">02:45</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 題目圖片 -->
+                    <div class="question-image">
+                        <img id="question-image" src="" alt="題目圖片" style="display: none;">
+                    </div>
+                    
+                    <div class="question-text" id="question-text">題目載入中...</div>
+                    <div id="options-container"></div>
+                </div>
+
+                <!-- 解釋區域 -->
+                <div id="explanation-area" class="card explanation-card hidden">
+                    <h3>💡 詳細解釋</h3>
+                    <div class="explanation-image">
+                        <img id="explanation-image" src="" alt="解釋圖片" style="display: none;">
+                    </div>
+                    <div class="explanation-text" id="explanation-text"></div>
+                    <div class="explanation-actions" style="margin-top: 24px; text-align: center;">
+                        <button class="next-question-btn" onclick="loadNextQuestion()">
+                            ➡️ 下一題
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：用戶信息和排行榜 -->
+            <div class="right-column">
+                <!-- 用戶資料 -->
+                <div class="card user-card">
+                    <div class="user-avatar">👨‍⚕️</div>
+                    <div class="user-name" id="user-name">遊客</div>
+                    <div class="user-level" id="user-level">等級 1 • 解剖學新手</div>
+                    <div class="user-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="consecutive-days">0</div>
+                            <div class="stat-label">連續天數</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-score">0</div>
+                            <div class="stat-label">總分數</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本週排行榜 -->
+                <div class="card leaderboard-card">
+                    <h3>🏆 本週排行榜</h3>
+                    <div id="leaderboard-list">
+                        <!-- 排行榜項目將在這裡動態生成 -->
+                    </div>
+                    <button class="view-full-btn" onclick="showFullLeaderboard()">查看完整排行榜</button>
+                </div>
+
+                <!-- 學習統計 -->
+                <div class="card stats-card">
+                    <h3>📊 學習統計</h3>
+                    <div class="stats-item">
+                        <span>本週答題</span>
+                        <span id="weekly-questions">0 題</span>
+                    </div>
+                    <div class="stats-item">
+                        <span>正確率</span>
+                        <span id="accuracy-rate">0%</span>
+                    </div>
+                    <div class="stats-item">
+                        <span>最高等級</span>
+                        <span id="max-level">1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部導航 -->
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="goHome()">🏠 主頁</button>
+            <button class="submit-btn" id="submit-btn" onclick="submitAnswer()" disabled>
+                📤 提交答案 →
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Supabase 配置
+        const SUPABASE_URL = 'https://ciqlfqfgzqqgdrogedxg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA';
+
+        let supabase;
+        let currentQuestion = null;
+        let selectedAnswer = null;
+        let allQuestions = [];
+        let userNickname = '遊客';
+        let gameStarted = false;
+        let currentQuestionNumber = 1;
+        let totalQuestions = 20;
+        let correctAnswers = 0;
+        let userLevel = 1;
+        let userScore = 0;
+        let consecutiveDays = 0;
+        let weeklyQuestions = 0;
+
+        // 真實排行榜數據
+        let realLeaderboard = [];
+
+        // 開始遊戲
+        function startGame() {
+            const nicknameInput = document.getElementById('nickname-input');
+            userNickname = nicknameInput.value.trim() || '遊客';
+            
+            // 隱藏登入畫面，顯示主應用
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            // 更新用戶信息
+            updateUserInfo();
+            
+            // 開始初始化
+            init();
+        }
+
+        // 初始化
+        async function init() {
+            try {
+                // 初始化 Supabase
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // 載入題目
+                await loadQuestions();
+                
+                // 載入排行榜
+                await loadRealLeaderboard();
+                
+                // 顯示第一題
+                if (allQuestions.length > 0) {
+                    showQuestion(allQuestions[0]);
+                } else {
+                    alert('沒有找到題目，請刷新頁面重試');
+                }
+
+            } catch (error) {
+                console.error('初始化失敗:', error);
+                alert('載入失敗: ' + error.message);
+            }
+        }
+
+        // 載入題目
+        async function loadQuestions() {
+            try {
+                const { data, error } = await supabase
+                    .from('anatomy_questions_v2')
+                    .select('*')
+                    .limit(20);
+
+                if (error) {
+                    throw new Error('Supabase 查詢錯誤: ' + error.message);
+                }
+
+                if (!data || data.length === 0) {
+                    throw new Error('題庫為空');
+                }
+                
+                // 轉換數據格式
+                allQuestions = data.map(item => ({
+                    id: item.id,
+                    question: item.question,
+                    options: [
+                        item.option_1,
+                        item.option_2,
+                        item.option_3,
+                        item.option_4
+                    ].filter(opt => opt && opt.trim()),
+                    correct_answer: (item.correct_option || 1) - 1,
+                    explanation: item.explanation || '',
+                    level: item.level || 1,
+                    category: '解剖學',
+                    image_url: item.image_url || '',  // 解釋圖片
+                    qimage_url: item.qimage_url || ''  // 題目圖片
+                }));
+
+            } catch (error) {
+                console.error('載入題目失敗:', error);
+                throw error;
+            }
+        }
+
+        // 顯示題目
+        function showQuestion(question) {
+            currentQuestion = question;
+            selectedAnswer = null;
+
+            // 隱藏解釋區域
+            document.getElementById('explanation-area').classList.add('hidden');
+
+            // 更新題目信息
+            document.getElementById('question-info').textContent = `${currentQuestionNumber} ${question.category}`;
+            document.getElementById('question-text').textContent = question.question;
+
+            // 顯示題目圖片
+            const questionImage = document.getElementById('question-image');
+            
+            if (question.qimage_url && question.qimage_url.trim()) {
+                questionImage.src = question.qimage_url;
+                questionImage.style.display = 'block';
+            } else {
+                questionImage.style.display = 'none';
+            }
+
+            // 創建選項
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                button.onclick = () => selectAnswer(index);
+                button.id = `option-${index}`;
+                optionsContainer.appendChild(button);
+            });
+
+            // 重置按鈕狀態
+            document.getElementById('submit-btn').disabled = true;
+
+            // 顯示題目區域
+            document.getElementById('question-area').classList.remove('hidden');
+        }
+
+        // 選擇答案
+        function selectAnswer(index) {
+            selectedAnswer = index;
+
+            // 移除所有選中狀態
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // 添加選中狀態
+            document.getElementById(`option-${index}`).classList.add('selected');
+
+            // 啟用提交按鈕
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+        // 提交答案
+        function submitAnswer() {
+            if (selectedAnswer === null) {
+                alert('請先選擇一個答案！');
+                return;
+            }
+
+            const isCorrect = selectedAnswer === currentQuestion.correct_answer;
+
+            // 更新統計
+            if (isCorrect) {
+                correctAnswers++;
+                userScore += 10;
+            }
+            weeklyQuestions++;
+            currentQuestionNumber++;
+
+            // 顯示結果
+            document.querySelectorAll('.option-btn').forEach((btn, index) => {
+                if (index === currentQuestion.correct_answer) {
+                    btn.style.background = '#4caf50';
+                    btn.style.color = 'white';
+                } else if (index === selectedAnswer && !isCorrect) {
+                    btn.style.background = '#f44336';
+                    btn.style.color = 'white';
+                }
+                btn.disabled = true;
+            });
+
+            // 禁用提交按鈕
+            document.getElementById('submit-btn').disabled = true;
+
+            // 更新進度和統計
+            updateProgress();
+            updateUserInfo();
+
+            // 顯示解釋
+            setTimeout(() => {
+                showExplanation();
+            }, 1000);
+        }
+
+        // 顯示解釋
+        function showExplanation() {
+            // 隱藏題目區域
+            document.getElementById('question-area').classList.add('hidden');
+            
+            // 顯示解釋區域
+            document.getElementById('explanation-area').classList.remove('hidden');
+            
+            // 設置解釋文字
+            document.getElementById('explanation-text').textContent = currentQuestion.explanation || '暫無詳細解釋';
+            
+            // 顯示解釋圖片
+            const explanationImage = document.getElementById('explanation-image');
+            if (currentQuestion.image_url && currentQuestion.image_url.trim()) {
+                explanationImage.src = currentQuestion.image_url;
+                explanationImage.style.display = 'block';
+            } else {
+                explanationImage.style.display = 'none';
+            }
+        }
+
+        // 載入下一題
+        function loadNextQuestion() {
+            if (currentQuestionNumber > totalQuestions) {
+                alert('恭喜！您已完成今日的所有題目！');
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * allQuestions.length);
+            showQuestion(allQuestions[randomIndex]);
+        }
+
+        // 更新用戶信息
+        function updateUserInfo() {
+            document.getElementById('user-name').textContent = userNickname;
+            document.getElementById('user-level').textContent = `等級 ${userLevel} • 解剖學愛好者`;
+            document.getElementById('consecutive-days').textContent = consecutiveDays;
+            document.getElementById('total-score').textContent = userScore;
+            document.getElementById('weekly-questions').textContent = `${weeklyQuestions} 題`;
+            
+            const accuracy = weeklyQuestions > 0 ? Math.round((correctAnswers / weeklyQuestions) * 100) : 0;
+            document.getElementById('accuracy-rate').textContent = `${accuracy}%`;
+            document.getElementById('max-level').textContent = userLevel;
+        }
+
+        // 更新進度
+        function updateProgress() {
+            const progress = Math.round((currentQuestionNumber - 1) / totalQuestions * 100);
+            document.getElementById('progress-text').textContent = `${currentQuestionNumber - 1} / ${totalQuestions} 題`;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-percent').textContent = `已完成 ${progress}%`;
+            document.getElementById('progress-remaining').textContent = `還需 ${totalQuestions - (currentQuestionNumber - 1)} 題達成目標`;
+        }
+
+        // 獲取用戶暱稱（參考 LINE Bot 邏輯）
+        async function getUserNickname(userId) {
+            try {
+                // 使用正確的欄位名稱：line_user_id 和 game_nickname
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('game_nickname')
+                    .eq('line_user_id', userId)
+                    .single();
+
+                if (error || !data) {
+                    // 使用用戶ID後4位作為備用名稱（參考 LINE Bot 邏輯）
+                    return `用戶_${userId.slice(-4)}`;
+                }
+
+                const nickname = data.game_nickname;
+                if (nickname && nickname.trim()) {
+                    return nickname;
+                }
+
+                return `用戶_${userId.slice(-4)}`;
+            } catch (error) {
+                console.warn(`獲取用戶 ${userId} 暱稱失敗:`, error);
+                return `用戶_${userId.slice(-4)}`;
+            }
+        }
+
+        // 載入真實排行榜數據（參考 LINE Bot 邏輯）
+        async function loadRealLeaderboard() {
+            try {
+                console.log('🔄 載入真實排行榜數據...');
+                
+                // 從 Supabase 獲取用戶統計數據 - 使用正確的列名和排序
+                const { data, error } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .order('correct', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    console.error('載入排行榜失敗:', error);
+                    loadMockLeaderboard();
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    console.log('沒有排行榜數據，使用模擬數據');
+                    loadMockLeaderboard();
+                    return;
+                }
+
+                console.log(`✅ 成功獲取 ${data.length} 條原始數據`);
+
+                // 轉換數據格式（參考 LINE Bot 邏輯）
+                realLeaderboard = [];
+                for (const item of data) {
+                    const userId = item.user_id || '';
+                    const nickname = await getUserNickname(userId);
+                    
+                    const correct = item.correct || 0;
+                    const wrong = item.wrong || 0;
+                    const total = correct + wrong;
+                    const score = correct * 10; // 分數 = 正確題數 * 10
+                    
+                    realLeaderboard.push({
+                        name: nickname,
+                        score: score,
+                        correct: correct,
+                        total: total,
+                        level: item.level || 1,
+                        user_id: userId,
+                        avatar: getAvatarByLevel(item.level || 1)
+                    });
+                }
+
+                console.log(`✅ 成功載入 ${realLeaderboard.length} 條排行榜數據`);
+                
+                // 記錄前3名（參考 LINE Bot 邏輯）
+                for (let i = 0; i < Math.min(3, realLeaderboard.length); i++) {
+                    const student = realLeaderboard[i];
+                    console.log(`🏆 第${i+1}名: ${student.name} - ${student.score}分 (正確:${student.correct}, 總題:${student.total})`);
+                }
+                
+                displayLeaderboard();
+
+            } catch (error) {
+                console.error('載入排行榜錯誤:', error);
+                loadMockLeaderboard();
+            }
+        }
+
+        // 根據等級獲取頭像
+        function getAvatarByLevel(level) {
+            if (level >= 10) return '👨‍⚕️';
+            if (level >= 5) return '👩‍⚕️';
+            if (level >= 3) return '👨‍🎓';
+            return '👩‍🎓';
+        }
+
+        // 顯示排行榜（參考 LINE Bot 設計）
+        function displayLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+
+            const displayData = realLeaderboard.length > 0 ? realLeaderboard : getMockLeaderboard();
+            
+            displayData.slice(0, 3).forEach((user, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : 'rank-3';
+                const accuracy = user.total > 0 ? Math.round((user.correct / user.total) * 100 * 10) / 10 : 0;
+                
+                item.innerHTML = `
+                    <div class="rank-badge ${rankClass}">${index + 1}</div>
+                    <div class="leaderboard-avatar">${user.avatar}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${user.name}${user.name === userNickname ? ' (你)' : ''}</div>
+                        <div class="leaderboard-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">答對:</span>
+                                <span class="stat-value">${user.correct} 題</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">等級:</span>
+                                <span class="stat-value">${user.level}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">準確率:</span>
+                                <span class="stat-value">${accuracy}%</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">總題數:</span>
+                                <span class="stat-value">${user.total}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                leaderboardList.appendChild(item);
+            });
+        }
+
+        // 模擬排行榜數據（備用）
+        function getMockLeaderboard() {
+            return [
+                { 
+                    name: 'KW', 
+                    score: 450, 
+                    correct: 45, 
+                    total: 56, 
+                    level: 14, 
+                    avatar: '👨‍⚕️' 
+                },
+                { 
+                    name: 'Mo不到頸椎', 
+                    score: 450, 
+                    correct: 45, 
+                    total: 51, 
+                    level: 14, 
+                    avatar: '👩‍⚕️' 
+                },
+                { 
+                    name: '暘暘爸', 
+                    score: 410, 
+                    correct: 41, 
+                    total: 51, 
+                    level: 14, 
+                    avatar: '👨‍⚕️' 
+                }
+            ];
+        }
+
+        // 載入模擬排行榜（備用）
+        function loadMockLeaderboard() {
+            console.log('使用模擬排行榜數據');
+            realLeaderboard = getMockLeaderboard();
+            displayLeaderboard();
+        }
+
+        // 其他功能函數
+        function showFullLeaderboard() {
+            alert('完整排行榜功能開發中...');
+        }
+
+        function goHome() {
+            alert('主頁功能開發中...');
+        }
+
+
+        // 頁面載入完成後顯示登入畫面
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login-screen').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
