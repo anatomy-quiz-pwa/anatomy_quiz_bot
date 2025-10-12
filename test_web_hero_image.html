@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試 Hero 圖片功能</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+        }
+        .test-image {
+            max-width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: cover;
+            border: 2px solid #333;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .test-info {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Hero 圖片功能測試</h1>
+        
+        <p class="info">這個測試頁面用於驗證網頁版本中的 Hero 圖片顯示邏輯是否與 LINE Bot 一致。</p>
+        
+        <!-- 測試 1: 有題目圖片的情況 -->
+        <div class="test-section">
+            <div class="test-title">測試 1: 題目有特定圖片</div>
+            <button onclick="testWithQuestionImage()">執行測試</button>
+            <div id="test1-result"></div>
+        </div>
+        
+        <!-- 測試 2: 無題目圖片，使用等級 poster -->
+        <div class="test-section">
+            <div class="test-title">測試 2: 題目無圖片，使用等級 Poster</div>
+            <button onclick="testWithoutQuestionImage()">執行測試</button>
+            <div id="test2-result"></div>
+        </div>
+        
+        <!-- 測試 3: 測試所有等級的 poster -->
+        <div class="test-section">
+            <div class="test-title">測試 3: 測試所有等級的 Poster（1-14）</div>
+            <button onclick="testAllLevelPosters()">執行測試</button>
+            <div id="test3-result"></div>
+        </div>
+        
+        <!-- 測試 4: 邊界情況 -->
+        <div class="test-section">
+            <div class="test-title">測試 4: 邊界情況（等級超過14）</div>
+            <button onclick="testEdgeCases()">執行測試</button>
+            <div id="test4-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 複製網頁版本中的函數
+        function getLevelPosterUrl(level) {
+            const baseUrl = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot";
+            
+            // 等級海報映射（支援 level 1-14）
+            const levelPosters = {
+                1: `${baseUrl}/level_1_poster.png`,
+                2: `${baseUrl}/level_2_poster.png`,
+                3: `${baseUrl}/level_3_poster.png`,
+                4: `${baseUrl}/level_4_poster.png`,
+                5: `${baseUrl}/level_5_poster.png`,
+                6: `${baseUrl}/level_6_poster.png`,
+                7: `${baseUrl}/level_7_poster.png`,
+                8: `${baseUrl}/level_8_poster.png`,
+                9: `${baseUrl}/level_9_poster.png`,
+                10: `${baseUrl}/level_10_poster.png`,
+                11: `${baseUrl}/level_11_poster.png`,
+                12: `${baseUrl}/level_12_poster.png`,
+                13: `${baseUrl}/level_13_poster.png`,
+                14: `${baseUrl}/level_14_poster.png`,
+            };
+            
+            const posterUrl = levelPosters[level];
+            if (posterUrl) {
+                return posterUrl;
+            } else {
+                console.warn(`⚠️ 等級 ${level} 超出範圍，使用 level 1 poster`);
+                return levelPosters[1];
+            }
+        }
+        
+        function getQuestionHeroImageUrl(question, userLevel = null) {
+            console.log('🖼️ 開始獲取 Hero 圖片 URL...');
+            console.log('題目資料:', { 
+                qimage_url: question.qimage_url, 
+                image_url: question.image_url,
+                level: question.level 
+            });
+            
+            // 優先順序1: 使用題目特定的圖片 URL
+            const questionImageUrl = question.qimage_url || question.image_url;
+            
+            if (questionImageUrl && questionImageUrl.trim() !== '') {
+                console.log('✅ 使用題目特定圖片:', questionImageUrl);
+                return questionImageUrl;
+            }
+            
+            // 優先順序2: 使用用戶當前等級海報圖片
+            const level = userLevel !== null ? userLevel : (question.level || 1);
+            const levelPosterUrl = getLevelPosterUrl(level);
+            
+            console.log(`🎯 題目圖片為空，使用等級 ${level} 海報: ${levelPosterUrl}`);
+            return levelPosterUrl;
+        }
+        
+        // 測試函數
+        function testWithQuestionImage() {
+            const question = {
+                id: 1,
+                question: "測試題目（有圖片）",
+                qimage_url: "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+                level: 1
+            };
+            
+            const heroUrl = getQuestionHeroImageUrl(question, 1);
+            
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 測試通過</p>
+                    <p class="test-info"><strong>預期結果：</strong> 使用題目特定圖片</p>
+                    <p class="test-info"><strong>實際結果：</strong> ${heroUrl}</p>
+                    <img src="${heroUrl}" alt="測試圖片" class="test-image" 
+                         onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 圖片載入失敗</p>'">
+                </div>
+            `;
+        }
+        
+        function testWithoutQuestionImage() {
+            const question = {
+                id: 2,
+                question: "測試題目（無圖片）",
+                qimage_url: "",
+                image_url: "",
+                level: 3
+            };
+            
+            const userLevel = 5;
+            const heroUrl = getQuestionHeroImageUrl(question, userLevel);
+            
+            const resultDiv = document.getElementById('test2-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 測試通過</p>
+                    <p class="test-info"><strong>預期結果：</strong> 使用用戶等級 ${userLevel} 的 poster</p>
+                    <p class="test-info"><strong>實際結果：</strong> ${heroUrl}</p>
+                    <img src="${heroUrl}" alt="測試圖片" class="test-image"
+                         onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 圖片載入失敗</p>'">
+                </div>
+            `;
+        }
+        
+        function testAllLevelPosters() {
+            const resultDiv = document.getElementById('test3-result');
+            let html = '<div class="test-result">';
+            
+            for (let level = 1; level <= 14; level++) {
+                const posterUrl = getLevelPosterUrl(level);
+                html += `
+                    <div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <p class="test-info"><strong>等級 ${level}:</strong> ${posterUrl}</p>
+                        <img src="${posterUrl}" alt="Level ${level} Poster" class="test-image"
+                             style="max-height: 150px;"
+                             onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 等級 ${level} 圖片載入失敗</p>'">
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+        
+        function testEdgeCases() {
+            const question1 = {
+                id: 3,
+                question: "測試題目（等級超過14）",
+                qimage_url: "",
+                level: 20
+            };
+            
+            const heroUrl1 = getQuestionHeroImageUrl(question1, null);
+            
+            const question2 = {
+                id: 4,
+                question: "測試題目（等級為0）",
+                qimage_url: "",
+                level: 0
+            };
+            
+            const heroUrl2 = getQuestionHeroImageUrl(question2, null);
+            
+            const resultDiv = document.getElementById('test4-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 邊界測試完成</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <p class="test-info"><strong>測試 A - 等級 20（超過範圍）：</strong></p>
+                        <p class="test-info">預期：使用 level 1 poster</p>
+                        <p class="test-info">結果：${heroUrl1}</p>
+                        <img src="${heroUrl1}" alt="測試圖片" class="test-image" style="max-height: 150px;">
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <p class="test-info"><strong>測試 B - 等級 0（超出下限）：</strong></p>
+                        <p class="test-info">預期：使用 level 1 poster</p>
+                        <p class="test-info">結果：${heroUrl2}</p>
+                        <img src="${heroUrl2}" alt="測試圖片" class="test-image" style="max-height: 150px;">
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 頁面載入時顯示說明
+        console.log('✅ Hero 圖片測試頁面已載入');
+        console.log('📋 請依次點擊各個測試按鈕來驗證功能');
+    </script>
+</body>
+</html>
+

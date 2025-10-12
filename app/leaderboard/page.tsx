@@ -1,0 +1,805 @@
+import React from 'react';
+
+export default function LeaderboardPage() {
+  return (
+    <div dangerouslySetInnerHTML={{
+      __html: `
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解剖咬一口 - 完整排行榜</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background-color: #F4E8D8;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        /* 頂部導航欄 */
+        .top-nav {
+            background: #8B4513;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* 主內容區域 */
+        .main-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* 頁面標題 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            color: #8B4513;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .page-subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* 玩家排名卡片 */
+        .my-rank-card {
+            background: linear-gradient(135deg, #C57B57, #B85C38);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(139, 69, 19, 0.2);
+            color: white;
+        }
+        
+        .my-rank-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .my-rank-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .my-rank-info {
+            flex: 1;
+        }
+        
+        .my-rank-position {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .my-rank-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .my-stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .my-stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .my-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        /* 排行榜卡片 */
+        .leaderboard-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(139, 69, 19, 0.1);
+        }
+        
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #F4E8D8;
+        }
+        
+        .leaderboard-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        
+        .refresh-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .refresh-btn:hover {
+            background: #6B3410;
+        }
+        
+        .refresh-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 排行榜列表 */
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: #fffaf5;
+            border-radius: 12px;
+            border: 2px solid #F4E8D8;
+            transition: all 0.3s ease;
+        }
+        
+        .leaderboard-item:hover {
+            border-color: #C57B57;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.1);
+        }
+        
+        .leaderboard-item.highlight {
+            background: linear-gradient(135deg, #F4E8D8, #fffaf5);
+            border-color: #8B4513;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
+        }
+        
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        
+        .rank-1 { 
+            background: linear-gradient(135deg, #FFD700, #FFA500); 
+            color: #8B4513;
+            font-size: 20px;
+        }
+        .rank-2 { 
+            background: linear-gradient(135deg, #C0C0C0, #A8A8A8); 
+            color: #8B4513;
+            font-size: 18px;
+        }
+        .rank-3 { 
+            background: linear-gradient(135deg, #CD7F32, #B8722D); 
+            color: white;
+            font-size: 18px;
+        }
+        .rank-default { 
+            background: #F4E8D8; 
+            color: #8B4513;
+        }
+        
+        .leaderboard-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #F4E8D8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 24px;
+            flex-shrink: 0;
+            border: 2px solid #8B4513;
+        }
+        
+        .leaderboard-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .leaderboard-name {
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 8px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .current-user-badge {
+            background: #C57B57;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        .leaderboard-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            color: #8B4513;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .leaderboard-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #C57B57;
+            margin-left: 16px;
+            flex-shrink: 0;
+        }
+        
+        /* 加載狀態 */
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #F4E8D8;
+            border-top: 4px solid #8B4513;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #8B4513;
+            font-size: 16px;
+        }
+        
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+            
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .my-rank-card {
+                padding: 20px;
+            }
+            
+            .my-rank-position {
+                font-size: 36px;
+            }
+            
+            .my-rank-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .leaderboard-card {
+                padding: 16px;
+            }
+            
+            .leaderboard-item {
+                padding: 12px;
+            }
+            
+            .leaderboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .leaderboard-score {
+                font-size: 20px;
+            }
+            
+            .leaderboard-name {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .rank-badge {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+                margin-right: 12px;
+            }
+            
+            .leaderboard-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                margin-right: 12px;
+            }
+            
+            .leaderboard-stats {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+            
+            .stat-row {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+        
+        /* 隱藏元素 */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航欄 -->
+    <div class="top-nav">
+        <div class="logo">
+            🦷 解剖咬一口
+        </div>
+        <button class="back-btn" onclick="goBack()">
+            ← 返回遊戲
+        </button>
+    </div>
+
+    <!-- 主內容區域 -->
+    <div class="main-content">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="page-title">🏆 完整排行榜</div>
+            <div class="page-subtitle">查看所有玩家的排名與成績</div>
+        </div>
+
+        <!-- 我的排名卡片 -->
+        <div id="my-rank-card" class="my-rank-card hidden">
+            <div class="my-rank-header">
+                👤 我的排名
+            </div>
+            <div class="my-rank-content">
+                <div class="my-rank-info">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">目前排名</div>
+                    <div class="my-rank-position">
+                        <span id="my-rank-number">-</span>
+                        <span style="font-size: 24px;">名</span>
+                    </div>
+                </div>
+            </div>
+            <div class="my-rank-stats">
+                <div class="my-stat-item">
+                    <div class="my-stat-label">答對</div>
+                    <div class="my-stat-value" id="my-correct">0</div>
+                </div>
+                <div class="my-stat-item">
+                    <div class="my-stat-label">總題數</div>
+                    <div class="my-stat-value" id="my-total">0</div>
+                </div>
+                <div class="my-stat-item">
+                    <div class="my-stat-label">準確率</div>
+                    <div class="my-stat-value" id="my-accuracy">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加載狀態 -->
+        <div id="loading-container" class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">載入排行榜中...</div>
+        </div>
+
+        <!-- 排行榜卡片 -->
+        <div id="leaderboard-card" class="leaderboard-card hidden">
+            <div class="leaderboard-header">
+                <div class="leaderboard-title">
+                    🏆 本週排行榜
+                </div>
+                <button class="refresh-btn" id="refresh-btn" onclick="refreshLeaderboard()">
+                    🔄 刷新
+                </button>
+            </div>
+            <div id="leaderboard-list" class="leaderboard-list">
+                <!-- 排行榜項目將在這裡動態生成 -->
+            </div>
+        </div>
+
+        <!-- 空狀態 -->
+        <div id="empty-state" class="empty-state hidden">
+            <div class="empty-icon">📊</div>
+            <h3>暫無排行榜數據</h3>
+            <p>還沒有玩家開始遊戲</p>
+        </div>
+    </div>
+
+    <script>
+        // Supabase 配置
+        const SUPABASE_URL = 'https://ciqlfqfgzqqgdrogedxg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDcwODUsImV4cCI6MjA2Njc4MzA4NX0.LP-9iTyckifGXvS45GBWBImnBGKADAw0jk1BpGNZWWA';
+
+        let supabase;
+        let currentUserId = null;
+        let leaderboardData = [];
+
+        // 初始化
+        async function init() {
+            try {
+                // 初始化 Supabase
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // 從 localStorage 獲取當前用戶ID
+                currentUserId = localStorage.getItem('currentUserId');
+                
+                // 載入排行榜
+                await loadLeaderboard();
+
+            } catch (error) {
+                console.error('初始化失敗:', error);
+                showError('載入失敗: ' + error.message);
+            }
+        }
+
+        // 載入排行榜數據
+        async function loadLeaderboard() {
+            try {
+                console.log('🔄 載入排行榜數據...');
+                
+                // 顯示加載狀態
+                document.getElementById('loading-container').classList.remove('hidden');
+                document.getElementById('leaderboard-card').classList.add('hidden');
+                document.getElementById('empty-state').classList.add('hidden');
+                
+                // 從 Supabase 獲取前30名用戶統計數據
+                const { data, error } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .order('correct', { ascending: false })
+                    .limit(30);
+
+                if (error) {
+                    throw new Error('Supabase 查詢錯誤: ' + error.message);
+                }
+
+                if (!data || data.length === 0) {
+                    console.log('沒有排行榜數據');
+                    showEmptyState();
+                    return;
+                }
+
+                console.log(\`✅ 成功獲取 \${data.length} 條數據\`);
+
+                // 轉換並豐富數據
+                leaderboardData = [];
+                for (let i = 0; i < data.length; i++) {
+                    const item = data[i];
+                    const userId = item.user_id || '';
+                    const nickname = await getUserNickname(userId);
+                    
+                    const correct = item.correct || 0;
+                    const wrong = item.wrong || 0;
+                    const total = correct + wrong;
+                    const score = correct * 10;
+                    const accuracy = total > 0 ? Math.round((correct / total) * 100 * 10) / 10 : 0;
+                    
+                    leaderboardData.push({
+                        rank: i + 1,
+                        user_id: userId,
+                        name: nickname,
+                        score: score,
+                        correct: correct,
+                        wrong: wrong,
+                        total: total,
+                        accuracy: accuracy,
+                        level: item.level || 1,
+                        avatar: getAvatarByLevel(item.level || 1)
+                    });
+                }
+
+                // 顯示排行榜
+                displayLeaderboard();
+                
+                // 如果有當前用戶ID，顯示我的排名
+                if (currentUserId) {
+                    displayMyRank();
+                }
+
+            } catch (error) {
+                console.error('載入排行榜失敗:', error);
+                showError('載入排行榜失敗: ' + error.message);
+            }
+        }
+
+        // 獲取用戶暱稱
+        async function getUserNickname(userId) {
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('game_nickname')
+                    .eq('line_user_id', userId)
+                    .single();
+
+                if (error || !data) {
+                    return \`用戶_\${userId.slice(-4)}\`;
+                }
+
+                const nickname = data.game_nickname;
+                if (nickname && nickname.trim()) {
+                    return nickname;
+                }
+
+                return \`用戶_\${userId.slice(-4)}\`;
+            } catch (error) {
+                console.warn(\`獲取用戶 \${userId} 暱稱失敗:\`, error);
+                return \`用戶_\${userId.slice(-4)}\`;
+            }
+        }
+
+        // 根據等級獲取頭像
+        function getAvatarByLevel(level) {
+            if (level >= 10) return '👨‍⚕️';
+            if (level >= 5) return '👩‍⚕️';
+            if (level >= 3) return '👨‍🎓';
+            return '👩‍🎓';
+        }
+
+        // 顯示排行榜
+        function displayLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+
+            leaderboardData.forEach((user, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                
+                // 如果是當前用戶，高亮顯示
+                if (currentUserId && user.user_id === currentUserId) {
+                    item.classList.add('highlight');
+                }
+                
+                const rankClass = 
+                    user.rank === 1 ? 'rank-1' : 
+                    user.rank === 2 ? 'rank-2' : 
+                    user.rank === 3 ? 'rank-3' : 
+                    'rank-default';
+                
+                const currentUserBadge = (currentUserId && user.user_id === currentUserId) 
+                    ? '<span class="current-user-badge">你</span>' 
+                    : '';
+                
+                item.innerHTML = \`
+                    <div class="rank-badge \${rankClass}">\${user.rank}</div>
+                    <div class="leaderboard-avatar">\${user.avatar}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">
+                            \${user.name}
+                            \${currentUserBadge}
+                        </div>
+                        <div class="leaderboard-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">答對</span>
+                                <span class="stat-value">\${user.correct} 題</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">總題數</span>
+                                <span class="stat-value">\${user.total} 題</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">準確率</span>
+                                <span class="stat-value">\${user.accuracy}%</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">等級</span>
+                                <span class="stat-value">Lv.\${user.level}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="leaderboard-score">\${user.score}</div>
+                \`;
+                
+                leaderboardList.appendChild(item);
+            });
+
+            // 隱藏加載狀態，顯示排行榜
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('leaderboard-card').classList.remove('hidden');
+        }
+
+        // 顯示我的排名
+        function displayMyRank() {
+            if (!currentUserId) return;
+
+            // 查找當前用戶的排名
+            const myRank = leaderboardData.find(user => user.user_id === currentUserId);
+            
+            if (myRank) {
+                document.getElementById('my-rank-number').textContent = myRank.rank;
+                document.getElementById('my-correct').textContent = myRank.correct;
+                document.getElementById('my-total').textContent = myRank.total;
+                document.getElementById('my-accuracy').textContent = myRank.accuracy + '%';
+                document.getElementById('my-rank-card').classList.remove('hidden');
+            } else {
+                // 如果用戶不在前30名，從 Supabase 獲取完整排名
+                fetchFullRanking();
+            }
+        }
+
+        // 獲取完整排名（如果用戶不在前30名）
+        async function fetchFullRanking() {
+            try {
+                // 獲取所有用戶統計數據
+                const { data, error } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .order('correct', { ascending: false });
+
+                if (error || !data) {
+                    console.error('獲取完整排名失敗:', error);
+                    return;
+                }
+
+                // 查找當前用戶的排名
+                const myIndex = data.findIndex(item => item.user_id === currentUserId);
+                
+                if (myIndex !== -1) {
+                    const myData = data[myIndex];
+                    const correct = myData.correct || 0;
+                    const wrong = myData.wrong || 0;
+                    const total = correct + wrong;
+                    const accuracy = total > 0 ? Math.round((correct / total) * 100 * 10) / 10 : 0;
+                    
+                    document.getElementById('my-rank-number').textContent = myIndex + 1;
+                    document.getElementById('my-correct').textContent = correct;
+                    document.getElementById('my-total').textContent = total;
+                    document.getElementById('my-accuracy').textContent = accuracy + '%';
+                    document.getElementById('my-rank-card').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('獲取完整排名錯誤:', error);
+            }
+        }
+
+        // 刷新排行榜
+        async function refreshLeaderboard() {
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '載入中...';
+            
+            await loadLeaderboard();
+            
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '🔄 刷新';
+        }
+
+        // 顯示空狀態
+        function showEmptyState() {
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('leaderboard-card').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+        }
+
+        // 顯示錯誤
+        function showError(message) {
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('leaderboard-card').classList.add('hidden');
+            const emptyState = document.getElementById('empty-state');
+            emptyState.querySelector('.empty-icon').textContent = '⚠️';
+            emptyState.querySelector('h3').textContent = '載入失敗';
+            emptyState.querySelector('p').textContent = message;
+            emptyState.classList.remove('hidden');
+        }
+
+        // 返回遊戲
+        function goBack() {
+            window.history.back();
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+        });
+    </script>
+</body>
+</html>
+      `
+    }} />
+  );
+}

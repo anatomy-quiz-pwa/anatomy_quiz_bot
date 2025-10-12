@@ -510,6 +510,16 @@ button:active {
                 <div id="explanation-area" style="display: none;">
                     <div class="explanation-box">
                         <h5><i class="fas fa-lightbulb text-warning"></i> 詳細解釋</h5>
+                        
+                        <!-- 解釋圖片區域 -->
+                        <div id="explanation-image-container" style="margin: 20px 0; text-align: center;">
+                            <img id="explanation-image" src="" alt="解釋圖片" 
+                                 style="max-width: 100%; max-height: 400px; object-fit: cover; 
+                                        border-radius: 12px; border: 2px solid #1C1C1C; 
+                                        box-shadow: 4px 4px 0 #1C1C1C; display: none;"
+                                 onerror="this.style.display='none'; console.warn('解釋圖片載入失敗');">
+                        </div>
+                        
                         <p id="explanation-text"></p>
                     </div>
                 </div>
@@ -797,6 +807,36 @@ button:active {
                 return levelPosters[1];
             }
         }
+        
+        // 獲取解釋圖片 URL（與 LINE Bot 邏輯一致）
+        function getExplanationImageUrl(question) {
+            console.log('🖼️ 開始獲取解釋圖片 URL...');
+            console.log('題目資料:', { 
+                image_url: question.image_url, 
+                qimage_url: question.qimage_url,
+                level: question.level 
+            });
+            
+            // 優先順序1: 使用資料庫中的 image_url 欄位
+            const imageUrl = question.image_url || '';
+            if (imageUrl && imageUrl.trim() !== '') {
+                console.log('✅ 使用解釋圖片 (image_url):', imageUrl);
+                return imageUrl;
+            }
+            
+            // 優先順序2: 如果 image_url 為空，嘗試 qimage_url 作為備用
+            const qimageUrl = question.qimage_url || '';
+            if (qimageUrl && qimageUrl.trim() !== '') {
+                console.log('✅ 使用題目特定圖片 (qimage_url):', qimageUrl);
+                return qimageUrl;
+            }
+            
+            // 優先順序3: 使用題目等級對應的 level poster
+            const level = question.level || 1;
+            const levelPosterUrl = getLevelPosterUrl(level);
+            console.log(`🎯 解釋圖片為空，使用等級 ${level} 海報: ${levelPosterUrl}`);
+            return levelPosterUrl;
+        }
 
         // 顯示題目函數
         function displayQuestion() {
@@ -973,6 +1013,20 @@ button:active {
             const explanationText = document.getElementById('explanation-text');
             if (explanationArea && explanationText) {
                 explanationText.textContent = question.explanation;
+                
+                // 顯示解釋圖片（與 LINE Bot 邏輯一致）
+                const explanationImageUrl = getExplanationImageUrl(question);
+                const explanationImage = document.getElementById('explanation-image');
+                if (explanationImage) {
+                    if (explanationImageUrl) {
+                        explanationImage.src = explanationImageUrl;
+                        explanationImage.style.display = 'block';
+                        console.log('✅ 解釋圖片已設置:', explanationImageUrl);
+                    } else {
+                        explanationImage.style.display = 'none';
+                    }
+                }
+                
                 explanationArea.style.display = 'block';
             }
 

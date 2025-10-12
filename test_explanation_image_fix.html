@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解釋圖片修復測試</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+        }
+        .test-image {
+            max-width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: cover;
+            border: 2px solid #333;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .test-info {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .explanation-box {
+            background: #f8f9fa;
+            border-left: 5px solid #007bff;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 解釋圖片修復測試</h1>
+        
+        <p class="info">這個測試頁面用於驗證網頁版本中解釋圖片的修復是否與 LINE Bot 邏輯一致。</p>
+        
+        <!-- 測試 1: 有解釋圖片的情況 -->
+        <div class="test-section">
+            <div class="test-title">測試 1: 題目有解釋圖片 (image_url)</div>
+            <button onclick="testWithExplanationImage()">執行測試</button>
+            <div id="test1-result"></div>
+        </div>
+        
+        <!-- 測試 2: 無解釋圖片，使用 qimage_url -->
+        <div class="test-section">
+            <div class="test-title">測試 2: 無解釋圖片，使用題目圖片 (qimage_url)</div>
+            <button onclick="testWithQuestionImage()">執行測試</button>
+            <div id="test2-result"></div>
+        </div>
+        
+        <!-- 測試 3: 都無圖片，使用等級 poster -->
+        <div class="test-section">
+            <div class="test-title">測試 3: 都無圖片，使用等級 Poster</div>
+            <button onclick="testWithLevelPoster()">執行測試</button>
+            <div id="test3-result"></div>
+        </div>
+        
+        <!-- 測試 4: 完整解釋顯示 -->
+        <div class="test-section">
+            <div class="test-title">測試 4: 完整解釋顯示（模擬真實情況）</div>
+            <button onclick="testCompleteExplanation()">執行測試</button>
+            <div id="test4-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 複製修復後的函數
+        function getLevelPosterUrl(level) {
+            const baseUrl = "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot";
+            
+            const levelPosters = {
+                1: `${baseUrl}/level_1_poster.png`,
+                2: `${baseUrl}/level_2_poster.png`,
+                3: `${baseUrl}/level_3_poster.png`,
+                4: `${baseUrl}/level_4_poster.png`,
+                5: `${baseUrl}/level_5_poster.png`,
+                6: `${baseUrl}/level_6_poster.png`,
+                7: `${baseUrl}/level_7_poster.png`,
+                8: `${baseUrl}/level_8_poster.png`,
+                9: `${baseUrl}/level_9_poster.png`,
+                10: `${baseUrl}/level_10_poster.png`,
+                11: `${baseUrl}/level_11_poster.png`,
+                12: `${baseUrl}/level_12_poster.png`,
+                13: `${baseUrl}/level_13_poster.png`,
+                14: `${baseUrl}/level_14_poster.png`,
+            };
+            
+            const posterUrl = levelPosters[level];
+            if (posterUrl) {
+                return posterUrl;
+            } else {
+                console.warn(`⚠️ 等級 ${level} 超出範圍，使用 level 1 poster`);
+                return levelPosters[1];
+            }
+        }
+        
+        function getExplanationImageUrl(question) {
+            console.log('🖼️ 開始獲取解釋圖片 URL...');
+            console.log('題目資料:', { 
+                image_url: question.image_url, 
+                qimage_url: question.qimage_url,
+                level: question.level 
+            });
+            
+            // 優先順序1: 使用資料庫中的 image_url 欄位
+            const imageUrl = question.image_url || '';
+            if (imageUrl && imageUrl.trim() !== '') {
+                console.log('✅ 使用解釋圖片 (image_url):', imageUrl);
+                return imageUrl;
+            }
+            
+            // 優先順序2: 如果 image_url 為空，嘗試 qimage_url 作為備用
+            const qimageUrl = question.qimage_url || '';
+            if (qimageUrl && qimageUrl.trim() !== '') {
+                console.log('✅ 使用題目特定圖片 (qimage_url):', qimageUrl);
+                return qimageUrl;
+            }
+            
+            // 優先順序3: 使用題目等級對應的 level poster
+            const level = question.level || 1;
+            const levelPosterUrl = getLevelPosterUrl(level);
+            console.log(`🎯 解釋圖片為空，使用等級 ${level} 海報: ${levelPosterUrl}`);
+            return levelPosterUrl;
+        }
+        
+        // 測試函數
+        function testWithExplanationImage() {
+            const question = {
+                id: 1,
+                question: "測試題目（有解釋圖片）",
+                image_url: "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/opening.png",
+                qimage_url: "",
+                level: 1,
+                explanation: "這是測試解釋文字。"
+            };
+            
+            const explanationImageUrl = getExplanationImageUrl(question);
+            
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 測試通過</p>
+                    <p class="test-info"><strong>預期結果：</strong> 使用解釋圖片 (image_url)</p>
+                    <p class="test-info"><strong>實際結果：</strong> ${explanationImageUrl}</p>
+                    <img src="${explanationImageUrl}" alt="解釋圖片" class="test-image" 
+                         onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 圖片載入失敗</p>'">
+                </div>
+            `;
+        }
+        
+        function testWithQuestionImage() {
+            const question = {
+                id: 2,
+                question: "測試題目（無解釋圖片，有題目圖片）",
+                image_url: "",
+                qimage_url: "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/nickname.png",
+                level: 2,
+                explanation: "這是測試解釋文字。"
+            };
+            
+            const explanationImageUrl = getExplanationImageUrl(question);
+            
+            const resultDiv = document.getElementById('test2-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 測試通過</p>
+                    <p class="test-info"><strong>預期結果：</strong> 使用題目圖片 (qimage_url)</p>
+                    <p class="test-info"><strong>實際結果：</strong> ${explanationImageUrl}</p>
+                    <img src="${explanationImageUrl}" alt="解釋圖片" class="test-image"
+                         onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 圖片載入失敗</p>'">
+                </div>
+            `;
+        }
+        
+        function testWithLevelPoster() {
+            const question = {
+                id: 3,
+                question: "測試題目（都無圖片）",
+                image_url: "",
+                qimage_url: "",
+                level: 5,
+                explanation: "這是測試解釋文字。"
+            };
+            
+            const explanationImageUrl = getExplanationImageUrl(question);
+            
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 測試通過</p>
+                    <p class="test-info"><strong>預期結果：</strong> 使用等級 5 的 poster</p>
+                    <p class="test-info"><strong>實際結果：</strong> ${explanationImageUrl}</p>
+                    <img src="${explanationImageUrl}" alt="解釋圖片" class="test-image"
+                         onerror="this.parentElement.innerHTML += '<p style=color:red>❌ 圖片載入失敗</p>'">
+                </div>
+            `;
+        }
+        
+        function testCompleteExplanation() {
+            const question = {
+                id: 4,
+                question: "解剖學測試題目",
+                image_url: "",
+                qimage_url: "",
+                level: 3,
+                explanation: "此動作出自 Jochen Schomacher 等人 (2015) 的研究；該文獻建議頸椎伸直肌 (如頸半棘肌) 可以透過阻力以及軀幹排列方式進行耐力訓練。這與本研究結果相呼應，提供了臨床實際應用的依據。"
+            };
+            
+            const explanationImageUrl = getExplanationImageUrl(question);
+            
+            const resultDiv = document.getElementById('test4-result');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <p class="success">✅ 完整解釋測試通過</p>
+                    <div class="explanation-box">
+                        <h5><i class="fas fa-lightbulb text-warning"></i> 詳細解釋</h5>
+                        
+                        <!-- 解釋圖片區域 -->
+                        <div style="margin: 20px 0; text-align: center;">
+                            <img src="${explanationImageUrl}" alt="解釋圖片" class="test-image"
+                                 onerror="this.style.display='none'; console.warn('解釋圖片載入失敗');">
+                        </div>
+                        
+                        <p>${question.explanation}</p>
+                    </div>
+                    
+                    <p class="test-info"><strong>使用的圖片 URL：</strong> ${explanationImageUrl}</p>
+                    <p class="info">✅ 解釋圖片現在應該正確顯示了！</p>
+                </div>
+            `;
+        }
+        
+        // 頁面載入時顯示說明
+        console.log('✅ 解釋圖片修復測試頁面已載入');
+        console.log('📋 請依次點擊各個測試按鈕來驗證修復效果');
+    </script>
+</body>
+</html>

@@ -241,6 +241,31 @@ function getLevelPosterUrl(level) {
     }
 }
 
+// 獲取解釋圖片 URL（與 LINE Bot 邏輯一致）
+function getExplanationImageUrl(question) {
+    console.log('🖼️ 開始獲取解釋圖片 URL...');
+    
+    // 優先順序1: 使用資料庫中的 image_url 欄位
+    const imageUrl = question.image_url || '';
+    if (imageUrl && imageUrl.trim() !== '') {
+        console.log('✅ 使用解釋圖片 (image_url):', imageUrl);
+        return imageUrl;
+    }
+    
+    // 優先順序2: 如果 image_url 為空，嘗試 qimage_url 作為備用
+    const qimageUrl = question.qimage_url || '';
+    if (qimageUrl && qimageUrl.trim() !== '') {
+        console.log('✅ 使用題目特定圖片 (qimage_url):', qimageUrl);
+        return qimageUrl;
+    }
+    
+    // 優先順序3: 使用題目等級對應的 level poster
+    const level = question.level || 1;
+    const levelPosterUrl = getLevelPosterUrl(level);
+    console.log(`🎯 解釋圖片為空，使用等級 ${level} 海報: ${levelPosterUrl}`);
+    return levelPosterUrl;
+}
+
 // 顯示題目
 function displayQuestion(question) {
     const gameArea = document.getElementById('game-area');
@@ -257,7 +282,7 @@ function displayQuestion(question) {
         `;
     });
     
-    gameArea.innerHTML = `
+            gameArea.innerHTML = `
         <div class="quiz-container">
             <div class="card mb-3">
                 <!-- Hero 圖片區域 -->
@@ -278,6 +303,31 @@ function displayQuestion(question) {
                         <button id="submit-btn" class="btn btn-success btn-lg" onclick="submitAnswer()" disabled>
                             <i class="fas fa-check"></i>
                             提交答案
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 解釋區域 -->
+            <div id="explanation-area" class="card mb-3" style="display: none;">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb text-warning"></i> 詳細解釋
+                </div>
+                <div class="card-body">
+                    <!-- 解釋圖片區域 -->
+                    <div id="explanation-image-container" style="margin: 20px 0; text-align: center;">
+                        <img id="explanation-image" src="" alt="解釋圖片" 
+                             style="max-width: 100%; max-height: 400px; object-fit: cover; 
+                                    border-radius: 8px; border: 2px solid #333; display: none;"
+                             onerror="this.style.display='none'; console.warn('解釋圖片載入失敗');">
+                    </div>
+                    
+                    <div id="explanation-text"></div>
+                    
+                    <div class="text-center mt-4">
+                        <button id="next-btn" class="btn btn-primary btn-lg" onclick="nextQuestion()" style="display: none;">
+                            <i class="fas fa-forward"></i>
+                            下一題
                         </button>
                     </div>
                 </div>
@@ -370,6 +420,15 @@ function showResult(result) {
                     
                     ${explanation ? `
                         <h5 class="mb-3"><i class="fas fa-book text-primary"></i> 詳細解釋：</h5>
+                        
+                        <!-- 解釋圖片區域 -->
+                        <div id="explanation-image-container" style="margin: 20px 0; text-align: center;">
+                            <img id="explanation-image" src="" alt="解釋圖片" 
+                                 style="max-width: 100%; max-height: 300px; object-fit: cover; 
+                                        border-radius: 8px; border: 2px solid #333; display: none;"
+                                 onerror="this.style.display='none'; console.warn('解釋圖片載入失敗');">
+                        </div>
+                        
                         <p class="lead">${explanation}</p>
                     ` : ''}
                     
@@ -405,6 +464,17 @@ function showResult(result) {
     `;
     
     gameArea.innerHTML = resultHtml;
+    
+    // 設置解釋圖片（如果有解釋）
+    if (explanation) {
+        const explanationImageUrl = getExplanationImageUrl(currentQuestion);
+        const explanationImage = document.getElementById('explanation-image');
+        if (explanationImage && explanationImageUrl) {
+            explanationImage.src = explanationImageUrl;
+            explanationImage.style.display = 'block';
+            console.log('✅ 解釋圖片已設置:', explanationImageUrl);
+        }
+    }
     
     // 重新載入排行榜以更新排名
     setTimeout(() => {

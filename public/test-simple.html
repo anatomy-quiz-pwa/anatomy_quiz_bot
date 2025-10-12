@@ -597,14 +597,14 @@
                 <div class="card progress-card">
                     <div class="progress-info">
                         <span>今日進度</span>
-                        <span id="progress-text">0 / 20 題</span>
+                        <span id="progress-text">0 / 3 題</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; color: #666;">
                         <span id="progress-percent">已完成 0%</span>
-                        <span id="progress-remaining">還需 20 題達成目標</span>
+                        <span id="progress-remaining">還需 3 題達成目標</span>
                     </div>
                 </div>
 
@@ -709,7 +709,7 @@
         let userNickname = '遊客';
         let gameStarted = false;
         let currentQuestionNumber = 1;
-        let totalQuestions = 20;
+        let totalQuestions = 3;
         let correctAnswers = 0;
         let userLevel = 1;
         let userScore = 0;
@@ -1136,11 +1136,18 @@
 
         // 其他功能函數
         function showFullLeaderboard() {
-            alert('完整排行榜功能開發中...');
+            // 保存當前用戶ID到 localStorage（如果需要）
+            if (userNickname !== '遊客') {
+                // 這裡可以保存用戶ID，如果有的話
+                // localStorage.setItem('currentUserId', userId);
+            }
+            
+            // 跳轉到完整排行榜頁面
+            window.location.href = '/leaderboard';
         }
 
         function goHome() {
-            alert('主頁功能開發中...');
+            window.location.href = '/test-simple.html';
         }
 
 
