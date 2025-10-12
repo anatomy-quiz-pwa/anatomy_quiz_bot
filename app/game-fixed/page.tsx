@@ -26,7 +26,7 @@ export default function GameFixedPage() {
     <div>
       {/* 內嵌 HTML 內容，確保 LINE 登入按鈕可以正常工作 */}
       <iframe
-        src="/public/index.html"
+        src="/public/game.html"
         style={{
           width: "100%",
           height: "100vh",
@@ -49,7 +49,7 @@ export default function GameFixedPage() {
       }}>
         <p>如果遊戲無法載入，請點擊：</p>
         <a 
-          href="/public/index.html" 
+          href="/public/game.html" 
           target="_blank"
           style={{ color: "#00C300", textDecoration: "underline" }}
         >

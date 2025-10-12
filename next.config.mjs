@@ -12,8 +12,8 @@ const nextConfig = {
         destination: '/static/:path*',
       },
       {
-        source: '/index.html',
-        destination: '/public/index.html',
+        source: '/game',
+        destination: '/public/game.html',
       },
     ];
   },
