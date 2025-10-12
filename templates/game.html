@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-4">
-        <!-- 用戶統計卡片 -->
+    <!-- 用戶統計卡片 - 在所有螢幕都顯示在最上面 -->
+    <div class="col-md-4 order-0">
         <div class="stats-card">
             <h4><i class="fas fa-user"></i> 玩家資訊</h4>
             <p class="mb-2"><strong>暱稱：</strong>{{ nickname }}</p>
@@ -20,27 +20,10 @@
                 ({{ "%.1f"|format((user_stats.correct / user_stats.total * 100) if user_stats.total > 0 else 0) }}%)
             </p>
         </div>
-        
-        <!-- 排行榜 -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-trophy"></i> 排行榜
-            </div>
-            <div class="card-body">
-                <div id="leaderboard">
-                    <div class="loading">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">載入中...</span>
-                        </div>
-                        <p class="mt-2">載入排行榜中...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     
-    <div class="col-md-8">
-        <!-- 遊戲區域 -->
+    <!-- 遊戲區域 - 手機版排第二（order-1），桌面版在右側 -->
+    <div class="col-md-8 order-1">
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-gamepad"></i> 測驗區域
@@ -57,6 +40,25 @@
                             <i class="fas fa-play"></i>
                             開始測驗
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 排行榜 - 手機版排最後（order-2），桌面版在左側下方 -->
+    <div class="col-md-4 order-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-trophy"></i> 排行榜
+            </div>
+            <div class="card-body">
+                <div id="leaderboard">
+                    <div class="loading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-2">載入排行榜中...</p>
                     </div>
                 </div>
             </div>

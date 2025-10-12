@@ -199,7 +199,7 @@ export default function GameSimplePage() {
                 <div className="flex items-center space-x-2 mb-4">
                   <span className="text-2xl">{isCorrect ? "🎉" : "😢"}</span>
                   <h3 className="text-xl font-bold">
-                    {isCorrect ? "答對了！" : "答錯了！"}
+                    {isCorrect ? "恭喜你答對！一起來了解人體不可思議的細節！" : "喔喔～哎呀回答錯啦～來看看正確答案吧！"}
                   </h3>
                 </div>
                 <div className="mb-4">
