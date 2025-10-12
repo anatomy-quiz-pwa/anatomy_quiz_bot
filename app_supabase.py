@@ -2961,13 +2961,13 @@ def send_explanation_with_image(user_id, question_data, is_correct, level_up_inf
         
         # 設定答案結果的主題
         if is_correct:
-            result_emoji = "✅"
-            result_text = "答對了！"
+            result_emoji = "🎉"
+            result_text = "恭喜你答對！一起來了解人體不可思議的細節！"
             header_color = "#28a745"  # 綠色
             bg_color = "#f8fff8"      # 淺綠色
         else:
-            result_emoji = "❌"
-            result_text = "答錯了！"
+            result_emoji = "😅"
+            result_text = "喔喔～哎呀回答錯啦～來看看正確答案吧！"
             header_color = "#dc3545"  # 紅色
             bg_color = "#fff8f8"      # 淺紅色
         
@@ -2982,7 +2982,8 @@ def send_explanation_with_image(user_id, question_data, is_correct, level_up_inf
                     "url": explanation_image_url if explanation_image_url else "https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/default_explanation.png",
                     "size": "full",
                     "aspectRatio": "20:13",
-                    "aspectMode": "cover"
+                    "aspectMode": "cover",
+                    "align": "center"
                 },
                 "header": {
                     "type": "box",
@@ -2992,9 +2993,10 @@ def send_explanation_with_image(user_id, question_data, is_correct, level_up_inf
                             "type": "text",
                             "text": f"{result_emoji} {result_text}",
                             "weight": "bold",
-                            "size": "xl",
+                            "size": "lg",
                             "color": "#FFFFFF",
-                            "align": "center"
+                            "align": "center",
+                            "wrap": True
                         }
                     ],
                     "backgroundColor": header_color,
@@ -3093,7 +3095,7 @@ def send_explanation_with_image(user_id, question_data, is_correct, level_up_inf
     except Exception as e:
         logger.error(f"❌ 發送 Hero Flex Message 失敗: {e}")
         # 備用方案：發送純文字訊息
-        result_text = "✅ 答對了！" if is_correct else "❌ 答錯了！"
+        result_text = "🎉 恭喜你答對！一起來了解人體不可思議的細節！" if is_correct else "😅 喔喔～哎呀回答錯啦～來看看正確答案吧！"
         explanation = question_data.get('explanation', '暫無詳細解說')
         correct_answer_index = question_data.get('correct_answer', 0)
         correct_option = question_data.get('options', [''])[correct_answer_index]
@@ -3102,7 +3104,7 @@ def send_explanation_with_image(user_id, question_data, is_correct, level_up_inf
 
 📚 正確答案：{correct_option}
 
-💡 解說：
+💡 詳細解說：
 {explanation}
 
 輸入「開始」繼續答題！"""

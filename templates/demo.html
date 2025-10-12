@@ -178,7 +178,7 @@ function showResult(data) {
     const resultExplanation = document.getElementById('resultExplanation');
     
     if (data.is_correct) {
-        resultTitle.innerHTML = '<i class="fas fa-check-circle text-success"></i> 答對了！🎉';
+        resultTitle.innerHTML = '<i class="fas fa-check-circle text-success"></i> 恭喜你答對！一起來了解人體不可思議的細節！';
         resultTitle.className = 'text-success';
         resultExplanation.innerHTML = `
             <div class="alert alert-success">
@@ -194,7 +194,7 @@ function showResult(data) {
             <p class="text-muted">太棒了！繼續挑戰下一題吧！</p>
         `;
     } else {
-        resultTitle.innerHTML = '<i class="fas fa-times-circle text-danger"></i> 答錯了 😢';
+        resultTitle.innerHTML = '<i class="fas fa-times-circle text-danger"></i> 喔喔～哎呀回答錯啦～來看看正確答案吧！';
         resultTitle.className = 'text-danger';
         resultExplanation.innerHTML = `
             <div class="alert alert-warning">

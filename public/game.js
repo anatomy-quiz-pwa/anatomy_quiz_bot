@@ -791,12 +791,12 @@ function showResultAnimation(isCorrect) {
     
     if (isCorrect) {
         icon.innerHTML = '<i class="fas fa-check-circle fa-5x text-success"></i>';
-        title.textContent = '答對了！🎉';
+        title.textContent = '恭喜你答對！一起來了解人體不可思議的細節！';
         title.className = 'text-success';
         message.textContent = '太棒了！你答對了這道題！';
     } else {
         icon.innerHTML = '<i class="fas fa-times-circle fa-5x text-danger"></i>';
-        title.textContent = '答錯了 😢';
+        title.textContent = '喔喔～哎呀回答錯啦～來看看正確答案吧！';
         title.className = 'text-danger';
         message.textContent = '別灰心，繼續加油！';
     }
