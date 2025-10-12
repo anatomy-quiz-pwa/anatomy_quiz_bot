@@ -13,6 +13,9 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendM
 from supabase import create_client, Client
 import json
 from typing import Optional
+from datetime import datetime, timedelta
+import uuid
+import requests
 
 app = Flask(__name__)
 
@@ -278,6 +281,43 @@ def safe_reply_message(reply_token, message):
         logger.error(f"❌ safe_reply_message 失敗: {e}")
         return False
 
+@app.route('/api/create-link-token', methods=['POST'])
+def create_link_token():
+    """創建一次性連結 token，用於 LINE 帳號與網站登入綁定"""
+    try:
+        data = request.get_json()
+        line_user_id = data.get('line_user_id')
+        
+        if not line_user_id:
+            logger.error("❌ 缺少 line_user_id")
+            return jsonify({"ok": False, "reason": "missing_line_user_id"}), 400
+        
+        # 生成 UUID token
+        token = str(uuid.uuid4())
+        
+        # 設定過期時間（10 分鐘後）
+        expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat() + 'Z'
+        
+        # 插入到 Supabase
+        if supabase is None:
+            logger.error("❌ Supabase 未連接")
+            return jsonify({"ok": False, "reason": "database_error"}), 500
+        
+        response = supabase.table('link_tokens').insert({
+            'token': token,
+            'line_user_id': line_user_id,
+            'expires_at': expires_at,
+            'used': False
+        }).execute()
+        
+        logger.info(f"✅ 為用戶 {line_user_id} 創建連結 token: {token}")
+        
+        return jsonify({"ok": True, "token": token}), 200
+        
+    except Exception as e:
+        logger.error(f"❌ 創建連結 token 失敗: {e}")
+        return jsonify({"ok": False, "reason": "server_error", "error": str(e)}), 500
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """處理 LINE Webhook"""
@@ -306,6 +346,119 @@ def handle_message(event):
         message_text = event.message.text.strip()
         
         logger.info(f"📨 收到來自用戶 {user_id} 的訊息: {message_text}")
+        
+        # 處理網站連結請求
+        if message_text in ['網站', 'website', '網頁', 'web']:
+            logger.info(f"🌐 用戶 {user_id} 請求網站連結")
+            
+            try:
+                # 呼叫 API 創建連結 token
+                import requests
+                api_url = os.getenv('API_BASE_URL', 'http://localhost:5000')
+                response = requests.post(
+                    f"{api_url}/api/create-link-token",
+                    json={"line_user_id": user_id},
+                    timeout=5
+                )
+                
+                if response.status_code == 200:
+                    token = response.json().get('token')
+                    site_base = os.getenv('WEBSITE_URL', 'https://anatomy-quiz-bot.vercel.app')
+                    
+                    # 創建 Flex Message
+                    flex_message = FlexSendMessage(
+                        alt_text="在網站中繼續遊戲",
+                        contents={
+                            "type": "bubble",
+                            "body": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "md",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "🌐 在網站中繼續遊戲",
+                                        "weight": "bold",
+                                        "size": "xl",
+                                        "color": "#C57B57"
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": "點一下把你的 LINE 帳號與網站登入連結，同步等級與紀錄。",
+                                        "size": "sm",
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "margin": "md"
+                                    },
+                                    {
+                                        "type": "separator",
+                                        "margin": "lg"
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "margin": "lg",
+                                        "spacing": "sm",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": "✨ 網站功能特色",
+                                                "weight": "bold",
+                                                "size": "sm",
+                                                "color": "#1C1C1C"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "• 大螢幕更好操作\n• 進度自動同步\n• 隨時隨地學習",
+                                                "size": "xs",
+                                                "wrap": True,
+                                                "color": "#999999",
+                                                "margin": "sm"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "footer": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "style": "primary",
+                                        "color": "#C57B57",
+                                        "action": {
+                                            "type": "uri",
+                                            "label": "🔗 一鍵連結並開始",
+                                            "uri": f"{site_base}/link?token={token}"
+                                        }
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": "連結有效期限：10 分鐘",
+                                        "size": "xxs",
+                                        "color": "#999999",
+                                        "align": "center",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            }
+                        }
+                    )
+                    
+                    line_bot_api.reply_message(event.reply_token, flex_message)
+                    logger.info(f"✅ 已發送網站連結給用戶 {user_id}")
+                    return
+                else:
+                    logger.error(f"❌ 創建連結 token 失敗: {response.status_code}")
+                    safe_reply_message(event.reply_token, "抱歉，創建連結失敗，請稍後再試。")
+                    return
+                    
+            except Exception as e:
+                logger.error(f"❌ 處理網站連結請求失敗: {e}")
+                safe_reply_message(event.reply_token, "抱歉，目前無法生成網站連結，請稍後再試。")
+                return
         
         # 處理排行榜請求
         if message_text in ['排行榜', 'leaderboard', '排名', '排行']:
