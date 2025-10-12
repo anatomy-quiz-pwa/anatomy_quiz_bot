@@ -1136,99 +1136,17 @@
 
         // 其他功能函數
         function showFullLeaderboard() {
-            // 顯示完整排行榜彈窗
-            showFullLeaderboardModal();
+            // 顯示完整排行榜
+            loadAndDisplayFullLeaderboard();
         }
 
-        // 顯示完整排行榜彈窗
-        function showFullLeaderboardModal() {
-            // 創建模態框
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                z-index: 1000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 20px;
-                box-sizing: border-box;
-            `;
-
-            // 創建內容容器
-            const content = document.createElement('div');
-            content.style.cssText = `
-                background: white;
-                border-radius: 16px;
-                max-width: 800px;
-                width: 100%;
-                max-height: 90vh;
-                overflow-y: auto;
-                padding: 24px;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                position: relative;
-            `;
-
-            // 添加關閉按鈕
-            const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '✕';
-            closeBtn.style.cssText = `
-                position: absolute;
-                top: 16px;
-                right: 16px;
-                background: #8B4513;
-                color: white;
-                border: none;
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                cursor: pointer;
-                font-size: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            closeBtn.onclick = () => document.body.removeChild(modal);
-
-            // 添加標題
-            const title = document.createElement('h2');
-            title.innerHTML = '🏆 完整排行榜';
-            title.style.cssText = `
-                color: #8B4513;
-                font-size: 24px;
-                font-weight: bold;
-                margin: 0 0 20px 0;
-                text-align: center;
-            `;
-
-            // 添加排行榜容器
-            const leaderboardContainer = document.createElement('div');
-            leaderboardContainer.id = 'full-leaderboard-list';
-            leaderboardContainer.style.cssText = `
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            `;
-
-            // 組裝內容
-            content.appendChild(closeBtn);
-            content.appendChild(title);
-            content.appendChild(leaderboardContainer);
-            modal.appendChild(content);
-            document.body.appendChild(modal);
-
-            // 載入完整排行榜數據
-            loadFullLeaderboardData();
-        }
-
-        // 載入完整排行榜數據
-        async function loadFullLeaderboardData() {
-            const container = document.getElementById('full-leaderboard-list');
-            container.innerHTML = '<div style="text-align: center; padding: 20px;">載入中...</div>';
+        // 載入並顯示完整排行榜
+        async function loadAndDisplayFullLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            const originalContent = leaderboardList.innerHTML;
+            
+            // 顯示載入狀態
+            leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px; color: #8B4513;">載入完整排行榜中...</div>';
 
             try {
                 // 獲取前30名數據
@@ -1239,14 +1157,14 @@
                     .limit(30);
 
                 if (error || !data || data.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">暫無排行榜數據</div>';
+                    leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">暫無排行榜數據</div>';
                     return;
                 }
 
-                // 清空容器
-                container.innerHTML = '';
+                // 清空並重新生成排行榜
+                leaderboardList.innerHTML = '';
 
-                // 生成排行榜項目
+                // 生成完整排行榜項目
                 for (let i = 0; i < data.length; i++) {
                     const item = data[i];
                     const userId = item.user_id || '';
@@ -1258,109 +1176,68 @@
                     const score = correct * 10;
                     const accuracy = total > 0 ? Math.round((correct / total) * 100 * 10) / 10 : 0;
                     
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'leaderboard-item';
+                    
                     const rankClass = 
                         i === 0 ? 'rank-1' : 
                         i === 1 ? 'rank-2' : 
                         i === 2 ? 'rank-3' : 
                         'rank-default';
                     
-                    const itemDiv = document.createElement('div');
-                    itemDiv.style.cssText = `
-                        display: flex;
-                        align-items: center;
-                        padding: 16px;
-                        background: #fffaf5;
-                        border-radius: 12px;
-                        border: 2px solid #F4E8D8;
-                        transition: all 0.3s ease;
-                    `;
-                    
                     itemDiv.innerHTML = \`
-                        <div style="
-                            width: 40px;
-                            height: 40px;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-weight: bold;
-                            font-size: 16px;
-                            margin-right: 16px;
-                            flex-shrink: 0;
-                            \${i === 0 ? 'background: linear-gradient(135deg, #FFD700, #FFA500); color: #8B4513; font-size: 20px;' : 
-                              i === 1 ? 'background: linear-gradient(135deg, #C0C0C0, #A8A8A8); color: #8B4513; font-size: 18px;' :
-                              i === 2 ? 'background: linear-gradient(135deg, #CD7F32, #B8722D); color: white; font-size: 18px;' :
-                              'background: #F4E8D8; color: #8B4513;'}
-                        ">
-                            \${i + 1}
-                        </div>
-                        <div style="
-                            width: 50px;
-                            height: 50px;
-                            border-radius: 50%;
-                            background: #F4E8D8;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            margin-right: 16px;
-                            font-size: 24px;
-                            flex-shrink: 0;
-                            border: 2px solid #8B4513;
-                        ">
-                            \${getAvatarByLevel(item.level || 1)}
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="
-                                font-weight: bold;
-                                color: #8B4513;
-                                margin-bottom: 8px;
-                                font-size: 18px;
-                            ">
-                                \${nickname}
-                            </div>
-                            <div style="
-                                display: grid;
-                                grid-template-columns: repeat(4, 1fr);
-                                gap: 8px;
-                                font-size: 12px;
-                            ">
-                                <div>
-                                    <div style="color: #666; font-weight: 500;">答對</div>
-                                    <div style="color: #8B4513; font-weight: 600;">\${correct} 題</div>
+                        <div class="rank-badge \${rankClass}">\${i + 1}</div>
+                        <div class="leaderboard-avatar">\${getAvatarByLevel(item.level || 1)}</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">\${nickname}</div>
+                            <div class="leaderboard-stats">
+                                <div class="stat-row">
+                                    <span class="stat-label">答對:</span>
+                                    <span class="stat-value">\${correct} 題</span>
                                 </div>
-                                <div>
-                                    <div style="color: #666; font-weight: 500;">總題數</div>
-                                    <div style="color: #8B4513; font-weight: 600;">\${total} 題</div>
+                                <div class="stat-row">
+                                    <span class="stat-label">等級:</span>
+                                    <span class="stat-value">\${item.level || 1}</span>
                                 </div>
-                                <div>
-                                    <div style="color: #666; font-weight: 500;">準確率</div>
-                                    <div style="color: #8B4513; font-weight: 600;">\${accuracy}%</div>
+                                <div class="stat-row">
+                                    <span class="stat-label">準確率:</span>
+                                    <span class="stat-value">\${accuracy}%</span>
                                 </div>
-                                <div>
-                                    <div style="color: #666; font-weight: 500;">等級</div>
-                                    <div style="color: #8B4513; font-weight: 600;">Lv.\${item.level || 1}</div>
+                                <div class="stat-row">
+                                    <span class="stat-label">總題數:</span>
+                                    <span class="stat-value">\${total}</span>
                                 </div>
                             </div>
                         </div>
-                        <div style="
-                            font-size: 24px;
-                            font-weight: bold;
-                            color: #C57B57;
-                            margin-left: 16px;
-                            flex-shrink: 0;
-                        ">
-                            \${score}
-                        </div>
+                        <div class="leaderboard-score">\${score}</div>
                     \`;
                     
-                    container.appendChild(itemDiv);
+                    leaderboardList.appendChild(itemDiv);
+                }
+
+                // 更新按鈕文字
+                const viewBtn = document.querySelector('.view-full-btn');
+                if (viewBtn) {
+                    viewBtn.textContent = '收起排行榜';
+                    viewBtn.onclick = () => {
+                        // 恢復原始排行榜顯示
+                        displayLeaderboard();
+                        viewBtn.textContent = '查看完整排行榜';
+                        viewBtn.onclick = showFullLeaderboard;
+                    };
                 }
 
             } catch (error) {
                 console.error('載入完整排行榜失敗:', error);
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f44336;">載入失敗，請稍後再試</div>';
+                leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px; color: #f44336;">載入失敗，請稍後再試</div>';
+                
+                // 3秒後恢復原始內容
+                setTimeout(() => {
+                    displayLeaderboard();
+                }, 3000);
             }
         }
+
 
         function goHome() {
             window.location.href = '/test-simple.html';
