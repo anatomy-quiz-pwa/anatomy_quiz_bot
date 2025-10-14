@@ -463,6 +463,9 @@
         .explanation-image {
             text-align: center;
             margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         .explanation-image img {
@@ -470,12 +473,30 @@
             max-height: 300px;
             border: 2px solid #8B4513;
             border-radius: 8px;
+            display: block;
+            margin: 0 auto;
         }
         
         .explanation-text {
             font-size: 16px;
             line-height: 1.6;
             margin: 20px 0;
+        }
+        
+        /* 反饋訊息動畫 */
+        @keyframes slideInDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .feedback-message {
+            font-family: 'Microsoft JhengHei', sans-serif;
         }
         
         /* 下一題按鈕 */
@@ -871,6 +892,11 @@
             if (isCorrect) {
                 correctAnswers++;
                 userScore += 10;
+                // 顯示正確答案反饋
+                showFeedbackMessage('🎉 恭喜你答對！一起來了解人體不可思議的細節！', 'success');
+            } else {
+                // 顯示錯誤答案反饋
+                showFeedbackMessage('😅 喔喔～哎呀回答錯啦～來看看正確答案吧！', 'error');
             }
             weeklyQuestions++;
             currentQuestionNumber++;
@@ -898,6 +924,41 @@
             setTimeout(() => {
                 showExplanation();
             }, 1000);
+        }
+
+        // 顯示反饋訊息
+        function showFeedbackMessage(message, type) {
+            // 創建反饋訊息元素
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = `feedback-message ${type}`;
+            feedbackDiv.textContent = message;
+            
+            // 設置樣式
+            feedbackDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideInDown 0.5s ease-out;
+            `;
+            
+            // 添加到頁面
+            document.body.appendChild(feedbackDiv);
+            
+            // 3秒後自動移除
+            setTimeout(() => {
+                if (feedbackDiv.parentNode) {
+                    feedbackDiv.remove();
+                }
+            }, 3000);
         }
 
         // 顯示解釋
