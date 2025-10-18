@@ -53,7 +53,7 @@ export default function UserProfile({
       <div className="flex flex-col items-center text-center">
         {/* 等級對應海報圖片（從 Supabase 載入） */}
         <img
-          src={`https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level${level}.png`}
+          src={`https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_${level}_poster.png`}
           alt={`等級 ${level} 海報`}
           className="w-40 h-40 md:w-52 md:h-52 rounded-xl object-cover shadow-md border-2 border-[#b96e3a]/40 bg-[#fff9f3]"
         />
