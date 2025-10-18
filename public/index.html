@@ -203,16 +203,34 @@
         }
         
         .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #8B4513;
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            border: 2px solid rgba(185, 110, 58, 0.4);
             margin: 0 auto 15px;
-            background: #F4E8D8;
+            background: #fff9f3;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 30px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .user-avatar img.error {
+            display: none;
+        }
+        
+        .user-avatar .fallback-icon {
+            font-size: 40px;
+            color: #8B4513;
         }
         
         .user-name {
@@ -645,7 +663,10 @@
             <div class="right-column">
                 <!-- 用戶資料 -->
                 <div class="card user-card">
-                    <div class="user-avatar">👨‍⚕️</div>
+                    <div class="user-avatar" id="user-avatar">
+                        <img id="level-poster" src="https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_1_poster.png" alt="等級 1 海報" onerror="handleImageError(this)" />
+                        <div class="fallback-icon" id="fallback-icon" style="display: none;">🏆</div>
+                    </div>
                     <div class="user-name" id="user-name">遊客</div>
                     <div class="user-level" id="user-level">等級 1 • 解剖學新手</div>
                     <div class="user-stats">
@@ -718,6 +739,51 @@
 
         // 真實排行榜數據
         let realLeaderboard = [];
+
+        // 檢查URL參數中的token
+        function checkTokenLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (token) {
+                // 如果有token，嘗試通過token登入
+                loginWithToken(token);
+                return true;
+            }
+            return false;
+        }
+
+        // 通過token登入
+        async function loginWithToken(token) {
+            try {
+                const response = await fetch(`/link?token=${token}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // 登入成功，立即移除URL中的token並重新載入頁面
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.location.href = '/game';
+                } else {
+                    console.error('Token登入失敗');
+                    // 移除URL中的token
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    showLoginScreen();
+                }
+            } catch (error) {
+                console.error('Token登入錯誤:', error);
+                // 移除URL中的token
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showLoginScreen();
+            }
+        }
+
+        // 顯示登入畫面
+        function showLoginScreen() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        }
 
         // 開始遊戲
         function startGame() {
@@ -935,7 +1001,23 @@
         // 更新用戶信息
         function updateUserInfo() {
             document.getElementById('user-name').textContent = userNickname;
-            document.getElementById('user-level').textContent = `等級 ${userLevel} • 解剖學愛好者`;
+            
+            // 使用新的等級稱號系統
+            const title = getLevelTitle(userLevel);
+            document.getElementById('user-level').textContent = `等級 ${userLevel} • ${title}`;
+            
+            // 更新等級海報圖片
+            const levelPoster = document.getElementById('level-poster');
+            const fallbackIcon = document.getElementById('fallback-icon');
+            if (levelPoster) {
+                levelPoster.src = getLevelPosterUrl(userLevel);
+                levelPoster.alt = `等級 ${userLevel} 海報`;
+                levelPoster.style.display = 'block';
+                if (fallbackIcon) {
+                    fallbackIcon.style.display = 'none';
+                }
+            }
+            
             document.getElementById('consecutive-days').textContent = consecutiveDays;
             document.getElementById('total-score').textContent = userScore;
             document.getElementById('weekly-questions').textContent = `${weeklyQuestions} 題`;
@@ -1045,7 +1127,68 @@
             }
         }
 
-        // 根據等級獲取頭像
+        // 等級稱號對應表（與 LINE Bot 一致）
+        const levelTitles = {
+            1: "解剖新手村",
+            2: "胚體學長", 
+            3: "肌肉拆解師",
+            4: "神經探路員",
+            5: "解剖影武者",
+            6: "組織細胞使者",
+            7: "血管引導員",
+            8: "解剖研究員",
+            9: "解剖操盤手",
+            10: "解剖副教授",
+            11: "腦神經導師",
+            12: "人體地圖管理",
+            13: "解剖大魔導",
+            14: "解剖學傳說"
+        };
+
+        // 獲取等級稱號
+        function getLevelTitle(level) {
+            return levelTitles[level] || "未知等級";
+        }
+
+        // 獲取等級海報圖片 URL（與 LINE Bot 邏輯一致）
+        function getLevelPosterUrl(level) {
+            const validLevel = Math.max(1, Math.min(14, level));
+            return `https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_${validLevel}_poster.png`;
+        }
+
+        // 處理圖片載入失敗
+        function handleImageError(img) {
+            img.style.display = 'none';
+            const fallbackIcon = document.getElementById('fallback-icon');
+            if (fallbackIcon) {
+                fallbackIcon.style.display = 'flex';
+            }
+        }
+
+        // 更新用戶資料顯示
+        function updateUserProfile(userData) {
+            const userName = document.getElementById('user-name');
+            const userLevel = document.getElementById('user-level');
+            const levelPoster = document.getElementById('level-poster');
+            const consecutiveDays = document.getElementById('consecutive-days');
+            const totalScore = document.getElementById('total-score');
+            
+            if (userName) userName.textContent = userData.name || '遊客';
+            if (userLevel) {
+                const level = userData.level || 1;
+                const title = getLevelTitle(level);
+                userLevel.textContent = `等級 ${level} • ${title}`;
+            }
+            if (levelPoster) {
+                const level = userData.level || 1;
+                levelPoster.src = getLevelPosterUrl(level);
+                levelPoster.alt = `等級 ${level} 海報`;
+            }
+            if (consecutiveDays) consecutiveDays.textContent = userData.consecutive_days || 0;
+            if (totalScore) totalScore.textContent = (userData.total_score || 0).toLocaleString();
+        }
+
+        // 根據等級獲取頭像（保留用於排行榜）
         function getAvatarByLevel(level) {
             if (level >= 10) return '👨‍⚕️';
             if (level >= 5) return '👩‍⚕️';
@@ -1144,9 +1287,13 @@
         }
 
 
-        // 頁面載入完成後顯示登入畫面
+        // 頁面載入完成後檢查token或顯示登入畫面
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('login-screen').classList.remove('hidden');
+            // 先檢查是否有token
+            if (!checkTokenLogin()) {
+                // 沒有token，顯示登入畫面
+                document.getElementById('login-screen').classList.remove('hidden');
+            }
         });
     </script>
 </body>
