@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from 'react';
+
 interface UserProfileProps {
   name: string;
   level: number;
@@ -36,6 +38,13 @@ const getQuestionsToNextLevel = (levelProgress: number = 0): number => {
   return 3 - levelProgress;
 };
 
+// 獲取等級海報圖片 URL（與 LINE Bot 邏輯一致）
+const getLevelPosterUrl = (level: number): string => {
+  // 確保等級在有效範圍內 (1-14)
+  const validLevel = Math.max(1, Math.min(14, level));
+  return `https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_${validLevel}_poster.png`;
+};
+
 export default function UserProfile({
   name,
   level,
@@ -45,18 +54,30 @@ export default function UserProfile({
   avatar,
   levelProgress = 0
 }: UserProfileProps) {
+  const [imageError, setImageError] = useState(false);
   const levelTitle = getLevelTitle(level);
   const toNextLevel = getQuestionsToNextLevel(levelProgress);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
 
   return (
     <div className="bg-[#fffaf5] border-2 border-[#1C1C1C] rounded-lg p-6">
       <div className="flex flex-col items-center text-center">
         {/* 等級對應海報圖片（從 Supabase 載入） */}
-        <img
-          src={`https://ciqlfqfgzqqgdrogedxg.supabase.co/storage/v1/object/public/linebot/level_${level}_poster.png`}
-          alt={`等級 ${level} 海報`}
-          className="w-40 h-40 md:w-52 md:h-52 rounded-xl object-cover shadow-md border-2 border-[#b96e3a]/40 bg-[#fff9f3]"
-        />
+        {imageError ? (
+          <div className="w-40 h-40 md:w-52 md:h-52 rounded-xl bg-gray-200 flex items-center justify-center shadow-md border-2 border-[#b96e3a]/40">
+            <span className="text-4xl">🏆</span>
+          </div>
+        ) : (
+          <img
+            src={getLevelPosterUrl(level)}
+            alt={`等級 ${level} 海報`}
+            className="w-40 h-40 md:w-52 md:h-52 rounded-xl object-cover shadow-md border-2 border-[#b96e3a]/40 bg-[#fff9f3]"
+            onError={handleImageError}
+          />
+        )}
 
         {/* 狀態文字 */}
         <div className="mt-4 flex flex-col items-center text-stone-800">
