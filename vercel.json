@@ -14,12 +14,6 @@
       "runtime": "@vercel/node@3"
     }
   },
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
   "routes": [
     {
       "src": "/public/(.*)",
