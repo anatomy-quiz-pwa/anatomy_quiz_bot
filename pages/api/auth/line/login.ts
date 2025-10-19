@@ -12,8 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // 存在 HttpOnly cookie，callback 要用
   res.setHeader('Set-Cookie', [
-    `oidc_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
-    `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+    `oidc_state=${state}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
+    `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
   ]);
 
   const host = req.headers['x-forwarded-host'] || req.headers.host;
