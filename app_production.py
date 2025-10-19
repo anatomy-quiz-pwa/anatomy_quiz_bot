@@ -16,6 +16,9 @@ from typing import Optional
 from datetime import datetime, timedelta
 import uuid
 import requests
+import hmac
+import hashlib
+from secure_token_manager import SecureTokenManager
 
 app = Flask(__name__)
 
@@ -60,6 +63,9 @@ try:
 except Exception as e:
     logger.error(f"❌ Supabase 連接失敗: {e}")
     supabase = None
+
+# 初始化安全Token管理器
+token_manager = SecureTokenManager(supabase) if supabase else None
 
 def get_user_nickname(user_id):
     """從 users 表格獲取用戶暱稱"""
@@ -283,7 +289,7 @@ def safe_reply_message(reply_token, message):
 
 @app.route('/api/create-link-token', methods=['POST'])
 def create_link_token():
-    """創建一次性連結 token，用於 LINE 帳號與網站登入綁定"""
+    """創建安全的一次性連結 token，用於 LINE 帳號與網站登入綁定"""
     try:
         data = request.get_json()
         line_user_id = data.get('line_user_id')
@@ -292,25 +298,18 @@ def create_link_token():
             logger.error("❌ 缺少 line_user_id")
             return jsonify({"ok": False, "reason": "missing_line_user_id"}), 400
         
-        # 生成 UUID token
-        token = str(uuid.uuid4())
+        if not token_manager:
+            logger.error("❌ Token管理器未初始化")
+            return jsonify({"ok": False, "reason": "service_unavailable"}), 500
         
-        # 設定過期時間（10 分鐘後）
-        expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat() + 'Z'
+        # 使用安全Token管理器創建token
+        token = token_manager.create_link_token(line_user_id)
         
-        # 插入到 Supabase
-        if supabase is None:
-            logger.error("❌ Supabase 未連接")
-            return jsonify({"ok": False, "reason": "database_error"}), 500
+        if not token:
+            logger.error(f"❌ 為用戶 {line_user_id} 創建token失敗")
+            return jsonify({"ok": False, "reason": "token_creation_failed"}), 500
         
-        response = supabase.table('link_tokens').insert({
-            'token': token,
-            'line_user_id': line_user_id,
-            'expires_at': expires_at,
-            'used': False
-        }).execute()
-        
-        logger.info(f"✅ 為用戶 {line_user_id} 創建連結 token: {token}")
+        logger.info(f"✅ 為用戶 {line_user_id} 創建安全token")
         
         return jsonify({"ok": True, "token": token}), 200
         
@@ -318,13 +317,44 @@ def create_link_token():
         logger.error(f"❌ 創建連結 token 失敗: {e}")
         return jsonify({"ok": False, "reason": "server_error", "error": str(e)}), 500
 
+def verify_line_signature(body: str, signature: str) -> bool:
+    """驗證LINE Webhook簽名"""
+    try:
+        # 使用HMAC-SHA256驗證簽名
+        expected_signature = hmac.new(
+            LINE_CHANNEL_SECRET.encode('utf-8'),
+            body.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+        
+        # 將簽名轉換為base64
+        import base64
+        expected_signature_b64 = base64.b64encode(expected_signature).decode('utf-8')
+        
+        # 使用安全的比較函數
+        return hmac.compare_digest(signature, expected_signature_b64)
+        
+    except Exception as e:
+        logger.error(f"❌ 簽名驗證異常: {e}")
+        return False
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """處理 LINE Webhook"""
+    """處理 LINE Webhook（帶簽名驗證）"""
     try:
-        signature = request.headers['X-Line-Signature']
+        signature = request.headers.get('X-Line-Signature')
         body = request.get_data(as_text=True)
-        logger.info(f"[🔁 收到 LINE Webhook] {body}")
+        
+        if not signature:
+            logger.error("❌ 缺少簽名標頭")
+            return 'Bad Request', 400
+        
+        # 驗證簽名
+        if not verify_line_signature(body, signature):
+            logger.error("❌ 無效的簽名")
+            return 'Forbidden', 403
+        
+        logger.info(f"[🔁 收到驗證通過的 LINE Webhook] {body[:100]}...")
         
         # 處理 webhook
         handler.handle(body, signature)
@@ -332,8 +362,8 @@ def webhook():
         return 'OK', 200
         
     except InvalidSignatureError:
-        logger.error("❌ 無效的簽名")
-        return 'Bad Request', 400
+        logger.error("❌ LINE SDK 簽名驗證失敗")
+        return 'Forbidden', 403
     except Exception as e:
         logger.error(f"❌ Webhook 處理失敗: {e}")
         return 'Internal Server Error', 500

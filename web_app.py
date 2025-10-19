@@ -8,11 +8,13 @@ import os
 import logging
 import secrets
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory, Response
 from supabase import create_client, Client
 import json
 from typing import Optional, Dict, List
 import requests
+from secure_token_manager import SecureTokenManager
+from secure_session_manager import SecureSessionManager, set_security_headers
 
 # 嘗試載入環境變數
 try:
@@ -62,6 +64,10 @@ try:
 except Exception as e:
     logger.error(f"❌ Supabase 連接失敗: {e}")
     supabase = None
+
+# 初始化安全管理器
+token_manager = SecureTokenManager(supabase) if supabase else None
+session_manager = SecureSessionManager()
 
 # 等級稱號對應表
 LEVEL_TITLES = {
@@ -264,7 +270,67 @@ def get_leaderboard_data() -> List[Dict]:
 def index():
     """首頁 - 使用public/index.html"""
     public_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
-    return send_from_directory(public_dir, 'index.html')
+    response = send_from_directory(public_dir, 'index.html')
+    return set_security_headers(response)
+
+@app.route('/link')
+def link_with_token():
+    """處理來自LINE Bot的安全連結token"""
+    try:
+        token = request.args.get('token')
+        
+        if not token:
+            logger.error("❌ 缺少連結token")
+            return redirect(url_for('index'))
+        
+        if not token_manager:
+            logger.error("❌ Token管理器未初始化")
+            return redirect(url_for('index'))
+        
+        # 使用安全Token管理器消耗token
+        token_result = token_manager.consume_token(token)
+        
+        if not token_result:
+            logger.error(f"❌ Token驗證失敗或已使用: {token[:8]}...")
+            return redirect(url_for('index'))
+        
+        line_user_id = token_result['line_user_id']
+        
+        # 獲取或創建用戶資料
+        user_response = supabase.table('users').select('*').eq('line_user_id', line_user_id).execute()
+        
+        if user_response.data:
+            user_data = user_response.data[0]
+            display_name = user_data.get('display_name', f'用戶_{line_user_id[2:10]}')
+        else:
+            display_name = f'用戶_{line_user_id[2:10]}'
+            # 創建新用戶記錄
+            supabase.table('users').insert({
+                'line_user_id': line_user_id,
+                'display_name': display_name,
+                'game_nickname': display_name
+            }).execute()
+        
+        # 創建安全的session token
+        access_token = session_manager.create_access_token(line_user_id)
+        refresh_token = session_manager.create_refresh_token(line_user_id)
+        
+        # 創建響應並設置安全cookie
+        response = redirect(url_for('game'))
+        response = session_manager.set_secure_cookies(response, access_token, refresh_token)
+        response = set_security_headers(response)
+        
+        # 儲存到session（備用）
+        session['user_id'] = line_user_id
+        session['display_name'] = display_name
+        session['linked_from_line'] = True
+        
+        logger.info(f"✅ 用戶 {line_user_id} ({display_name}) 通過安全token成功連結")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ 處理連結token失敗: {e}")
+        return redirect(url_for('index'))
 
 @app.route('/login')
 def login():
@@ -364,11 +430,13 @@ def game():
     user_id = session['user_id']
     user_stats = get_user_stats(user_id)
     nickname = get_user_nickname(user_id)
+    linked_from_line = session.get('linked_from_line', False)
     
     return render_template('game.html', 
                          user_stats=user_stats, 
                          nickname=nickname,
-                         level_title=get_level_title(user_stats['level']))
+                         level_title=get_level_title(user_stats['level']),
+                         linked_from_line=linked_from_line)
 
 @app.route('/api/quiz/start', methods=['POST'])
 def start_quiz():

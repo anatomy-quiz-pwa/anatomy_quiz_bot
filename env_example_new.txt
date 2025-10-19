@@ -1,0 +1,16 @@
+# LINE Login（Web-first / OIDC）
+LINE_LOGIN_CHANNEL_ID=2001129748
+LINE_LOGIN_CHANNEL_SECRET=36a169e0bf3d0339a4b4749137efea18
+
+# LIFF（在 LINE 內開網頁）
+LIFF_ID=2001129748-VY9zLnpq
+
+# 你網站自己的簽章金鑰（簽發網站 Session Cookie）
+APP_SESSION_SECRET=super-long-random-string-at-least-64chars
+
+# Supabase（只在伺服器端使用）
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGciOiJI...（service_role key；**不可放前端**）
+
+# 前端環境變數（用於 LIFF）
+NEXT_PUBLIC_LIFF_ID=2001129748-VY9zLnpq

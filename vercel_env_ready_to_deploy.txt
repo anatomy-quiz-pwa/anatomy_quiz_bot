@@ -1,0 +1,39 @@
+# 🚀 Vercel 環境變數 - 準備部署
+# 所有憑證都已準備完成，只需要設定 APP_SESSION_SECRET
+
+# ===========================================
+# 已確認的變數（直接複製到 Vercel）
+# ===========================================
+
+# LINE Login Channel 憑證
+LINE_LOGIN_CHANNEL_ID=2001129748
+LINE_LOGIN_CHANNEL_SECRET=36a169e0bf3d0339a4b4749137efea18
+
+# LIFF 應用程式
+LIFF_ID=2001129748-VY9zLnpq
+NEXT_PUBLIC_LIFF_ID=2001129748-VY9zLnpq
+
+# Supabase 資料庫
+SUPABASE_URL=https://ciqlfqfgzqqgdrogedxg.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTIwNzA4NSwiZXhwIjoyMDY2NzgzMDg1fQ.B5as4Q7AAgXSHfrQS7_c30Kpog6Rmlw4d7Or6pi9wZM
+
+# Session 簽章金鑰
+APP_SESSION_SECRET=d8e91a2e4f463fb37a61a7dc3566f84b9f4a0e0fb07e7dce27e0b0a1b80f60cb8d512e8e2c6cb5cf26b0d640a2b44b5b9c65e7a34e19a8849b6a3b5312b0f3a9
+
+# ===========================================
+# 部署步驟
+# ===========================================
+
+# 1. 前往 Vercel Dashboard → Project → Settings → Environment Variables
+# 2. 新增上述所有環境變數
+# 3. 設定 APP_SESSION_SECRET 為至少64字元的隨機字串
+# 4. 重新部署專案
+# 5. 測試登入功能
+
+# ===========================================
+# 測試網址
+# ===========================================
+
+# 測試頁面：https://YOUR-APP.vercel.app/test-login
+# 遊戲頁面：https://YOUR-APP.vercel.app/game-new
+# LIFF 網址：https://liff.line.me/2001129748-VY9zLnpq

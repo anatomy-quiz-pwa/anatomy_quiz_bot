@@ -1,0 +1,50 @@
+# Vercel 環境變數完整設定清單
+# 請將以下變數設定到 Vercel Dashboard → Project → Settings → Environment Variables
+
+# ===========================================
+# LINE Login Channel 憑證（已提供）
+# ===========================================
+LINE_LOGIN_CHANNEL_ID=2001129748
+LINE_LOGIN_CHANNEL_SECRET=36a169e0bf3d0339a4b4749137efea18
+
+# ===========================================
+# LIFF ID（已建立）
+# ===========================================
+LIFF_ID=2001129748-VY9zLnpq
+# 說明：LIFF App 已建立，ID 為 2001129748-VY9zLnpq
+
+# ===========================================
+# Session 簽章金鑰（已提供）
+# ===========================================
+APP_SESSION_SECRET=d8e91a2e4f463fb37a61a7dc3566f84b9f4a0e0fb07e7dce27e0b0a1b80f60cb8d512e8e2c6cb5cf26b0d640a2b44b5b9c65e7a34e19a8849b6a3b5312b0f3a9
+# 說明：Session 簽章金鑰已提供
+
+# ===========================================
+# Supabase 資料庫（已提供）
+# ===========================================
+SUPABASE_URL=https://ciqlfqfgzqqgdrogedxg.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpcWxmcWZnenFxZ2Ryb2dlZHhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTIwNzA4NSwiZXhwIjoyMDY2NzgzMDg1fQ.B5as4Q7AAgXSHfrQS7_c30Kpog6Rmlw4d7Or6pi9wZM
+# 說明：Supabase Service Role Key 已提供
+
+# ===========================================
+# 前端環境變數（用於 LIFF）
+# ===========================================
+NEXT_PUBLIC_LIFF_ID=2001129748-VY9zLnpq
+# 說明：與上面的 LIFF_ID 相同，但這是給前端使用的
+
+# ===========================================
+# 設定步驟
+# ===========================================
+# 1. 前往 Vercel Dashboard
+# 2. 選擇你的專案
+# 3. 進入 Settings → Environment Variables
+# 4. 逐一新增上述環境變數
+# 5. 重新部署專案
+
+# ===========================================
+# 注意事項
+# ===========================================
+# - SUPABASE_SERVICE_KEY 必須是 service_role key，不是 anon key
+# - APP_SESSION_SECRET 必須至少64字元
+# - LIFF_ID 和 NEXT_PUBLIC_LIFF_ID 必須相同
+# - 設定完成後需要重新部署專案

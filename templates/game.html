@@ -3,9 +3,10 @@
 {% block title %}解剖學測驗 - 遊戲大廳{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- 用戶統計卡片 - 在所有螢幕都顯示在最上面 -->
-    <div class="col-md-4 order-0">
+<!-- 手機版布局：垂直排列，題目在前 -->
+<div class="d-md-none">
+    <!-- 用戶統計卡片 -->
+    <div class="mb-3">
         <div class="stats-card">
             <h4><i class="fas fa-user"></i> 玩家資訊</h4>
             <p class="mb-2"><strong>暱稱：</strong>{{ nickname }}</p>
@@ -22,21 +23,21 @@
         </div>
     </div>
     
-    <!-- 遊戲區域 - 手機版排第二（order-1），桌面版在右側 -->
-    <div class="col-md-8 order-1">
+    <!-- 遊戲區域 - 手機版優先顯示 -->
+    <div class="mb-3">
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-gamepad"></i> 測驗區域
             </div>
             <div class="card-body">
-                <div id="game-area">
+                <div id="game-area-mobile">
                     <div class="text-center">
                         <h4>準備好挑戰解剖學測驗了嗎？</h4>
                         <p class="text-muted mb-4">
                             你目前的等級是 <strong>{{ level_title }}</strong> (等級{{ user_stats.level }})，
                             系統會為你準備適合難度的題目。
                         </p>
-                        <button id="start-quiz-btn" class="btn btn-primary btn-lg">
+                        <button id="start-quiz-btn-mobile" class="btn btn-primary btn-lg">
                             <i class="fas fa-play"></i>
                             開始測驗
                         </button>
@@ -46,19 +47,85 @@
         </div>
     </div>
     
-    <!-- 排行榜 - 手機版排最後（order-2），桌面版在左側下方 -->
-    <div class="col-md-4 order-2">
+    <!-- 排行榜 - 手機版最後顯示 -->
+    <div class="mb-3">
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-trophy"></i> 排行榜
             </div>
             <div class="card-body">
-                <div id="leaderboard">
+                <div id="leaderboard-mobile">
                     <div class="loading">
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">載入中...</span>
                         </div>
                         <p class="mt-2">載入排行榜中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 桌面版布局：左右排列 -->
+<div class="d-none d-md-block">
+    <div class="row">
+        <!-- 用戶統計卡片 -->
+        <div class="col-12 mb-3">
+            <div class="stats-card">
+                <h4><i class="fas fa-user"></i> 玩家資訊</h4>
+                <p class="mb-2"><strong>暱稱：</strong>{{ nickname }}</p>
+                <p class="mb-2">
+                    <strong>等級：</strong>
+                    <span class="level-badge">{{ level_title }}</span>
+                </p>
+                <p class="mb-2"><strong>當前等級：</strong>{{ user_stats.level }}</p>
+                <p class="mb-2"><strong>總分：</strong>{{ user_stats.score }}分</p>
+                <p class="mb-0">
+                    <strong>答題記錄：</strong>{{ user_stats.correct }}/{{ user_stats.total }}
+                    ({{ "%.1f"|format((user_stats.correct / user_stats.total * 100) if user_stats.total > 0 else 0) }}%)
+                </p>
+            </div>
+        </div>
+        
+        <!-- 左側：排行榜 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-trophy"></i> 排行榜
+                </div>
+                <div class="card-body">
+                    <div id="leaderboard-desktop">
+                        <div class="loading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                            <p class="mt-2">載入排行榜中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右側：遊戲區域 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-gamepad"></i> 測驗區域
+                </div>
+                <div class="card-body">
+                    <div id="game-area-desktop">
+                        <div class="text-center">
+                            <h4>準備好挑戰解剖學測驗了嗎？</h4>
+                            <p class="text-muted mb-4">
+                                你目前的等級是 <strong>{{ level_title }}</strong> (等級{{ user_stats.level }})，
+                                系統會為你準備適合難度的題目。
+                            </p>
+                            <button id="start-quiz-btn-desktop" class="btn btn-primary btn-lg">
+                                <i class="fas fa-play"></i>
+                                開始測驗
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -132,11 +199,21 @@ async function loadLeaderboard() {
             html = '<p class="text-muted text-center">暫無排行榜數據</p>';
         }
         
-        document.getElementById('leaderboard').innerHTML = html;
+        // 更新手機版和桌面版的排行榜
+        const mobileLeaderboard = document.getElementById('leaderboard-mobile');
+        const desktopLeaderboard = document.getElementById('leaderboard-desktop');
+        
+        if (mobileLeaderboard) mobileLeaderboard.innerHTML = html;
+        if (desktopLeaderboard) desktopLeaderboard.innerHTML = html;
     } catch (error) {
         console.error('載入排行榜失敗:', error);
-        document.getElementById('leaderboard').innerHTML = 
-            '<p class="text-danger text-center">載入排行榜失敗</p>';
+        const errorHtml = '<p class="text-danger text-center">載入排行榜失敗</p>';
+        
+        const mobileLeaderboard = document.getElementById('leaderboard-mobile');
+        const desktopLeaderboard = document.getElementById('leaderboard-desktop');
+        
+        if (mobileLeaderboard) mobileLeaderboard.innerHTML = errorHtml;
+        if (desktopLeaderboard) desktopLeaderboard.innerHTML = errorHtml;
     }
 }
 
@@ -270,7 +347,8 @@ function getExplanationImageUrl(question) {
 
 // 顯示題目
 function displayQuestion(question) {
-    const gameArea = document.getElementById('game-area');
+    const mobileGameArea = document.getElementById('game-area-mobile');
+    const desktopGameArea = document.getElementById('game-area-desktop');
     
     // 獲取 Hero 圖片 URL（與 LINE Bot 邏輯一致）
     const heroImageUrl = getQuestionHeroImageUrl(question, userStats.level);
@@ -284,7 +362,7 @@ function displayQuestion(question) {
         `;
     });
     
-            gameArea.innerHTML = `
+    const questionHtml = `
         <div class="quiz-container">
             <div class="card mb-3">
                 <!-- Hero 圖片區域 -->
@@ -336,6 +414,10 @@ function displayQuestion(question) {
             </div>
         </div>
     `;
+    
+    // 同時更新手機版和桌面版的遊戲區域
+    if (mobileGameArea) mobileGameArea.innerHTML = questionHtml;
+    if (desktopGameArea) desktopGameArea.innerHTML = questionHtml;
 }
 
 // 選擇答案
@@ -489,8 +571,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // 載入排行榜
     loadLeaderboard();
     
-    // 綁定開始測驗按鈕事件
-    document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
+    // 綁定開始測驗按鈕事件（手機版和桌面版）
+    const mobileStartBtn = document.getElementById('start-quiz-btn-mobile');
+    const desktopStartBtn = document.getElementById('start-quiz-btn-desktop');
+    
+    if (mobileStartBtn) {
+        mobileStartBtn.addEventListener('click', startQuiz);
+    }
+    if (desktopStartBtn) {
+        desktopStartBtn.addEventListener('click', startQuiz);
+    }
 });
 </script>
 {% endblock %}

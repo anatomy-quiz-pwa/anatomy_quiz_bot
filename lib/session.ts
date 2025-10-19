@@ -1,26 +1,26 @@
 // lib/session.ts
-import { jwtVerify } from "jose";
+import { SignJWT, jwtVerify } from 'jose';
+const SESSION_NAME = 'app_session';
+const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
 
-const secret = new TextEncoder().encode(process.env.SESSION_SECRET || "default-secret-key-please-change-in-production");
+export async function setSessionCookie(userId: string, headers: Headers) {
+  const token = await new SignJWT({ sub: userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')                // 你的網站 Session 期限（可改）
+    .sign(secret);
 
-/**
- * 從 Cookie 中解析並驗證 JWT session，返回 line_user_id
- * @param cookieHeader Cookie header 字串
- * @returns line_user_id 或 null
- */
-export async function getSessionLineUserId(cookieHeader?: string): Promise<string | null> {
-  const cookie = cookieHeader ?? "";
-  const match = /(?:^|;\s*)session=([^;]+)/.exec(cookie);
-  
-  if (!match) {
-    return null;
-  }
-  
+  headers.append('Set-Cookie',
+    `${SESSION_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7*24*60*60}`);
+}
+
+export async function getSessionUserId(cookies: { get: (k:string)=>{value?:string}|undefined }) {
+  const raw = cookies.get(SESSION_NAME)?.value;
+  if (!raw) return null;
   try {
-    const { payload } = await jwtVerify(match[1], secret);
-    return (payload as any).line_user_id as string;
-  } catch (error) {
-    console.error("JWT 驗證失敗:", error);
+    const { payload } = await jwtVerify(raw, secret);
+    return String(payload.sub);
+  } catch {
     return null;
   }
 }

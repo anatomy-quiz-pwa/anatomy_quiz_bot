@@ -1,0 +1,27 @@
+# Vercel 環境變數設定清單
+# 請將以下變數設定到 Vercel Dashboard → Project → Settings → Environment Variables
+
+# LINE Login Channel 憑證（已提供）
+LINE_LOGIN_CHANNEL_ID=2001129748
+LINE_LOGIN_CHANNEL_SECRET=36a169e0bf3d0339a4b4749137efea18
+
+# 待設定的環境變數：
+# LIFF（在 LINE 內開網頁）
+LIFF_ID=xxxxxxxx-xxxxxxxx
+
+# 你網站自己的簽章金鑰（簽發網站 Session Cookie）
+APP_SESSION_SECRET=super-long-random-string-at-least-64chars
+
+# Supabase（只在伺服器端使用）
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGciOiJI...（service_role key；**不可放前端**）
+
+# 前端環境變數（用於 LIFF）
+NEXT_PUBLIC_LIFF_ID=xxxxxxxx-xxxxxxxx
+
+# 設定步驟：
+# 1. 前往 Vercel Dashboard
+# 2. 選擇你的專案
+# 3. 進入 Settings → Environment Variables
+# 4. 逐一新增上述環境變數
+# 5. 重新部署專案
