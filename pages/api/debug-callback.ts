@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 測試 LINE token 交換
-    let tokenTest = null;
+    let tokenTest: { success: boolean; status?: number; error: any } | null = null;
     if (code) {
       try {
         const host = req.headers['x-forwarded-host'] || req.headers.host;
