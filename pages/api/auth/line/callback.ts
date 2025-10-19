@@ -1,11 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify, SignJWT } from 'jose';
 import { createClient } from '@supabase/supabase-js';
-import { SignJWT } from 'jose';
 
-const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, {
-  auth: { persistSession: false },
-});
+const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { auth: { persistSession: false }});
 const JWKS = createRemoteJWKSet(new URL('https://api.line.me/oauth2/v2.1/certs'));
 const LINE_ISS = 'https://access.line.me';
 const LINE_AUD = process.env.LINE_LOGIN_CHANNEL_ID!;
@@ -16,27 +13,21 @@ async function findOrCreateUserByLineSub(sub: string, profile?: {name?:string, p
   const { data: exist, error: e1 } = await sbAdmin.from('users').select('id').eq('line_user_id', sub).maybeSingle();
   if (e1) throw e1;
   if (exist) return exist.id as string;
-  const { data: created, error: e2 } = await sbAdmin.from('users').insert([{
-    line_user_id: sub,
-    display_name: profile?.name ?? null,
-    picture: profile?.picture ?? null,
-  }]).select('id').single();
+  const { data: created, error: e2 } = await sbAdmin.from('users').insert([{ line_user_id: sub, display_name: profile?.name ?? null, picture: profile?.picture ?? null }]).select('id').single();
   if (e2) throw e2;
   return created.id as string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).end();
-
   try {
-    const { code, state } = req.query as { code?: string; state?: string };
+    const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
     if (!code || !state) return res.status(400).json({ error: 'missing' });
 
-    const cookieState = req.cookies['oidc_state'];
-    const code_verifier = req.cookies['oidc_cv'];
-    if (!cookieState || !code_verifier || cookieState !== state) {
-      return res.status(400).json({ error: 'bad_state' });
-    }
+    const cookieState = req.cookies?.oidc_state;
+    const code_verifier = req.cookies?.oidc_cv;
+    if (!cookieState || !code_verifier || cookieState !== state) return res.status(400).json({ error: 'bad_state' });
 
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const redirect_uri = `https://${host}/api/auth/line/callback`;
@@ -46,8 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        code,
-        redirect_uri,
+        code, redirect_uri,
         client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
         client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET!,
         code_verifier,
@@ -63,15 +53,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const userId = await findOrCreateUserByLineSub(sub, profile);
 
-    // 設網站 Session cookie
     const session = await new SignJWT({ sub: userId })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt().setExpirationTime('7d').sign(secret);
+      .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('7d').sign(secret);
 
     res.setHeader('Set-Cookie', [
       `${SESSION_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7*24*60*60}`,
-      `oidc_state=; Path=/; Max-Age=0`,
-      `oidc_cv=; Path=/; Max-Age=0`,
+      `oidc_state=; Path=/; Max-Age=0`, `oidc_cv=; Path=/; Max-Age=0`,
     ]);
 
     res.writeHead(302, { Location: '/game' });
