@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // 測試 Supabase 連線
-    let supabaseTest = null;
+    let supabaseTest: { success: boolean; error: string | undefined } | null = null;
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const sbAdmin = createClient(
