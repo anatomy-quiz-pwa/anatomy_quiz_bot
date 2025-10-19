@@ -172,10 +172,9 @@ export default function GameNewPage() {
               padding: '15px 30px',
               backgroundColor: '#C57B57',
               color: 'white',
-              border: 'none',
+              border: '2px solid #1C1C1C',
               borderRadius: '8px',
               fontWeight: 'bold',
-              border: '2px solid #1C1C1C',
               boxShadow: '3px 3px 0 #1C1C1C',
               cursor: 'pointer'
             }}
