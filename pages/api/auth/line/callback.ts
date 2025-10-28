@@ -48,24 +48,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const idToken = tokenJson.id_token as string;
     
-    // 驗證 LINE ID Token (不指定 algorithms，讓 JWKS 自動處理)
+    // 驗證 LINE ID Token（LINE 使用 RS256 算法）
     const { payload } = await jwtVerify(idToken, JWKS, { 
       issuer: LINE_ISS, 
-      audience: LINE_AUD
+      audience: LINE_AUD,
+      algorithms: ['RS256']  // 明確指定 LINE 使用的算法
     });
+    
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
-
+    
     const userId = await findOrCreateUserByLineSub(sub, profile);
-
+    
     const session = await new SignJWT({ sub: userId })
       .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('7d').sign(secret);
-
+    
     res.setHeader('Set-Cookie', [
       `${SESSION_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7*24*60*60}`,
       `oidc_state=; Path=/; Max-Age=0`, `oidc_cv=; Path=/; Max-Age=0`,
     ]);
-
+    
     // 重定向到遊戲頁面
     res.writeHead(302, { Location: '/game-play' });
     res.end();
