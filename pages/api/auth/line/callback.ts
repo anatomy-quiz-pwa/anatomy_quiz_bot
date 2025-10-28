@@ -47,7 +47,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!tokenRes.ok) return res.status(401).json({ error: 'token_exchange_failed', detail: tokenJson });
 
     const idToken = tokenJson.id_token as string;
-    const { payload } = await jwtVerify(idToken, JWKS, { issuer: LINE_ISS, audience: LINE_AUD });
+    const { payload } = await jwtVerify(idToken, JWKS, { 
+      issuer: LINE_ISS, 
+      audience: LINE_AUD,
+      algorithms: ['RS256', 'ES256'] // LINE 使用 RS256
+    });
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
 
