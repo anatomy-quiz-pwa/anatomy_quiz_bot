@@ -3,8 +3,8 @@ import { useEffect } from "react";
 
 export default function HomePage() {
   useEffect(() => {
-    // 直接重定向到根目錄（會被 next.config.mjs 重寫為 public/index.html）
-    window.location.href = "/";
+    // 重定向到 index.html 靜態頁面
+    window.location.href = "/index.html";
   }, []);
 
   return (
