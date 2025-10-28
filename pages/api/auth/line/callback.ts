@@ -49,8 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const idToken = tokenJson.id_token as string;
     const { payload } = await jwtVerify(idToken, JWKS, { 
       issuer: LINE_ISS, 
-      audience: LINE_AUD,
-      algorithms: ['RS256', 'ES256'] // LINE 使用 RS256
+      audience: LINE_AUD
+      // algorithms 參數已從 JWKS 自動獲取，不需要明確指定
     });
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
