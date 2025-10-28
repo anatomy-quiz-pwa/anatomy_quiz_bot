@@ -65,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `oidc_state=; Path=/; Max-Age=0`, `oidc_cv=; Path=/; Max-Age=0`,
     ]);
 
-    res.writeHead(302, { Location: '/game' });
+    res.writeHead(302, { Location: '/game.html' });
     res.end();
   } catch (e) {
     console.error('LINE callback error:', e);

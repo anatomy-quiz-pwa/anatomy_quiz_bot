@@ -43,6 +43,39 @@ let gameState = {
 // LINE 登录功能
 async function initLineLogin() {
     try {
+        // 首先嘗試從 session cookie 獲取用戶信息（OIDC 登入）
+        try {
+            const response = await fetch('/api/me/profile', {
+                credentials: 'include' // 包含 cookie
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                gameState.user = {
+                    userId: data.lineUserId,
+                    displayName: data.displayName,
+                    pictureUrl: data.picture
+                };
+                gameState.isLoggedIn = true;
+                gameState.nickname = data.displayName;
+                gameState.userId = data.lineUserId;
+                
+                // 加載用戶統計信息
+                if (data.stats) {
+                    gameState.currentLevel = data.stats.level || 1;
+                    gameState.correctAnswers = data.stats.correct_answers || 0;
+                    gameState.totalAnswers = data.stats.total_answers || 0;
+                    gameState.streak = data.stats.streak || 0;
+                }
+                
+                showUserInfo(gameState.user);
+                console.log('✅ 從 session 載入用戶信息成功:', data.displayName);
+                return;
+            }
+        } catch (e) {
+            console.log('Session 檢查失敗，嘗試其他登入方式');
+        }
+        
         // 检查是否有 LINE 用户信息参数
         const urlParams = new URLSearchParams(window.location.search);
         const lineUser = urlParams.get('line_user');
