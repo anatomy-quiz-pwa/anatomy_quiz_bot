@@ -3,8 +3,8 @@ import { useEffect } from "react";
 
 export default function HomePage() {
   useEffect(() => {
-    // 重定向到 index.html 靜態頁面
-    window.location.href = "/index.html";
+    // 重定向到遊戲頁面
+    window.location.href = "/game-play";
   }, []);
 
   return (

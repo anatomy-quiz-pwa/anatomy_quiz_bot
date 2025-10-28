@@ -65,8 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `oidc_state=; Path=/; Max-Age=0`, `oidc_cv=; Path=/; Max-Age=0`,
     ]);
 
-    // 重定向到遊戲首頁
-    res.writeHead(302, { Location: '/index.html' });
+    // 重定向到遊戲頁面
+    res.writeHead(302, { Location: '/game-play' });
     res.end();
   } catch (e) {
     console.error('LINE callback error:', e);
