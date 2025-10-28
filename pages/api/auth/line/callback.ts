@@ -47,10 +47,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!tokenRes.ok) return res.status(401).json({ error: 'token_exchange_failed', detail: tokenJson });
 
     const idToken = tokenJson.id_token as string;
+    
+    // 驗證 LINE ID Token (不指定 algorithms，讓 JWKS 自動處理)
     const { payload } = await jwtVerify(idToken, JWKS, { 
       issuer: LINE_ISS, 
       audience: LINE_AUD
-      // algorithms 參數已從 JWKS 自動獲取，不需要明確指定
     });
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
