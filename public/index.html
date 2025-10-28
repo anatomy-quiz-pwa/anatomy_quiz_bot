@@ -1287,12 +1287,35 @@
         }
 
 
-        // 頁面載入完成後檢查token或顯示登入畫面
-        document.addEventListener('DOMContentLoaded', function() {
+        // 檢查用戶是否已登入
+        async function checkAuthentication() {
+            try {
+                const response = await fetch('/api/auth/me');
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    // 已登入，直接開始遊戲
+                    console.log('用戶已登入，自動開始遊戲');
+                    startGame();
+                    return true;
+                }
+            } catch (error) {
+                console.error('檢查登入狀態失敗:', error);
+            }
+            return false;
+        }
+
+        // 頁面載入完成後檢查token或登入狀態
+        document.addEventListener('DOMContentLoaded', async function() {
             // 先檢查是否有token
             if (!checkTokenLogin()) {
-                // 沒有token，顯示登入畫面
-                document.getElementById('login-screen').classList.remove('hidden');
+                // 沒有token，檢查是否已有 session
+                const isAuthenticated = await checkAuthentication();
+                
+                if (!isAuthenticated) {
+                    // 未登入，顯示登入畫面
+                    document.getElementById('login-screen').classList.remove('hidden');
+                }
             }
         });
     </script>
