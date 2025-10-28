@@ -64,6 +64,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.writeHead(302, { Location: '/game' });
     res.end();
   } catch (e) {
-    res.status(500).json({ error: 'callback_failed' });
+    console.error('LINE callback error:', e);
+    res.status(500).json({ 
+      error: 'callback_failed', 
+      message: e instanceof Error ? e.message : String(e),
+      stack: process.env.NODE_ENV === 'development' ? (e instanceof Error ? e.stack : undefined) : undefined
+    });
   }
 }
