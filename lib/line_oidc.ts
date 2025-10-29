@@ -1,9 +1,20 @@
 // lib/line_oidc.ts
-import { createLocalJWKSet, jwtVerify, JWKSet } from 'jose';
+import { createLocalJWKSet, jwtVerify } from 'jose';
 
 const LINE_JWKS_URL = 'https://api.line.me/oauth2/v2.1/certs';
 const LINE_ISSUER = 'https://access.line.me';
 const TTL = 1000 * 60 * 60; // 1h
+
+// 定義 JWKSet 類型
+interface JWKSet {
+  keys: Array<{
+    kid?: string;
+    kty?: string;
+    alg?: string;
+    use?: string;
+    [key: string]: any;
+  }>;
+}
 
 let cache: { exp: number; set: ReturnType<typeof createLocalJWKSet> } | null = null;
 
