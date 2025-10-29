@@ -86,25 +86,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'missing_id_token' });
     }
 
-    // 2️⃣ 驗證 id_token - 讓 jose 自動從 JWKS 推斷算法
+    // 2️⃣ 驗證 id_token (RS256) - LINE 使用 RS256 算法
     console.log('[LINE Callback] 開始驗證 LINE ID Token...');
-    console.log('[LINE Callback] 版本: 6d36bf44-auto-algorithm');
+    console.log('[LINE Callback] 版本: 7ddee001-rs256-explicit');
     console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
     
     // 先檢查 JWT header 中的算法
+    let jwtAlg: string | undefined;
     try {
       const [headerPart] = idToken.split('.');
       const header = JSON.parse(Buffer.from(headerPart, 'base64url').toString('utf-8'));
-      console.log('[LINE Callback] JWT header alg:', header.alg);
+      jwtAlg = header.alg;
+      console.log('[LINE Callback] JWT header alg:', jwtAlg);
     } catch (e) {
       console.warn('[LINE Callback] 無法解析 JWT header:', e);
     }
     
     let payload;
     try {
-      // 移除 algorithms 參數，讓 jose 自動從 JWKS 推斷算法
-      // 這樣可以避免 'alg Header Parameter value not allowed' 錯誤
+      // LINE 的 ID token 使用 RS256 算法簽名
+      // 必須明確指定 algorithms 參數，並且必須與 JWKS 中的 key 算法匹配
       const result = await jwtVerify(idToken, LINE_JWKS, {
+        algorithms: ['RS256'], // LINE 只使用 RS256
         issuer: LINE_ISSUER,
         audience: process.env.LINE_LOGIN_CHANNEL_ID!,
       });
@@ -116,10 +119,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: jwtError instanceof Error ? jwtError.message : String(jwtError),
         name: jwtError instanceof Error ? jwtError.name : undefined,
         code: (jwtError as any).code,
+        jwtAlg: jwtAlg,
       });
+      
+      // 如果是算法相關錯誤，提供更詳細的錯誤訊息
+      const errorMsg = jwtError instanceof Error ? jwtError.message : String(jwtError);
+      if (errorMsg.includes('alg') || errorMsg.includes('algorithm')) {
+        console.error('[LINE Callback] 算法錯誤 - JWT 使用的算法:', jwtAlg);
+        console.error('[LINE Callback] 預期算法: RS256');
+      }
+      
       return res.status(400).json({ 
         error: 'jwt_verification_failed', 
-        message: jwtError instanceof Error ? jwtError.message : String(jwtError)
+        message: errorMsg
       });
     }
 
