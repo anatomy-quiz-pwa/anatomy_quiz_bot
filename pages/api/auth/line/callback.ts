@@ -1,13 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { createRemoteJWKSet, jwtVerify, SignJWT } from 'jose';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { jwtVerify, createRemoteJWKSet, SignJWT } from 'jose';
 import { createClient } from '@supabase/supabase-js';
 
-const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { auth: { persistSession: false }});
-const JWKS = createRemoteJWKSet(new URL('https://api.line.me/oauth2/v2.1/certs'));
-const LINE_ISS = 'https://access.line.me';
-const LINE_AUD = process.env.LINE_LOGIN_CHANNEL_ID!;
+const LINE_JWKS = createRemoteJWKSet(new URL('https://api.line.me/oauth2/v2.1/certs'));
+const LINE_ISSUER = 'https://access.line.me';
 const SESSION_NAME = 'app_session';
 const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
+
+const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { 
+  auth: { persistSession: false }
+});
 
 // base64url 解碼函數，對應 login.ts 中的 b64url
 const b64urlDecode = (str: string): string => {
@@ -19,104 +21,122 @@ async function findOrCreateUserByLineSub(sub: string, profile?: {name?:string, p
   const { data: exist, error: e1 } = await sbAdmin.from('users').select('id').eq('line_user_id', sub).maybeSingle();
   if (e1) throw e1;
   if (exist) return exist.id as string;
-  const { data: created, error: e2 } = await sbAdmin.from('users').insert([{ line_user_id: sub, display_name: profile?.name ?? null, picture: profile?.picture ?? null }]).select('id').single();
+  const { data: created, error: e2 } = await sbAdmin.from('users').insert([{ 
+    line_user_id: sub, 
+    display_name: profile?.name ?? null, 
+    picture: profile?.picture ?? null 
+  }]).select('id').single();
   if (e2) throw e2;
   return created.id as string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).end();
+  
   try {
-    const code = req.query.code as string | undefined;
-    const state = req.query.state as string | undefined;
-    if (!code || !state) return res.status(400).json({ error: 'missing' });
+    const { code, state } = req.query;
+
+    if (!code) return res.status(400).json({ error: 'missing_code' });
+    if (!state) return res.status(400).json({ error: 'missing_state' });
 
     // 解碼 state（包含 state 和 code_verifier）
-    let decodedState: string;
-    let code_verifier: string;
-    
+    let code_verifier: string | undefined;
     try {
-      // base64url 解碼（對應 login.ts 中的 b64url 編碼）
-      const decoded = b64urlDecode(state);
+      const decoded = b64urlDecode(String(state));
       const stateData = JSON.parse(decoded);
-      decodedState = stateData.s;
       code_verifier = stateData.cv;
-      
-      console.log('[LINE Callback] decoded state:', decodedState);
-      console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
-      console.log('[LINE Callback] state length:', state.length);
+      console.log('[LINE Callback] PKCE code_verifier:', code_verifier ? 'present' : 'missing');
     } catch (e) {
-      console.error('[LINE Callback] failed to decode state:', e);
-      console.error('[LINE Callback] state value:', state);
-      return res.status(400).json({ error: 'invalid_state' });
+      console.warn('[LINE Callback] Failed to decode state for PKCE, continuing without code_verifier');
     }
-    
-    if (!code_verifier) {
-      console.log('[LINE Callback] code_verifier missing from state');
-      return res.status(400).json({ error: 'missing_code_verifier' });
-    }
-    
-    console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
-    console.log('[LINE Callback] timestamp:', new Date().toISOString());
-    console.log('[LINE Callback] deployment version: 63025779-fixed');
 
+    // 1️⃣ 用 code 換取 access_token + id_token
+    const preferredBaseUrl = process.env.PUBLIC_BASE_URL;
     const host = req.headers['x-forwarded-host'] || req.headers.host;
-    const redirect_uri = `https://${host}/api/auth/line/callback`;
+    const baseUrl = preferredBaseUrl || `https://${host}`;
+    const redirect_uri = `${baseUrl}/api/auth/line/callback`;
+
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: String(code),
+      redirect_uri,
+      client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
+      client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET!,
+    });
+
+    // 如果有 code_verifier（PKCE），添加到請求中
+    if (code_verifier) {
+      body.append('code_verifier', code_verifier);
+    }
 
     const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
       method: 'POST',
-      headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code, redirect_uri,
-        client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
-        client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET!,
-        code_verifier,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
     });
-    const tokenJson: any = await tokenRes.json();
-    if (!tokenRes.ok) return res.status(401).json({ error: 'token_exchange_failed', detail: tokenJson });
 
-    const idToken = tokenJson.id_token as string;
-    
-    // 驗證 LINE ID Token - 修復 JWT 算法問題
-    console.log('開始驗證 LINE ID Token...');
+    const tokens = await tokenRes.json();
+    if (!tokenRes.ok) {
+      console.error('LINE token exchange failed:', tokens);
+      return res.status(400).json({ error: 'token_exchange_failed', detail: tokens });
+    }
+
+    const idToken = tokens.id_token as string;
+    if (!idToken) {
+      return res.status(400).json({ error: 'missing_id_token' });
+    }
+
+    // 2️⃣ 驗證 id_token (RS256) - 修復 JWT 算法問題
+    console.log('[LINE Callback] 開始驗證 LINE ID Token (RS256)...');
     let payload;
     try {
-      const result = await jwtVerify(idToken, JWKS, { 
-        issuer: LINE_ISS, 
-        audience: LINE_AUD,
-        algorithms: ['RS256']  // LINE 只使用 RS256 算法
+      const result = await jwtVerify(idToken, LINE_JWKS, {
+        algorithms: ['RS256'],
+        issuer: LINE_ISSUER,
+        audience: process.env.LINE_LOGIN_CHANNEL_ID!,
       });
       payload = result.payload;
-      console.log('JWT 驗證成功');
+      console.log('[LINE Callback] JWT 驗證成功');
     } catch (jwtError) {
-      console.error('JWT 驗證失敗:', jwtError);
-      throw new Error(`JWT 驗證失敗: ${jwtError instanceof Error ? jwtError.message : String(jwtError)}`);
+      console.error('[LINE Callback] JWT 驗證失敗:', jwtError);
+      return res.status(400).json({ 
+        error: 'jwt_verification_failed', 
+        message: jwtError instanceof Error ? jwtError.message : String(jwtError)
+      });
     }
-    
+
+    // 3️⃣ 建立或查找用戶，創建 session
     const sub = String(payload.sub);
-    const profile = { name: (payload as any).name, picture: (payload as any).picture };
+    const profile = { 
+      name: (payload as any).name, 
+      picture: (payload as any).picture 
+    };
     
     const userId = await findOrCreateUserByLineSub(sub, profile);
     
+    // 創建 session token
     const session = await new SignJWT({ sub: userId })
-      .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('7d').sign(secret);
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(secret);
     
+    // 設置 session cookie
     res.setHeader('Set-Cookie', [
       `${SESSION_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7*24*60*60}`,
-      `oidc_state=; Path=/; Max-Age=0`, `oidc_cv=; Path=/; Max-Age=0`,
+      `oidc_state=; Path=/; Max-Age=0`,
+      `oidc_cv=; Path=/; Max-Age=0`,
     ]);
     
     // 重定向到遊戲頁面
     res.writeHead(302, { Location: '/game-play' });
     res.end();
-  } catch (e) {
-    console.error('LINE callback error:', e);
-    res.status(500).json({ 
+    
+  } catch (err: any) {
+    console.error('[LINE Callback] 錯誤:', err);
+    return res.status(400).json({ 
       error: 'callback_failed', 
-      message: e instanceof Error ? e.message : String(e),
-      stack: process.env.NODE_ENV === 'development' ? (e instanceof Error ? e.stack : undefined) : undefined
+      message: String(err?.message || err) 
     });
   }
 }
