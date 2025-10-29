@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createRemoteJWKSet, jwtVerify, SignJWT } from 'jose';
+import { SignJWT } from 'jose';
 import { createClient } from '@supabase/supabase-js';
+import { verifyLineIdToken } from '../../../lib/line_oidc';
 
 const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { auth: { persistSession: false }});
-const JWKS = createRemoteJWKSet(new URL('https://api.line.me/oauth2/v2.1/certs'));
-const LINE_ISS = 'https://access.line.me';
-const LINE_AUD = process.env.LINE_LOGIN_CHANNEL_ID!;
 const SESSION_NAME = 'app_session';
 const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
 
@@ -23,7 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { idToken } = req.body || {};
     if (!idToken) return res.status(400).json({ error: 'missing_idToken' });
 
-    const { payload } = await jwtVerify(idToken, JWKS, { issuer: LINE_ISS, audience: LINE_AUD });
+    // 使用統一的 verifyLineIdToken 函數
+    const { payload } = await verifyLineIdToken(
+      idToken,
+      process.env.LINE_CHANNEL_ID || process.env.LINE_LOGIN_CHANNEL_ID || ''
+    );
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
 
