@@ -10,22 +10,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const code_verifier = b64url(crypto.randomBytes(32));
   const code_challenge = b64url(crypto.createHash('sha256').update(code_verifier).digest());
 
-  // 設置 OAuth state 和 code_verifier 到 cookie
-  const cookieOptions = [
-    'Path=/',
-    'HttpOnly',
-    'Secure',
-    'SameSite=Lax',  // 改為 Lax 避免跨站問題
-    'Max-Age=600'
-  ].join('; ');
-  
-  res.setHeader('Set-Cookie', [
-    `oidc_state=${state}; ${cookieOptions}`,
-    `oidc_cv=${code_verifier}; ${cookieOptions}`,
-  ]);
-  
-  console.log('[LINE Login] state:', state);
-  console.log('[LINE Login] cookies set:', ['oidc_state', 'oidc_cv']);
+  // 將 state 和 code_verifier 編碼到 URL 中，避免 cookie 問題
+  const encodedState = encodeURIComponent(state);
+  const encodedVerifier = encodeURIComponent(code_verifier);
 
   // 以環境變數為優先，避免不同網域造成 redirect_uri 不匹配
   const preferredBaseUrl = process.env.PUBLIC_BASE_URL; // 例如 https://anatomy-quiz-bot.vercel.app
@@ -36,12 +23,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // 調試資訊（僅輸出到伺服器日誌）
   console.log('[LINE Login] client_id:', process.env.LINE_LOGIN_CHANNEL_ID);
   console.log('[LINE Login] redirect_uri:', redirect_uri);
+  console.log('[LINE Login] state:', state);
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
     redirect_uri,
-    state,
+    state: encodedState, // 使用編碼的 state
     scope: 'openid profile',
     code_challenge,
     code_challenge_method: 'S256',
@@ -49,6 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const authorizeUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`;
   console.log('[LINE Login] authorize URL:', authorizeUrl);
-  res.writeHead(302, { Location: authorizeUrl });
+  
+  // 將 code_verifier 存儲在 sessionStorage 中（通過前端處理）
+  res.writeHead(302, { 
+    Location: authorizeUrl,
+    'Set-Cookie': `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+  });
   res.end();
 }

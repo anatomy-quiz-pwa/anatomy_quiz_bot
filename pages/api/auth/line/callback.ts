@@ -25,25 +25,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const state = req.query.state as string | undefined;
     if (!code || !state) return res.status(400).json({ error: 'missing' });
 
-    console.log('[LINE Callback] received state:', state);
+    // 解碼 state（從 URL 參數中）
+    const decodedState = decodeURIComponent(state);
+    console.log('[LINE Callback] received state:', decodedState);
     console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
     console.log('[LINE Callback] cookies:', req.cookies);
     console.log('[LINE Callback] timestamp:', new Date().toISOString());
 
-    const cookieState = req.cookies?.oidc_state;
     const code_verifier = req.cookies?.oidc_cv;
     
-    console.log('[LINE Callback] cookie state:', cookieState);
     console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
-    console.log('[LINE Callback] state match:', cookieState === state);
-    console.log('[LINE Callback] state lengths:', { 
-      received: state?.length, 
-      cookie: cookieState?.length 
-    });
+    console.log('[LINE Callback] state length:', decodedState?.length);
     
-    if (!cookieState || !code_verifier || cookieState !== state) {
-      console.log('[LINE Callback] state validation failed');
-      return res.status(400).json({ error: 'bad_state' });
+    if (!code_verifier) {
+      console.log('[LINE Callback] code_verifier missing from cookies');
+      return res.status(400).json({ error: 'missing_code_verifier' });
     }
 
     const host = req.headers['x-forwarded-host'] || req.headers.host;
