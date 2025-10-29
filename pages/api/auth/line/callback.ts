@@ -25,9 +25,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const state = req.query.state as string | undefined;
     if (!code || !state) return res.status(400).json({ error: 'missing' });
 
+    console.log('[LINE Callback] received state:', state);
+    console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
+    console.log('[LINE Callback] cookies:', req.cookies);
+
     const cookieState = req.cookies?.oidc_state;
     const code_verifier = req.cookies?.oidc_cv;
-    if (!cookieState || !code_verifier || cookieState !== state) return res.status(400).json({ error: 'bad_state' });
+    
+    console.log('[LINE Callback] cookie state:', cookieState);
+    console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
+    console.log('[LINE Callback] state match:', cookieState === state);
+    
+    if (!cookieState || !code_verifier || cookieState !== state) {
+      console.log('[LINE Callback] state validation failed');
+      return res.status(400).json({ error: 'bad_state' });
+    }
 
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const redirect_uri = `https://${host}/api/auth/line/callback`;

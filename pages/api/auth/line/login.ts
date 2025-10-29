@@ -10,11 +10,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const code_verifier = b64url(crypto.randomBytes(32));
   const code_challenge = b64url(crypto.createHash('sha256').update(code_verifier).digest());
 
-  // 存在 HttpOnly cookie，callback 要用
+  // 設置 OAuth state 和 code_verifier 到 cookie
+  const cookieOptions = [
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',  // 改為 Lax 避免跨站問題
+    'Max-Age=600'
+  ].join('; ');
+  
   res.setHeader('Set-Cookie', [
-    `oidc_state=${state}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
-    `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
+    `oidc_state=${state}; ${cookieOptions}`,
+    `oidc_cv=${code_verifier}; ${cookieOptions}`,
   ]);
+  
+  console.log('[LINE Login] state:', state);
+  console.log('[LINE Login] cookies set:', ['oidc_state', 'oidc_cv']);
 
   // 以環境變數為優先，避免不同網域造成 redirect_uri 不匹配
   const preferredBaseUrl = process.env.PUBLIC_BASE_URL; // 例如 https://anatomy-quiz-bot.vercel.app
