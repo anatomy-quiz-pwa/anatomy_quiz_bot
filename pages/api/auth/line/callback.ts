@@ -9,6 +9,12 @@ const LINE_AUD = process.env.LINE_LOGIN_CHANNEL_ID!;
 const SESSION_NAME = 'app_session';
 const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
 
+// base64url 解碼函數，對應 login.ts 中的 b64url
+const b64urlDecode = (str: string): string => {
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(base64, 'base64').toString('utf-8');
+};
+
 async function findOrCreateUserByLineSub(sub: string, profile?: {name?:string, picture?:string}) {
   const { data: exist, error: e1 } = await sbAdmin.from('users').select('id').eq('line_user_id', sub).maybeSingle();
   if (e1) throw e1;
@@ -30,16 +36,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let code_verifier: string;
     
     try {
-      // base64url 解碼
-      const decoded = Buffer.from(state, 'base64url').toString('utf-8');
+      // base64url 解碼（對應 login.ts 中的 b64url 編碼）
+      const decoded = b64urlDecode(state);
       const stateData = JSON.parse(decoded);
       decodedState = stateData.s;
       code_verifier = stateData.cv;
       
       console.log('[LINE Callback] decoded state:', decodedState);
       console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
+      console.log('[LINE Callback] state length:', state.length);
     } catch (e) {
       console.error('[LINE Callback] failed to decode state:', e);
+      console.error('[LINE Callback] state value:', state);
       return res.status(400).json({ error: 'invalid_state' });
     }
     
