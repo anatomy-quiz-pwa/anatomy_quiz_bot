@@ -86,15 +86,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'missing_id_token' });
     }
 
-    // 2️⃣ 驗證 id_token (RS256) - 修復 JWT 算法問題
-    console.log('[LINE Callback] 開始驗證 LINE ID Token (RS256)...');
-    console.log('[LINE Callback] 版本: 35bda21f-fixed-rs256');
+    // 2️⃣ 驗證 id_token - 讓 jose 自動從 JWKS 推斷算法
+    console.log('[LINE Callback] 開始驗證 LINE ID Token...');
+    console.log('[LINE Callback] 版本: 6d36bf44-auto-algorithm');
     console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
+    
+    // 先檢查 JWT header 中的算法
+    try {
+      const [headerPart] = idToken.split('.');
+      const header = JSON.parse(Buffer.from(headerPart, 'base64url').toString('utf-8'));
+      console.log('[LINE Callback] JWT header alg:', header.alg);
+    } catch (e) {
+      console.warn('[LINE Callback] 無法解析 JWT header:', e);
+    }
     
     let payload;
     try {
+      // 移除 algorithms 參數，讓 jose 自動從 JWKS 推斷算法
+      // 這樣可以避免 'alg Header Parameter value not allowed' 錯誤
       const result = await jwtVerify(idToken, LINE_JWKS, {
-        algorithms: ['RS256'], // 明確指定 RS256 算法
         issuer: LINE_ISSUER,
         audience: process.env.LINE_LOGIN_CHANNEL_ID!,
       });
@@ -105,6 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('[LINE Callback] JWT 錯誤詳情:', {
         message: jwtError instanceof Error ? jwtError.message : String(jwtError),
         name: jwtError instanceof Error ? jwtError.name : undefined,
+        code: (jwtError as any).code,
       });
       return res.status(400).json({ 
         error: 'jwt_verification_failed', 
