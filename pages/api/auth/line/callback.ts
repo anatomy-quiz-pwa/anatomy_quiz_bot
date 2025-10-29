@@ -88,10 +88,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 2️⃣ 驗證 id_token (RS256) - 修復 JWT 算法問題
     console.log('[LINE Callback] 開始驗證 LINE ID Token (RS256)...');
+    console.log('[LINE Callback] 版本: 35bda21f-fixed-rs256');
+    console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
+    
     let payload;
     try {
       const result = await jwtVerify(idToken, LINE_JWKS, {
-        algorithms: ['RS256'],
+        algorithms: ['RS256'], // 明確指定 RS256 算法
         issuer: LINE_ISSUER,
         audience: process.env.LINE_LOGIN_CHANNEL_ID!,
       });
@@ -99,6 +102,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('[LINE Callback] JWT 驗證成功');
     } catch (jwtError) {
       console.error('[LINE Callback] JWT 驗證失敗:', jwtError);
+      console.error('[LINE Callback] JWT 錯誤詳情:', {
+        message: jwtError instanceof Error ? jwtError.message : String(jwtError),
+        name: jwtError instanceof Error ? jwtError.name : undefined,
+      });
       return res.status(400).json({ 
         error: 'jwt_verification_failed', 
         message: jwtError instanceof Error ? jwtError.message : String(jwtError)
