@@ -28,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[LINE Callback] received state:', state);
     console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
     console.log('[LINE Callback] cookies:', req.cookies);
+    console.log('[LINE Callback] timestamp:', new Date().toISOString());
 
     const cookieState = req.cookies?.oidc_state;
     const code_verifier = req.cookies?.oidc_cv;
@@ -35,6 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[LINE Callback] cookie state:', cookieState);
     console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
     console.log('[LINE Callback] state match:', cookieState === state);
+    console.log('[LINE Callback] state lengths:', { 
+      received: state?.length, 
+      cookie: cookieState?.length 
+    });
     
     if (!cookieState || !code_verifier || cookieState !== state) {
       console.log('[LINE Callback] state validation failed');
