@@ -21,15 +21,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const baseUrl = preferredBaseUrl || `https://${host}`;
   const redirect_uri = `${baseUrl}/api/auth/line/callback`;
 
+  // 優先使用 LINE_CHANNEL_ID，如果不存在則使用 LINE_LOGIN_CHANNEL_ID
+  const clientId = process.env.LINE_CHANNEL_ID || process.env.LINE_LOGIN_CHANNEL_ID;
+  if (!clientId) {
+    console.error('[LINE Login] Error: LINE_CHANNEL_ID and LINE_LOGIN_CHANNEL_ID are both undefined');
+    return res.status(500).json({ error: 'misconfigured_client_id' });
+  }
+
   // 調試資訊（僅輸出到伺服器日誌）
-  console.log('[LINE Login] client_id:', process.env.LINE_CHANNEL_ID);
+  console.log('[LINE Login] client_id:', clientId);
   console.log('[LINE Login] redirect_uri:', redirect_uri);
   console.log('[LINE Login] random state:', randomState);
   console.log('[LINE Login] code_verifier present:', !!code_verifier);
 
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: process.env.LINE_CHANNEL_ID!,
+    client_id: clientId,
     redirect_uri,
     state: encodedState, // 使用編碼的 state
     scope: 'openid profile',
