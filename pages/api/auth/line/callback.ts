@@ -86,9 +86,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'missing_id_token' });
     }
 
-    // 2️⃣ 驗證 id_token (RS256) - LINE 使用 RS256 算法
+    // 2️⃣ 驗證 id_token - 使用與 lib/line_oidc.ts 相同的方式
     console.log('[LINE Callback] 開始驗證 LINE ID Token...');
-    console.log('[LINE Callback] 版本: 7ddee001-rs256-explicit');
+    console.log('[LINE Callback] 版本: 9b89cfdd-match-lib-oidc');
     console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
     
     // 先檢查 JWT header 中的算法
@@ -104,12 +104,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     let payload;
     try {
-      // LINE 的 ID token 使用 RS256 算法簽名
-      // 必須明確指定 algorithms 參數，並且必須與 JWKS 中的 key 算法匹配
+      // 按照 lib/line_oidc.ts 的實現方式，不指定 algorithms 參數
+      // 讓 jose 自動從 JWKS 推斷支持的算法
       const result = await jwtVerify(idToken, LINE_JWKS, {
-        algorithms: ['RS256'], // LINE 只使用 RS256
         issuer: LINE_ISSUER,
         audience: process.env.LINE_LOGIN_CHANNEL_ID!,
+        // 不指定 algorithms，讓 jose 自動處理
       });
       payload = result.payload;
       console.log('[LINE Callback] JWT 驗證成功');
@@ -122,17 +122,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         jwtAlg: jwtAlg,
       });
       
-      // 如果是算法相關錯誤，提供更詳細的錯誤訊息
+      // 如果是算法相關錯誤，嘗試使用明確的 RS256
       const errorMsg = jwtError instanceof Error ? jwtError.message : String(jwtError);
-      if (errorMsg.includes('alg') || errorMsg.includes('algorithm')) {
-        console.error('[LINE Callback] 算法錯誤 - JWT 使用的算法:', jwtAlg);
-        console.error('[LINE Callback] 預期算法: RS256');
+      if ((errorMsg.includes('alg') || errorMsg.includes('algorithm')) && jwtAlg === 'RS256') {
+        console.log('[LINE Callback] 嘗試使用明確的 RS256 算法...');
+        try {
+          const result2 = await jwtVerify(idToken, LINE_JWKS, {
+            algorithms: ['RS256'],
+            issuer: LINE_ISSUER,
+            audience: process.env.LINE_LOGIN_CHANNEL_ID!,
+          });
+          payload = result2.payload;
+          console.log('[LINE Callback] JWT 驗證成功（使用明確的 RS256）');
+        } catch (retryError) {
+          console.error('[LINE Callback] 重試也失敗:', retryError);
+          return res.status(400).json({ 
+            error: 'jwt_verification_failed', 
+            message: errorMsg
+          });
+        }
+      } else {
+        return res.status(400).json({ 
+          error: 'jwt_verification_failed', 
+          message: errorMsg
+        });
       }
-      
-      return res.status(400).json({ 
-        error: 'jwt_verification_failed', 
-        message: errorMsg
-      });
     }
 
     // 3️⃣ 建立或查找用戶，創建 session
