@@ -58,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
     console.log('[LINE Callback] timestamp:', new Date().toISOString());
+    console.log('[LINE Callback] deployment version: 63025779-fixed');
 
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const redirect_uri = `https://${host}/api/auth/line/callback`;
