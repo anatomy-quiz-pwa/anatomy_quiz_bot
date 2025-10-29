@@ -25,22 +25,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const state = req.query.state as string | undefined;
     if (!code || !state) return res.status(400).json({ error: 'missing' });
 
-    // 解碼 state（從 URL 參數中）
-    const decodedState = decodeURIComponent(state);
-    console.log('[LINE Callback] received state:', decodedState);
-    console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
-    console.log('[LINE Callback] cookies:', req.cookies);
-    console.log('[LINE Callback] timestamp:', new Date().toISOString());
-
-    const code_verifier = req.cookies?.oidc_cv;
+    // 解碼 state（包含 state 和 code_verifier）
+    let decodedState: string;
+    let code_verifier: string;
     
-    console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
-    console.log('[LINE Callback] state length:', decodedState?.length);
+    try {
+      // base64url 解碼
+      const decoded = Buffer.from(state, 'base64url').toString('utf-8');
+      const stateData = JSON.parse(decoded);
+      decodedState = stateData.s;
+      code_verifier = stateData.cv;
+      
+      console.log('[LINE Callback] decoded state:', decodedState);
+      console.log('[LINE Callback] code verifier:', code_verifier ? 'present' : 'missing');
+    } catch (e) {
+      console.error('[LINE Callback] failed to decode state:', e);
+      return res.status(400).json({ error: 'invalid_state' });
+    }
     
     if (!code_verifier) {
-      console.log('[LINE Callback] code_verifier missing from cookies');
+      console.log('[LINE Callback] code_verifier missing from state');
       return res.status(400).json({ error: 'missing_code_verifier' });
     }
+    
+    console.log('[LINE Callback] received code:', code ? 'present' : 'missing');
+    console.log('[LINE Callback] timestamp:', new Date().toISOString());
 
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const redirect_uri = `https://${host}/api/auth/line/callback`;

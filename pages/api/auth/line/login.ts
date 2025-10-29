@@ -6,13 +6,14 @@ const b64url = (buf: Buffer) => buf.toString('base64').replace(/\+/g,'-').replac
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const state = b64url(crypto.randomBytes(16));
+  const randomState = b64url(crypto.randomBytes(16));
   const code_verifier = b64url(crypto.randomBytes(32));
   const code_challenge = b64url(crypto.createHash('sha256').update(code_verifier).digest());
 
-  // 將 state 和 code_verifier 編碼到 URL 中，避免 cookie 問題
-  const encodedState = encodeURIComponent(state);
-  const encodedVerifier = encodeURIComponent(code_verifier);
+  // 將 state 和 code_verifier 組合成一個 JSON，然後 base64url 編碼
+  // 這樣可以在 callback 中完全恢復，避免 cookie 依賴
+  const stateData = JSON.stringify({ s: randomState, cv: code_verifier });
+  const encodedState = b64url(Buffer.from(stateData));
 
   // 以環境變數為優先，避免不同網域造成 redirect_uri 不匹配
   const preferredBaseUrl = process.env.PUBLIC_BASE_URL; // 例如 https://anatomy-quiz-bot.vercel.app
@@ -23,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // 調試資訊（僅輸出到伺服器日誌）
   console.log('[LINE Login] client_id:', process.env.LINE_LOGIN_CHANNEL_ID);
   console.log('[LINE Login] redirect_uri:', redirect_uri);
-  console.log('[LINE Login] state:', state);
+  console.log('[LINE Login] random state:', randomState);
+  console.log('[LINE Login] code_verifier present:', !!code_verifier);
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -37,11 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const authorizeUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`;
   console.log('[LINE Login] authorize URL:', authorizeUrl);
+  console.log('[LINE Login] encoded state contains both state and code_verifier');
   
-  // 將 code_verifier 存儲在 sessionStorage 中（通過前端處理）
-  res.writeHead(302, { 
-    Location: authorizeUrl,
-    'Set-Cookie': `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
-  });
+  res.writeHead(302, { Location: authorizeUrl });
   res.end();
 }
