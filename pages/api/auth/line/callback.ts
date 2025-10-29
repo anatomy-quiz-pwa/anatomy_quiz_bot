@@ -1,9 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { jwtVerify, createRemoteJWKSet, SignJWT } from 'jose';
+import { SignJWT } from 'jose';
 import { createClient } from '@supabase/supabase-js';
+import { verifyLineIdToken } from '@/lib/line_oidc';
 
-const LINE_JWKS = createRemoteJWKSet(new URL('https://api.line.me/oauth2/v2.1/certs'));
-const LINE_ISSUER = 'https://access.line.me';
 const SESSION_NAME = 'app_session';
 const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
 
@@ -86,74 +85,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'missing_id_token' });
     }
 
-    // 2️⃣ 驗證 id_token - 使用與 lib/line_oidc.ts 相同的方式
+    // 2️⃣ 驗證 id_token - 直接使用 lib/line_oidc.ts 中驗證過的函數
     console.log('[LINE Callback] 開始驗證 LINE ID Token...');
-    console.log('[LINE Callback] 版本: 9b89cfdd-match-lib-oidc');
+    console.log('[LINE Callback] 版本: ff3d50ea-use-lib-oidc');
     console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
-    
-    // 先檢查 JWT header 中的算法
-    let jwtAlg: string | undefined;
-    try {
-      const [headerPart] = idToken.split('.');
-      const header = JSON.parse(Buffer.from(headerPart, 'base64url').toString('utf-8'));
-      jwtAlg = header.alg;
-      console.log('[LINE Callback] JWT header alg:', jwtAlg);
-    } catch (e) {
-      console.warn('[LINE Callback] 無法解析 JWT header:', e);
-    }
     
     let payload;
     try {
-      // 按照 lib/line_oidc.ts 的實現方式，不指定 algorithms 參數
-      // 讓 jose 自動從 JWKS 推斷支持的算法
-      const result = await jwtVerify(idToken, LINE_JWKS, {
-        issuer: LINE_ISSUER,
-        audience: process.env.LINE_LOGIN_CHANNEL_ID!,
-        // 不指定 algorithms，讓 jose 自動處理
-      });
-      payload = result.payload;
-      console.log('[LINE Callback] JWT 驗證成功');
+      // 直接使用 lib/line_oidc.ts 中已經驗證過可以工作的 verifyLineIdToken 函數
+      payload = await verifyLineIdToken(idToken);
+      console.log('[LINE Callback] JWT 驗證成功（使用 lib/line_oidc.ts）');
     } catch (jwtError) {
       console.error('[LINE Callback] JWT 驗證失敗:', jwtError);
       console.error('[LINE Callback] JWT 錯誤詳情:', {
         message: jwtError instanceof Error ? jwtError.message : String(jwtError),
         name: jwtError instanceof Error ? jwtError.name : undefined,
         code: (jwtError as any).code,
-        jwtAlg: jwtAlg,
       });
-      
-      // 如果是算法相關錯誤，嘗試使用明確的 RS256
-      const errorMsg = jwtError instanceof Error ? jwtError.message : String(jwtError);
-      if ((errorMsg.includes('alg') || errorMsg.includes('algorithm')) && jwtAlg === 'RS256') {
-        console.log('[LINE Callback] 嘗試使用明確的 RS256 算法...');
-        try {
-          const result2 = await jwtVerify(idToken, LINE_JWKS, {
-            algorithms: ['RS256'],
-            issuer: LINE_ISSUER,
-            audience: process.env.LINE_LOGIN_CHANNEL_ID!,
-          });
-          payload = result2.payload;
-          console.log('[LINE Callback] JWT 驗證成功（使用明確的 RS256）');
-        } catch (retryError) {
-          console.error('[LINE Callback] 重試也失敗:', retryError);
-          return res.status(400).json({ 
-            error: 'jwt_verification_failed', 
-            message: errorMsg
-          });
-        }
-      } else {
-        return res.status(400).json({ 
-          error: 'jwt_verification_failed', 
-          message: errorMsg
-        });
-      }
+      return res.status(400).json({ 
+        error: 'jwt_verification_failed', 
+        message: jwtError instanceof Error ? jwtError.message : String(jwtError)
+      });
     }
 
     // 3️⃣ 建立或查找用戶，創建 session
     const sub = String(payload.sub);
     const profile = { 
-      name: (payload as any).name, 
-      picture: (payload as any).picture 
+      name: payload.name, 
+      picture: payload.picture 
     };
     
     const userId = await findOrCreateUserByLineSub(sub, profile);
