@@ -22,14 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const redirect_uri = `${baseUrl}/api/auth/line/callback`;
 
   // 調試資訊（僅輸出到伺服器日誌）
-  console.log('[LINE Login] client_id:', process.env.LINE_LOGIN_CHANNEL_ID);
+  console.log('[LINE Login] client_id:', process.env.LINE_CHANNEL_ID);
   console.log('[LINE Login] redirect_uri:', redirect_uri);
   console.log('[LINE Login] random state:', randomState);
   console.log('[LINE Login] code_verifier present:', !!code_verifier);
 
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
+    client_id: process.env.LINE_CHANNEL_ID!,
     redirect_uri,
     state: encodedState, // 使用編碼的 state
     scope: 'openid profile',

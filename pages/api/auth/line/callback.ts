@@ -1,145 +1,62 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { SignJWT } from 'jose';
-import { createClient } from '@supabase/supabase-js';
+// /api/auth/line/callback.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyLineIdToken } from '@/lib/line_oidc';
 
-const SESSION_NAME = 'app_session';
-const secret = new TextEncoder().encode(process.env.APP_SESSION_SECRET!);
-
-const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { 
-  auth: { persistSession: false }
-});
-
-// base64url 解碼函數，對應 login.ts 中的 b64url
-const b64urlDecode = (str: string): string => {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  return Buffer.from(base64, 'base64').toString('utf-8');
-};
-
-async function findOrCreateUserByLineSub(sub: string, profile?: {name?:string, picture?:string}) {
-  const { data: exist, error: e1 } = await sbAdmin.from('users').select('id').eq('line_user_id', sub).maybeSingle();
-  if (e1) throw e1;
-  if (exist) return exist.id as string;
-  const { data: created, error: e2 } = await sbAdmin.from('users').insert([{ 
-    line_user_id: sub, 
-    display_name: profile?.name ?? null, 
-    picture: profile?.picture ?? null 
-  }]).select('id').single();
-  if (e2) throw e2;
-  return created.id as string;
-}
+const TOK_URL = 'https://api.line.me/oauth2/v2.1/token';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') return res.status(405).end();
-  
   try {
-    const { code, state } = req.query;
-
+    const code = String(req.query.code || '');
+    const state = String(req.query.state || '');
     if (!code) return res.status(400).json({ error: 'missing_code' });
-    if (!state) return res.status(400).json({ error: 'missing_state' });
 
-    // 解碼 state（包含 state 和 code_verifier）
-    let code_verifier: string | undefined;
-    try {
-      const decoded = b64urlDecode(String(state));
-      const stateData = JSON.parse(decoded);
-      code_verifier = stateData.cv;
-      console.log('[LINE Callback] PKCE code_verifier:', code_verifier ? 'present' : 'missing');
-    } catch (e) {
-      console.warn('[LINE Callback] Failed to decode state for PKCE, continuing without code_verifier');
-    }
+    // TODO: 如有實作 state/nonce/PKCE，這裡取出並比對
+    // if (state !== expected) return res.status(400).json({ error: 'bad_state' });
 
-    // 1️⃣ 用 code 換取 access_token + id_token
-    const preferredBaseUrl = process.env.PUBLIC_BASE_URL;
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
-    const baseUrl = preferredBaseUrl || `https://${host}`;
-    const redirect_uri = `${baseUrl}/api/auth/line/callback`;
+    const redirectUri = `${process.env.PUBLIC_BASE_URL}/api/auth/line/callback`;
 
+    // 1) 用 code 換 token
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
-      code: String(code),
-      redirect_uri,
-      client_id: process.env.LINE_LOGIN_CHANNEL_ID!,
-      client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET!,
+      code,
+      redirect_uri: redirectUri,
+      client_id: process.env.LINE_CHANNEL_ID || '',
+      client_secret: process.env.LINE_CHANNEL_SECRET || '',
+      // 如有 PKCE：body.set('code_verifier', codeVerifierFromCookieOrStore)
     });
 
-    // 如果有 code_verifier（PKCE），添加到請求中
-    if (code_verifier) {
-      body.append('code_verifier', code_verifier);
-    }
-
-    const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
+    const r = await fetch(TOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
+      body
     });
-
-    const tokens = await tokenRes.json();
-    if (!tokenRes.ok) {
-      console.error('LINE token exchange failed:', tokens);
-      return res.status(400).json({ error: 'token_exchange_failed', detail: tokens });
+    const tok = await r.json();
+    if (!r.ok) {
+      return res.status(400).json({ error: 'token_exchange_failed', detail: tok });
     }
+    const idToken = tok.id_token as string;
+    if (!idToken) return res.status(400).json({ error: 'missing_id_token' });
 
-    const idToken = tokens.id_token as string;
-    if (!idToken) {
-      return res.status(400).json({ error: 'missing_id_token' });
-    }
+    // 2) 驗證 id_token（RS256 + 本地 JWKS）
+    const { payload, protectedHeader } = await verifyLineIdToken(
+      idToken,
+      process.env.LINE_CHANNEL_ID as string
+    );
 
-    // 2️⃣ 驗證 id_token - 直接使用 lib/line_oidc.ts 中驗證過的函數
-    console.log('[LINE Callback] 開始驗證 LINE ID Token...');
-    console.log('[LINE Callback] 版本: ff3d50ea-use-lib-oidc');
-    console.log('[LINE Callback] 環境變數 LINE_LOGIN_CHANNEL_ID:', process.env.LINE_LOGIN_CHANNEL_ID ? '已設置' : '未設置');
-    
-    let payload;
-    try {
-      // 直接使用 lib/line_oidc.ts 中已經驗證過可以工作的 verifyLineIdToken 函數
-      payload = await verifyLineIdToken(idToken);
-      console.log('[LINE Callback] JWT 驗證成功（使用 lib/line_oidc.ts）');
-    } catch (jwtError) {
-      console.error('[LINE Callback] JWT 驗證失敗:', jwtError);
-      console.error('[LINE Callback] JWT 錯誤詳情:', {
-        message: jwtError instanceof Error ? jwtError.message : String(jwtError),
-        name: jwtError instanceof Error ? jwtError.name : undefined,
-        code: (jwtError as any).code,
-      });
-      return res.status(400).json({ 
-        error: 'jwt_verification_failed', 
-        message: jwtError instanceof Error ? jwtError.message : String(jwtError)
-      });
-    }
-
-    // 3️⃣ 建立或查找用戶，創建 session
-    const sub = String(payload.sub);
-    const profile = { 
-      name: payload.name, 
-      picture: payload.picture 
-    };
-    
-    const userId = await findOrCreateUserByLineSub(sub, profile);
-    
-    // 創建 session token
-    const session = await new SignJWT({ sub: userId })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('7d')
-      .sign(secret);
-    
-    // 設置 session cookie
-    res.setHeader('Set-Cookie', [
-      `${SESSION_NAME}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7*24*60*60}`,
-      `oidc_state=; Path=/; Max-Age=0`,
-      `oidc_cv=; Path=/; Max-Age=0`,
-    ]);
-    
-    // 重定向到遊戲頁面
-    res.writeHead(302, { Location: '/game-play' });
-    res.end();
-    
+    // 3) TODO: 建立你的 session / JWT / cookie；這裡先回應 JSON，方便雲端 log 驗證
+    return res.status(200).json({
+      ok: true,
+      sub: payload.sub,
+      name: payload.name,
+      picture: payload.picture,
+      header: protectedHeader,
+      aud: payload.aud,
+      iss: payload.iss,
+    });
   } catch (err: any) {
-    console.error('[LINE Callback] 錯誤:', err);
-    return res.status(400).json({ 
-      error: 'callback_failed', 
-      message: String(err?.message || err) 
+    return res.status(400).json({
+      error: 'callback_failed',
+      message: String(err?.message || err)
     });
   }
 }
