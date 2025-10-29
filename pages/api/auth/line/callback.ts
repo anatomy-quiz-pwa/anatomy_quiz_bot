@@ -5,6 +5,10 @@ import { verifyLineIdToken } from '@/lib/line_oidc';
 const TOK_URL = 'https://api.line.me/oauth2/v2.1/token';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('[LINE Callback] Version: 628a5135-debug-v2');
+  console.log('[LINE Callback] Env check - LINE_CHANNEL_ID:', process.env.LINE_CHANNEL_ID ? 'SET' : 'NOT SET');
+  console.log('[LINE Callback] Env check - PUBLIC_BASE_URL:', process.env.PUBLIC_BASE_URL || 'NOT SET');
+  
   try {
     const code = String(req.query.code || '');
     const state = String(req.query.state || '');
