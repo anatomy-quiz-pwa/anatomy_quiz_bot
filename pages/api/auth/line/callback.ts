@@ -48,12 +48,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const idToken = tokenJson.id_token as string;
     
-    // 驗證 LINE ID Token（LINE 使用 RS256 算法）
+    // 驗證 LINE ID Token - 修復 JWT 算法問題
+    console.log('開始驗證 LINE ID Token...');
     const { payload } = await jwtVerify(idToken, JWKS, { 
       issuer: LINE_ISS, 
       audience: LINE_AUD,
-      algorithms: ['RS256']  // 明確指定 LINE 使用的算法
+      algorithms: ['RS256']  // LINE 只使用 RS256 算法
     });
+    console.log('JWT 驗證成功');
     
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
