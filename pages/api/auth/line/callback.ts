@@ -1,6 +1,6 @@
 // /api/auth/line/callback.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyLineIdToken } from '@/lib/line_oidc';
+import { verifyLineIdToken } from '../../../../lib/line_oidc';
 
 const TOK_URL = 'https://api.line.me/oauth2/v2.1/token';
 
