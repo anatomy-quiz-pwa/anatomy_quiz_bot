@@ -16,8 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `oidc_cv=${code_verifier}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
   ]);
 
+  // 以環境變數為優先，避免不同網域造成 redirect_uri 不匹配
+  const preferredBaseUrl = process.env.PUBLIC_BASE_URL; // 例如 https://anatomy-quiz-bot.vercel.app
   const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const redirect_uri = `https://${host}/api/auth/line/callback`;
+  const baseUrl = preferredBaseUrl || `https://${host}`;
+  const redirect_uri = `${baseUrl}/api/auth/line/callback`;
+
+  // 調試資訊（僅輸出到伺服器日誌）
+  console.log('[LINE Login] client_id:', process.env.LINE_LOGIN_CHANNEL_ID);
+  console.log('[LINE Login] redirect_uri:', redirect_uri);
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -29,6 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     code_challenge_method: 'S256',
   });
 
-  res.writeHead(302, { Location: `https://access.line.me/oauth2/v2.1/authorize?${params}` });
+  const authorizeUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`;
+  console.log('[LINE Login] authorize URL:', authorizeUrl);
+  res.writeHead(302, { Location: authorizeUrl });
   res.end();
 }
