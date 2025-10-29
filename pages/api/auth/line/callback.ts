@@ -81,12 +81,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 驗證 LINE ID Token - 修復 JWT 算法問題
     console.log('開始驗證 LINE ID Token...');
-    const { payload } = await jwtVerify(idToken, JWKS, { 
-      issuer: LINE_ISS, 
-      audience: LINE_AUD,
-      algorithms: ['RS256']  // LINE 只使用 RS256 算法
-    });
-    console.log('JWT 驗證成功');
+    let payload;
+    try {
+      const result = await jwtVerify(idToken, JWKS, { 
+        issuer: LINE_ISS, 
+        audience: LINE_AUD,
+        algorithms: ['RS256']  // LINE 只使用 RS256 算法
+      });
+      payload = result.payload;
+      console.log('JWT 驗證成功');
+    } catch (jwtError) {
+      console.error('JWT 驗證失敗:', jwtError);
+      throw new Error(`JWT 驗證失敗: ${jwtError instanceof Error ? jwtError.message : String(jwtError)}`);
+    }
     
     const sub = String(payload.sub);
     const profile = { name: (payload as any).name, picture: (payload as any).picture };
