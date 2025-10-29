@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 gunicorn==23.0.0
 uvicorn[standard]>=0.30
 cryptography>=3.4.8
+PyJWT==2.8.0
