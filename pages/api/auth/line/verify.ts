@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { SignJWT } from 'jose';
 import { createClient } from '@supabase/supabase-js';
-import { verifyLineIdToken } from '../../../lib/line_oidc';
+import { verifyLineIdToken } from '../../../../lib/line_oidc';
 
 const sbAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!, { auth: { persistSession: false }});
 const SESSION_NAME = 'app_session';
