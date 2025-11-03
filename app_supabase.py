@@ -91,7 +91,7 @@ if not LINE_CHANNEL_SECRET:
     logger.info("🔧 使用預設 LINE_CHANNEL_SECRET 進行測試")
 
 # 如果環境變數未設置，使用已知的 Supabase 配置進行測試
-if not SUPABASE_URL:
+if not SUPABASE_URL or "fospsvfokbwnfzfefnma" in SUPABASE_URL:
     SUPABASE_URL = "https://ciqlfqfgzqqgdrogedxg.supabase.co"
     logger.info("🔧 使用預設 SUPABASE_URL 進行測試")
 
