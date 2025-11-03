@@ -2773,8 +2773,8 @@ def get_all_questions(question_bank=None):
         question_bank: 題庫類型，可選值：'cervical'（頸椎）、'lower_limbs'（下肢）。如果為 None，則獲取所有題庫的題目。
     
     Note:
-        - cervical 題庫存放在 anatomy_questions_v2 表
-        - lower_limbs 題庫存放在 anatomy_questions_lower_limbs 表
+        - cervical 題庫存放在 anatomy_questions_cervical_advanced 表
+        - lower_limbs 題庫存放在 anatomy_questions_lower_limb 表
         - 兩個表完全分離，避免 import 時互相覆蓋
     """
     try:
@@ -2789,7 +2789,7 @@ def get_all_questions(question_bank=None):
         # 根據題庫類型選擇對應的 table
         if question_bank == 'lower_limbs':
             # 從下肢題庫表獲取
-            table_name = 'anatomy_questions_lower_limbs'
+            table_name = 'anatomy_questions_lower_limb'
             logger.info(f"📚 從 {table_name} 表讀取下肢題目")
             response = supabase.table(table_name).select('*').execute()
             
@@ -2816,7 +2816,7 @@ def get_all_questions(question_bank=None):
                     
         elif question_bank == 'cervical':
             # 從頸椎題庫表獲取
-            table_name = 'anatomy_questions_v2'
+            table_name = 'anatomy_questions_cervical_advanced'
             logger.info(f"📚 從 {table_name} 表讀取頸椎題目")
             response = supabase.table(table_name).select('*').execute()
             
@@ -2845,7 +2845,7 @@ def get_all_questions(question_bank=None):
         if question_bank is None:
             # 讀取頸椎題庫
             try:
-                response = supabase.table('anatomy_questions_v2').select('*').execute()
+                response = supabase.table('anatomy_questions_cervical_advanced').select('*').execute()
                 if response.data:
                     for item in response.data:
                         question = {
@@ -2871,7 +2871,7 @@ def get_all_questions(question_bank=None):
             
             # 讀取下肢題庫
             try:
-                response = supabase.table('anatomy_questions_lower_limbs').select('*').execute()
+                response = supabase.table('anatomy_questions_lower_limb').select('*').execute()
                 if response.data:
                     for item in response.data:
                         question = {
