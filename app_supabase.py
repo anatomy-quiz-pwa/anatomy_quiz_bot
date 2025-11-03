@@ -66,6 +66,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+from user_events import log_user_event
 
 # 環境變數
 PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')
@@ -2206,7 +2207,35 @@ def handle_text_message(sender_id, message):
         message_text = message.get('text', '').strip()
         logger.info(f"📨 收到來自用戶 {sender_id} 的訊息: {message_text}")
         
-        # 首先檢查是否為暱稱輸入
+        # 首先檢查是否為題庫選擇關鍵字（優先於暱稱檢查）
+        message_stripped = message_text.strip()
+        message_lower = message_stripped.lower()
+        
+        # 檢查下肢題庫關鍵字
+        lower_limbs_keywords = ['下肢', 'lower limbs', 'lower_limbs', '下肢題庫', 'lower', '腿', '足']
+        if message_stripped in lower_limbs_keywords or message_lower in ['lower limbs', 'lower_limbs', 'lower']:
+            logger.info(f"✅ 用戶 {sender_id} 選擇下肢題庫")
+            set_user_question_bank(sender_id, 'lower_limbs')
+            nickname = get_user_nickname(sender_id)
+            send_message(sender_id, {
+                "text": f"{nickname}，您已經開始本日的『下肢』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『下肢』的題目了喔！"
+            })
+            logger.info(f"✅ 用戶 {sender_id} ({nickname}) 選擇下肢題庫")
+            return
+        
+        # 檢查頸椎題庫關鍵字
+        cervical_keywords = ['頸椎', 'cervical', '頸椎題庫', '脖子', '頸部']
+        if message_stripped in cervical_keywords or message_lower == 'cervical':
+            logger.info(f"✅ 用戶 {sender_id} 選擇頸椎題庫")
+            set_user_question_bank(sender_id, 'cervical')
+            nickname = get_user_nickname(sender_id)
+            send_message(sender_id, {
+                "text": f"{nickname}，您已經開始本日的『頸椎』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『頸椎』的題目了喔！"
+            })
+            logger.info(f"✅ 用戶 {sender_id} ({nickname}) 選擇頸椎題庫")
+            return
+        
+        # 然後檢查是否為暱稱輸入
         if handle_nickname_input(sender_id, message_text):
             logger.info(f"✅ 用戶 {sender_id} 輸入已作為暱稱處理")
             return
@@ -2243,6 +2272,24 @@ def handle_text_message(sender_id, message):
 def handle_admin_message(sender_id, message_text):
     """處理管理員訊息"""
     try:
+        # 檢查是否為題庫選擇關鍵字
+        if message_text in ['下肢', 'lower limbs', 'lower_limbs', '下肢題庫']:
+            set_user_question_bank(sender_id, 'lower_limbs')
+            nickname = get_user_nickname(sender_id)
+            send_message(sender_id, {
+                "text": f"{nickname}，您已經開始本日的『下肢』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『下肢』的題目了喔！"
+            })
+            logger.info(f"✅ 管理員 {sender_id} ({nickname}) 選擇下肢題庫")
+            return
+        elif message_text in ['頸椎', 'cervical', '頸椎題庫']:
+            set_user_question_bank(sender_id, 'cervical')
+            nickname = get_user_nickname(sender_id)
+            send_message(sender_id, {
+                "text": f"{nickname}，您已經開始本日的『頸椎』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『頸椎』的題目了喔！"
+            })
+            logger.info(f"✅ 管理員 {sender_id} ({nickname}) 選擇頸椎題庫")
+            return
+        
         # 管理員特殊命令
         if message_text.startswith('/admin'):
             handle_admin_command(sender_id, message_text)
@@ -2439,7 +2486,7 @@ def handle_level_command(sender_id, message_text):
 def handle_regular_message(sender_id, message_text):
     """處理普通用戶訊息"""
     try:
-        # 直接處理普通用戶的問答邏輯
+        # 題庫選擇檢查已經在 handle_text_message 中處理，這裡直接處理問答邏輯
         # 注意：這裡不需要再次檢查管理員權限，因為在 handle_text_message 中已經檢查過了
         handle_normal_quiz(sender_id, message_text)
         
@@ -2566,11 +2613,15 @@ def send_admin_quiz_question(sender_id):
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
         
-        # 獲取指定等級的題目
-        level_questions = get_questions_by_level(current_level)
+        # 獲取用戶選擇的題庫類型
+        question_bank = get_user_question_bank(sender_id)
+        
+        # 獲取指定等級和題庫類型的題目
+        level_questions = get_questions_by_level(current_level, question_bank)
         
         if not level_questions:
-            send_message(sender_id, {"text": f"❌ 等級 {current_level} 目前沒有可用的題目，請稍後再試。"})
+            bank_name = '頸椎' if question_bank == 'cervical' else '下肢'
+            send_message(sender_id, {"text": f"❌ {bank_name}題庫的等級 {current_level} 目前沒有可用的題目，請稍後再試。\n\n您可以輸入「下肢」或「頸椎」切換題庫。"})
             return
         
         # 獲取用戶統計信息，包含已答對的題目ID
@@ -2597,6 +2648,7 @@ def send_admin_quiz_question(sender_id):
         session_data = {
             'current_question': question,
             'question_type': 'admin',
+            'question_bank': question_bank,
             'timestamp': datetime.datetime.now().isoformat()
         }
         set_user_session(sender_id, session_data)
@@ -2631,11 +2683,15 @@ def send_admin_quiz_question(sender_id):
 def send_normal_quiz_question(sender_id, level):
     """發送普通用戶問答題目（當前等級）"""
     try:
-        # 獲取指定等級的題目
-        level_questions = get_questions_by_level(level)
+        # 獲取用戶選擇的題庫類型
+        question_bank = get_user_question_bank(sender_id)
+        
+        # 獲取指定等級和題庫類型的題目
+        level_questions = get_questions_by_level(level, question_bank)
         
         if not level_questions:
-            send_message(sender_id, {"text": f"❌ 等級 {level} 目前沒有可用的題目，請稍後再試。"})
+            bank_name = '頸椎' if question_bank == 'cervical' else '下肢'
+            send_message(sender_id, {"text": f"❌ {bank_name}題庫的等級 {level} 目前沒有可用的題目，請稍後再試。\n\n您可以輸入「下肢」或「頸椎」切換題庫。"})
             return
         
         # 獲取用戶統計信息，包含已答對的題目ID
@@ -2679,6 +2735,7 @@ def send_normal_quiz_question(sender_id, level):
             'current_question': question,
             'question_type': 'normal',
             'level': level,
+            'question_bank': question_bank,
             'timestamp': datetime.datetime.now().isoformat()
         }
         set_user_session(sender_id, session_data)
@@ -2709,62 +2766,170 @@ def send_normal_quiz_question(sender_id, level):
         logger.error(f"❌ 發送普通題目失敗: {e}")
         send_message(sender_id, {"text": "❌ 發送題目時發生錯誤，請稍後再試。"})
 
-def get_all_questions():
-    """從 Supabase 獲取所有等級的真實題目"""
+def get_all_questions(question_bank=None):
+    """從 Supabase 獲取所有等級的真實題目
+    
+    Args:
+        question_bank: 題庫類型，可選值：'cervical'（頸椎）、'lower_limbs'（下肢）。如果為 None，則獲取所有題庫的題目。
+    
+    Note:
+        - cervical 題庫存放在 anatomy_questions_v2 表
+        - lower_limbs 題庫存放在 anatomy_questions_lower_limbs 表
+        - 兩個表完全分離，避免 import 時互相覆蓋
+    """
     try:
         if supabase is None:
             logger.error("❌ Supabase 未連接，無法獲取題目")
             return []
         
-        logger.info("📚 正在從 Supabase 獲取真實題目數據...")
+        logger.info(f"📚 正在從 Supabase 獲取真實題目數據... (題庫類型: {question_bank or '全部'})")
         
-        # 從 anatomy_questions_v2 表格獲取所有題目
-        response = supabase.table('anatomy_questions_v2').select('*').execute()
+        all_questions = []
         
-        if not response.data:
-            logger.warning("⚠️ 沒有找到任何題目數據")
+        # 根據題庫類型選擇對應的 table
+        if question_bank == 'lower_limbs':
+            # 從下肢題庫表獲取
+            table_name = 'anatomy_questions_lower_limbs'
+            logger.info(f"📚 從 {table_name} 表讀取下肢題目")
+            response = supabase.table(table_name).select('*').execute()
+            
+            if response.data:
+                for item in response.data:
+                    question = {
+                        "id": item.get('id'),
+                        "question": item.get('question'),
+                        "options": [
+                            item.get('option_1', ''),
+                            item.get('option_2', ''),
+                            item.get('option_3', ''),
+                            item.get('option_4', '')
+                        ],
+                        "correct_answer": (item.get('correct_option', 1) - 1) if item.get('correct_option') else 0,
+                        "level": item.get('level', 1),
+                        "category": "解剖學",
+                        "explanation": item.get('explanation', ''),
+                        "image_url": item.get('image_url', ''),
+                        "qimage_url": item.get('qimage_url', ''),
+                        "question_bank": 'lower_limbs'
+                    }
+                    all_questions.append(question)
+                    
+        elif question_bank == 'cervical':
+            # 從頸椎題庫表獲取
+            table_name = 'anatomy_questions_v2'
+            logger.info(f"📚 從 {table_name} 表讀取頸椎題目")
+            response = supabase.table(table_name).select('*').execute()
+            
+            if response.data:
+                for item in response.data:
+                    question = {
+                        "id": item.get('id'),
+                        "question": item.get('question'),
+                        "options": [
+                            item.get('option_1', ''),
+                            item.get('option_2', ''),
+                            item.get('option_3', ''),
+                            item.get('option_4', '')
+                        ],
+                        "correct_answer": (item.get('correct_option', 1) - 1) if item.get('correct_option') else 0,
+                        "level": item.get('level', 1),
+                        "category": "解剖學",
+                        "explanation": item.get('explanation', ''),
+                        "image_url": item.get('image_url', ''),
+                        "qimage_url": item.get('qimage_url', ''),
+                        "question_bank": 'cervical'
+                    }
+                    all_questions.append(question)
+        
+        # 如果 question_bank 為 None，獲取所有題庫的題目（從兩個表都讀取）
+        if question_bank is None:
+            # 讀取頸椎題庫
+            try:
+                response = supabase.table('anatomy_questions_v2').select('*').execute()
+                if response.data:
+                    for item in response.data:
+                        question = {
+                            "id": item.get('id'),
+                            "question": item.get('question'),
+                            "options": [
+                                item.get('option_1', ''),
+                                item.get('option_2', ''),
+                                item.get('option_3', ''),
+                                item.get('option_4', '')
+                            ],
+                            "correct_answer": (item.get('correct_option', 1) - 1) if item.get('correct_option') else 0,
+                            "level": item.get('level', 1),
+                            "category": "解剖學",
+                            "explanation": item.get('explanation', ''),
+                            "image_url": item.get('image_url', ''),
+                            "qimage_url": item.get('qimage_url', ''),
+                            "question_bank": 'cervical'
+                        }
+                        all_questions.append(question)
+            except Exception as e:
+                logger.warning(f"⚠️ 無法讀取頸椎題庫表: {e}")
+            
+            # 讀取下肢題庫
+            try:
+                response = supabase.table('anatomy_questions_lower_limbs').select('*').execute()
+                if response.data:
+                    for item in response.data:
+                        question = {
+                            "id": item.get('id'),
+                            "question": item.get('question'),
+                            "options": [
+                                item.get('option_1', ''),
+                                item.get('option_2', ''),
+                                item.get('option_3', ''),
+                                item.get('option_4', '')
+                            ],
+                            "correct_answer": (item.get('correct_option', 1) - 1) if item.get('correct_option') else 0,
+                            "level": item.get('level', 1),
+                            "category": "解剖學",
+                            "explanation": item.get('explanation', ''),
+                            "image_url": item.get('image_url', ''),
+                            "qimage_url": item.get('qimage_url', ''),
+                            "question_bank": 'lower_limbs'
+                        }
+                        all_questions.append(question)
+            except Exception as e:
+                logger.warning(f"⚠️ 無法讀取下肢題庫表（可能尚未創建）: {e}")
+        
+        if not all_questions:
+            logger.warning(f"⚠️ 沒有找到任何題目數據 (題庫類型: {question_bank or '全部'})")
             return []
         
-        # 轉換數據格式以符合現有系統
-        questions = []
-        for item in response.data:
-            question = {
-                "id": item.get('id'),
-                "question": item.get('question'),
-                "options": [
-                    item.get('option_1', ''),
-                    item.get('option_2', ''),
-                    item.get('option_3', ''),
-                    item.get('option_4', '')
-                ],
-                "correct_answer": (item.get('correct_option', 1) - 1) if item.get('correct_option') else 0,  # 轉換為 0-based 索引
-                "level": item.get('level', 1),
-                "category": "解剖學",  # 統一類別
-                "explanation": item.get('explanation', ''),
-                "image_url": item.get('image_url', ''),
-                "qimage_url": item.get('qimage_url', '')
-            }
-            questions.append(question)
-        
-        logger.info(f"✅ 成功獲取 {len(questions)} 道真實題目")
-        return questions
+        logger.info(f"✅ 成功獲取 {len(all_questions)} 道真實題目 (題庫類型: {question_bank or '全部'})")
+        return all_questions
         
     except Exception as e:
         logger.error(f"❌ 從 Supabase 獲取題目失敗: {e}")
         return []
 
-def get_questions_by_level(level):
-    """獲取指定等級的題目"""
-    all_questions = get_all_questions()
+def get_questions_by_level(level, question_bank=None):
+    """獲取指定等級的題目
+    
+    Args:
+        level: 題目等級
+        question_bank: 題庫類型，可選值：'cervical'（頸椎）、'lower_limbs'（下肢）。如果為 None，則獲取所有題庫的題目。
+    """
+    all_questions = get_all_questions(question_bank)
     return [q for q in all_questions if q['level'] == level]
 
 def send_admin_help_message(sender_id):
     """發送管理員幫助訊息"""
-    help_text = """🔑 管理員指令幫助
+    # 獲取當前選擇的題庫類型
+    question_bank = get_user_question_bank(sender_id)
+    bank_name = '頸椎' if question_bank == 'cervical' else '下肢'
+    
+    help_text = f"""🔑 管理員指令幫助
+
+📚 當前題庫：{bank_name}題庫
 
 📚 問答指令：
 • 開始 / start - 開始答題（按當前等級）
 • 幫助 / help - 顯示此幫助訊息
+• 頸椎 / 下肢 - 切換題庫類型
 
 🔧 管理員指令：
 • /admin status - 查看管理員狀態
@@ -2790,10 +2955,22 @@ def send_admin_help_message(sender_id):
 
 def send_normal_help_message(sender_id, level):
     """發送普通用戶幫助訊息"""
+    # 獲取當前選擇的題庫類型
+    question_bank = get_user_question_bank(sender_id)
+    bank_name = '頸椎' if question_bank == 'cervical' else '下肢'
+    
     help_text = f"""🧭 解剖冒險指南
 
 👋 歡迎來到 解剖咬一口！
 這是一個每天玩一點、慢慢升級的解剖闖關遊戲。
+
+📚 題庫選擇
+
+當前題庫：{bank_name}題庫
+
+您可以輸入以下關鍵字切換題庫：
+• 「頸椎」→ 切換到頸椎題庫
+• 「下肢」→ 切換到下肢題庫
 
 🦴 遊戲規則
 
@@ -2845,6 +3022,17 @@ def get_user_session(user_id):
 def set_user_session(user_id, session_data):
     """設置用戶會話狀態"""
     user_sessions[user_id] = session_data
+
+def get_user_question_bank(user_id):
+    """獲取用戶當前選擇的題庫類型"""
+    session = get_user_session(user_id)
+    return session.get('question_bank', 'cervical')  # 默認為 cervical
+
+def set_user_question_bank(user_id, question_bank):
+    """設置用戶選擇的題庫類型"""
+    session = get_user_session(user_id)
+    session['question_bank'] = question_bank
+    set_user_session(user_id, session)
 
 def clear_user_session(user_id):
     """清除用戶會話狀態"""
@@ -3301,6 +3489,10 @@ def handle_postback(sender_id, postback):
     elif payload == 'VIEW_LEADERBOARD':
         # 處理查看排行榜邏輯
         logger.info(f"📊 用戶 {sender_id} 請求查看排行榜")
+        try:
+            log_user_event(sender_id, 'VIEW_LEADERBOARD', 'postback', {'payload': payload})
+        except Exception:
+            pass
         send_leaderboard_message(sender_id)
     
     elif payload == 'RESTART_CHALLENGE':
