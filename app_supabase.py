@@ -2266,19 +2266,23 @@ def handle_text_message(sender_id, message):
         
         # 如果沒有輸入「下肢」或「頸椎」，檢查是否為首次使用且沒有挑戰進行中
         if message_stripped and not is_lower_limb_input and not is_cervical_input:
-            # 檢查用戶是否有進行中的挑戰
-            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            # 先檢查是否為答案選項（1-4, A-D），如果是答案，不應該提示選擇題庫
+            is_answer_option = message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D', 'a', 'b', 'c', 'd']
             
-            # 如果沒有進行中的挑戰，且不是已知命令，才提示選擇題庫
-            if not is_ongoing:
-                known_commands = ['開始', 'start', '積分', 'score', '排行榜', 'leaderboard', 'help', '幫助', '暱稱', 'nickname']
-                if message_lower not in [cmd.lower() for cmd in known_commands] and message_text.upper() != 'PAOPASS':
-                    # 檢查是否包含暱稱關鍵字
-                    if not (message_text.startswith('我的暱稱是') or message_text.startswith('暱稱') or message_text.startswith('name is')):
-                        send_message(sender_id, {
-                            "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
-                        })
-                        return
+            if not is_answer_option:
+                # 檢查用戶是否有進行中的挑戰
+                is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+                
+                # 如果沒有進行中的挑戰，且不是已知命令，才提示選擇題庫
+                if not is_ongoing:
+                    known_commands = ['開始', 'start', '積分', 'score', '排行榜', 'leaderboard', 'help', '幫助', '暱稱', 'nickname']
+                    if message_lower not in [cmd.lower() for cmd in known_commands] and message_text.upper() != 'PAOPASS':
+                        # 檢查是否包含暱稱關鍵字
+                        if not (message_text.startswith('我的暱稱是') or message_text.startswith('暱稱') or message_text.startswith('name is')):
+                            send_message(sender_id, {
+                                "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                            })
+                            return
         
         # 然後檢查是否為暱稱輸入
         if handle_nickname_input(sender_id, message_text):
@@ -2647,8 +2651,9 @@ def handle_normal_quiz(sender_id, message_text):
             else:
                 send_message(sender_id, {"text": "❌ 重置進度失敗，請稍後再試或聯繫管理員。"})
         else:
-            # 檢查是否為答案選項
-            if message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
+            # 檢查是否為答案選項（包含大小寫）
+            answer_cleaned = message_text.strip().upper()
+            if answer_cleaned in ['1', '2', '3', '4', 'A', 'B', 'C', 'D']:
                 handle_normal_answer(sender_id, message_text, current_level)
             else:
                 send_message(sender_id, {
