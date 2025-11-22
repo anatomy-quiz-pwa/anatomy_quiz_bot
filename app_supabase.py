@@ -2611,12 +2611,34 @@ def handle_normal_quiz(sender_id, message_text):
             # 檢查用戶是否有進行中的挑戰
             is_ongoing, current_theme, current_level = check_challenge_ongoing(sender_id)
             
-            if not is_ongoing:
-                # 沒有進行中的挑戰，提示選擇題庫
-                send_message(sender_id, {
-                    "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
-                })
-                return
+            # 如果沒有挑戰信息或主題，檢查是否有已設定的題庫
+            if not current_theme:
+                # 檢查用戶是否已有選擇的題庫
+                question_bank = get_user_question_bank(sender_id)
+                
+                # 如果題庫是有效值（lower_limb 或 cervical），就使用它
+                # 但需要檢查用戶是否有統計資料，如果沒有統計資料，說明是全新用戶，應該提示選擇題庫
+                if question_bank in ['lower_limb', 'cervical']:
+                    # 檢查用戶是否有統計資料（如果有，說明用戶之前選擇過題庫）
+                    user_stats = get_user_stats(sender_id)
+                    if user_stats:
+                        # 用戶有統計資料，說明之前選擇過題庫，恢復挑戰狀態並繼續
+                        set_user_challenge(sender_id, question_bank)
+                        current_theme = question_bank
+                        is_ongoing = True
+                        logger.info(f"✅ 恢復用戶 {sender_id} 的挑戰狀態，題庫: {question_bank}")
+                    else:
+                        # 用戶沒有統計資料，說明是全新用戶，提示選擇題庫
+                        send_message(sender_id, {
+                            "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                        })
+                        return
+                else:
+                    # 沒有選擇過題庫，提示選擇
+                    send_message(sender_id, {
+                        "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                    })
+                    return
             
             # 檢查每日答題限制
             daily_limit_status = check_daily_question_limit(sender_id)
@@ -2805,15 +2827,15 @@ def send_question(sender_id, theme):
         # 記錄選題信息
         logger.info(f"📚 為用戶 {sender_id} 選擇等級 {current_level} 題目 {question['id']} (剩餘 {len(available_questions)} 道未答題目)")
         
-        # 儲存當前題目到會話中
-        session_data = {
-            'current_question': question,
-            'question_type': 'normal',
-            'level': current_level,
-            'question_bank': question_bank,
-            'timestamp': datetime.datetime.now().isoformat()
-        }
-        set_user_session(sender_id, session_data)
+        # 儲存當前題目到會話中（保留現有的挑戰信息）
+        session = get_user_session(sender_id)
+        session['current_question'] = question
+        session['question_type'] = 'normal'
+        session['level'] = current_level
+        session['question_bank'] = question_bank
+        session['timestamp'] = datetime.datetime.now().isoformat()
+        # 保留 challenge 信息（如果存在）
+        set_user_session(sender_id, session)
         
         # 發送題目 Flex Message
         flex_message = create_question_flex_message(question, is_admin=False, user_level=current_level)
