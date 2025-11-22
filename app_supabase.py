@@ -3327,9 +3327,10 @@ def handle_normal_answer(sender_id, answer, level):
             })
             return
         
-        # 轉換答案格式 (A-D 轉為 1-4)
+        # 轉換答案格式 (A-D 轉為 1-4，處理大小寫)
+        answer_upper = answer.strip().upper()
         answer_mapping = {'A': '1', 'B': '2', 'C': '3', 'D': '4'}
-        normalized_answer = answer_mapping.get(answer, answer)
+        normalized_answer = answer_mapping.get(answer_upper, answer.strip())
         
         # 檢查答案是否正確
         correct_answer_index = current_question.get('correct_answer', 0)
