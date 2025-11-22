@@ -2217,7 +2217,7 @@ def handle_text_message(sender_id, message):
         
         if is_lower_limb_input or is_cervical_input:
             # 檢查用戶是否正在進行挑戰
-            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            is_ongoing, current_theme, current_level = check_challenge_ongoing(sender_id)
             
             if is_ongoing:
                 # 用戶正在進行挑戰，檢查是否想切換
@@ -2240,9 +2240,9 @@ def handle_text_message(sender_id, message):
                     send_question(sender_id, theme="cervical")
                     return
                 else:
-                    # 想切換到不同主題，但不允許
+                    # 想切換到不同主題，但不允許（必須完成等級14）
                     send_message(sender_id, {
-                        "text": f"目前您正在進行『{theme_name}』挑戰中！需完成 14 天後才能更換賽道喔！"
+                        "text": f"目前您正在進行『{theme_name}』挑戰中！需完成等級 14 後才能更換賽道喔！（目前等級：{current_level}）"
                     })
                     return
             
@@ -2264,14 +2264,23 @@ def handle_text_message(sender_id, message):
                 send_question(sender_id, theme="cervical")
                 return
         
-        # 如果沒有輸入「下肢」或「頸椎」，檢查是否為首次使用且沒有挑戰進行中
+        # 如果沒有輸入「下肢」或「頸椎」，檢查是否需要提示選擇題庫
         if message_stripped and not is_lower_limb_input and not is_cervical_input:
             # 先檢查是否為答案選項（1-4, A-D），如果是答案，不應該提示選擇題庫
             is_answer_option = message_text.strip() in ['1', '2', '3', '4', 'A', 'B', 'C', 'D', 'a', 'b', 'c', 'd']
             
-            if not is_answer_option:
+            # 檢查用戶是否有當前題目（正在答題中）
+            session = get_user_session(sender_id)
+            has_current_question = session.get('current_question') is not None
+            
+            # 如果用戶正在答題，不應該提示選擇題庫
+            if has_current_question:
+                # 用戶正在答題，讓訊息繼續處理（可能是答案或其他命令）
+                pass
+            elif not is_answer_option:
+                # 用戶沒有在答題，且不是答案選項
                 # 檢查用戶是否有進行中的挑戰
-                is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+                is_ongoing, current_theme, current_level = check_challenge_ongoing(sender_id)
                 
                 # 如果沒有進行中的挑戰，且不是已知命令，才提示選擇題庫
                 if not is_ongoing:
@@ -2600,7 +2609,7 @@ def handle_normal_quiz(sender_id, message_text):
         
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰', '出題', '題目', 'quiz', 'question']:
             # 檢查用戶是否有進行中的挑戰
-            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            is_ongoing, current_theme, current_level = check_challenge_ongoing(sender_id)
             
             if not is_ongoing:
                 # 沒有進行中的挑戰，提示選擇題庫
@@ -3251,22 +3260,36 @@ def set_user_challenge(user_id, theme):
         logger.error(f"❌ 設置用戶挑戰失敗: {e}")
 
 def check_challenge_ongoing(user_id):
-    """檢查用戶是否正在進行挑戰
+    """檢查用戶是否正在進行挑戰（基於等級14完成度）
     
     Returns:
-        tuple: (is_ongoing: bool, theme: str or None, days_completed: int)
+        tuple: (is_ongoing: bool, theme: str or None, current_level: int)
     """
     challenge = get_user_challenge(user_id)
     if not challenge['theme']:
         return False, None, 0
     
-    # 計算已完成天數（簡化版本，基於開始日期）
-    if challenge['start_date']:
-        days_passed = (datetime.datetime.now() - challenge['start_date']).days
-        if days_passed < 14:
-            return True, challenge['theme'], challenge.get('days_completed', days_passed)
+    # 獲取用戶當前等級
+    user_stats = get_user_stats(user_id)
+    current_level = user_stats.get('level', 1) if user_stats else 1
     
-    return False, challenge['theme'], challenge.get('days_completed', 0)
+    # 如果用戶還沒達到等級14，挑戰仍在進行中
+    if current_level < 14:
+        return True, challenge['theme'], current_level
+    
+    # 達到等級14，挑戰完成，可以切換主題
+    return False, challenge['theme'], current_level
+
+def clear_user_challenge(user_id):
+    """清除用戶挑戰狀態（完成等級14後）"""
+    try:
+        session = get_user_session(user_id)
+        if 'challenge' in session:
+            del session['challenge']
+            set_user_session(user_id, session)
+            logger.info(f"✅ 已清除用戶 {user_id} 的挑戰狀態")
+    except Exception as e:
+        logger.error(f"❌ 清除用戶挑戰狀態失敗: {e}")
 
 def clear_user_session(user_id):
     """清除用戶會話狀態"""
@@ -3684,6 +3707,11 @@ def check_and_handle_level_up(user_id, current_level, is_correct):
             
             # 更新數據庫 - 使用 on_conflict 參數處理重複鍵值
             supabase.table('user_stats').upsert(update_data, on_conflict='user_id').execute()
+            
+            # 如果達到等級14，清除挑戰狀態，允許切換主題
+            if new_level >= 14:
+                clear_user_challenge(user_id)
+                logger.info(f"🎉 用戶 {user_id} 達到等級14，挑戰完成！已清除挑戰狀態，可以選擇新主題")
             
             logger.info(f"🎉 用戶 {user_id} 從等級 {current_level} 提升到 {new_level} (答對{current_level_correct}題)")
             # 返回升級資訊，不立即發送訊息
