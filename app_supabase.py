@@ -265,46 +265,33 @@ def handle_nickname_input(user_id, text):
                         result = send_message(user_id, flex_message)
                         logger.info(f"✅ 暱稱設定 Flex Message 發送完成給用戶 {user_id}，結果: {result}")
                         
-                        # 暱稱設置成功後，自動發送第一道題目
-                        logger.info(f"🎯 暱稱設置完成，準備為用戶 {user_id} ({nickname}) 自動發送第一道題目")
+                        # 暱稱設置成功後，提示用戶選擇題庫
+                        logger.info(f"🎯 暱稱設置完成，準備為用戶 {user_id} ({nickname}) 提示選擇題庫")
                         
                         try:
                             # 檢查用戶是否為管理員
                             admin_info = get_user_admin_permissions(user_id)
                             
                             if admin_info and admin_info.get('is_admin'):
-                                # 管理員用戶：自動發送管理員模式的第一道題目
+                                # 管理員用戶：自動發送管理員模式的第一道題目（管理員不需要選擇題庫）
                                 send_admin_quiz_question(user_id)
                                 logger.info(f"✅ 已為管理員用戶 {user_id} ({nickname}) 自動發送第一道題目")
                             else:
-                                # 普通用戶：檢查每日限制後發送題目
-                                daily_limit_status = check_daily_question_limit(user_id)
-                                
-                                if daily_limit_status['can_answer']:
-                                    # 獲取或創建用戶統計
-                                    user_stats = get_user_stats(user_id)
-                                    if not user_stats:
-                                        user_stats = create_initial_user_stats(user_id)
+                                # 普通用戶：提示選擇題庫
+                                question_bank_message = {
+                                    "text": f"🎉 {nickname}，歡迎加入解剖學學習之旅！\n\n📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰\n\n💡 提示：需完成您選的主題（等級14）才能更換賽道喔！"
+                                }
+                                send_message(user_id, question_bank_message)
+                                logger.info(f"✅ 已為普通用戶 {user_id} ({nickname}) 提示選擇題庫")
                                     
-                                    current_level = user_stats.get('level', 1) if user_stats else 1
-                                    send_normal_quiz_question(user_id, level=current_level)
-                                    logger.info(f"✅ 已為普通用戶 {user_id} ({nickname}) 自動發送第一道題目 (等級 {current_level})")
-                                else:
-                                    # 已達每日限制，發送歡迎但不能答題的訊息
-                                    welcome_message = {
-                                        "text": f"🎉 {nickname}，歡迎加入解剖學學習之旅！\n\n⏰ 今天的答題次數已達上限 ({daily_limit_status['answered_today']}/3 題)\n明天再來挑戰第一道題目吧！\n\n📊 輸入「積分」查看學習進度\n🏆 輸入「排行榜」查看排名"
-                                    }
-                                    send_message(user_id, welcome_message)
-                                    logger.info(f"ℹ️ 用戶 {user_id} ({nickname}) 已達每日答題限制，發送歡迎訊息")
-                                    
-                        except Exception as auto_quiz_error:
-                            logger.error(f"❌ 自動發送第一道題目失敗: {auto_quiz_error}")
+                        except Exception as message_error:
+                            logger.error(f"❌ 發送選擇題庫訊息失敗: {message_error}")
                             # 失敗時發送引導訊息
                             fallback_message = {
-                                "text": f"🎉 {nickname}，歡迎加入！\n\n🚀 輸入「開始」開始你的解剖學學習之旅！\n📊 輸入「積分」查看學習進度\n🏆 輸入「排行榜」查看排名"
+                                "text": f"🎉 {nickname}，歡迎加入！\n\n📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰"
                             }
                             send_message(user_id, fallback_message)
-                            logger.info(f"📝 已為用戶 {user_id} ({nickname}) 發送手動開始指引")
+                            logger.info(f"📝 已為用戶 {user_id} ({nickname}) 發送選擇題庫指引")
                         
                     except Exception as flex_error:
                         logger.error(f"❌ Flex Message 處理失敗: {flex_error}")
@@ -2617,26 +2604,16 @@ def handle_normal_quiz(sender_id, message_text):
                 question_bank = get_user_question_bank(sender_id)
                 
                 # 如果題庫是有效值（lower_limb 或 cervical），就使用它
-                # 但需要檢查用戶是否有統計資料，如果沒有統計資料，說明是全新用戶，應該提示選擇題庫
                 if question_bank in ['lower_limb', 'cervical']:
-                    # 檢查用戶是否有統計資料（如果有，說明用戶之前選擇過題庫）
-                    user_stats = get_user_stats(sender_id)
-                    if user_stats:
-                        # 用戶有統計資料，說明之前選擇過題庫，恢復挑戰狀態並繼續
-                        set_user_challenge(sender_id, question_bank)
-                        current_theme = question_bank
-                        is_ongoing = True
-                        logger.info(f"✅ 恢復用戶 {sender_id} 的挑戰狀態，題庫: {question_bank}")
-                    else:
-                        # 用戶沒有統計資料，說明是全新用戶，提示選擇題庫
-                        send_message(sender_id, {
-                            "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
-                        })
-                        return
+                    # 用戶已選擇過題庫，恢復挑戰狀態並繼續
+                    set_user_challenge(sender_id, question_bank)
+                    current_theme = question_bank
+                    is_ongoing = True
+                    logger.info(f"✅ 恢復用戶 {sender_id} 的挑戰狀態，題庫: {question_bank}")
                 else:
                     # 沒有選擇過題庫，提示選擇
                     send_message(sender_id, {
-                        "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                        "text": "📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰\n\n💡 提示：需完成您選的主題（等級14）才能更換賽道喔！"
                     })
                     return
             
@@ -3209,7 +3186,7 @@ def set_user_session(user_id, session_data):
 def get_user_question_bank(user_id):
     """獲取用戶當前選擇的題庫類型"""
     session = get_user_session(user_id)
-    return session.get('question_bank', 'cervical')  # 默認為 cervical
+    return session.get('question_bank', None)  # 不設置默認值，用戶必須明確選擇
 
 def set_user_question_bank(user_id, question_bank):
     """設置用戶選擇的題庫類型"""
