@@ -2227,6 +2227,12 @@ def handle_text_message(sender_id, message):
             
             # 用戶沒有進行中的挑戰，可以開始新挑戰
             if is_lower_limb_input:
+                # 清除當前題目，避免題庫不一致
+                session = get_user_session(sender_id)
+                if 'current_question' in session:
+                    del session['current_question']
+                set_user_session(sender_id, session)
+                
                 set_user_challenge(sender_id, 'lower_limb')
                 set_user_question_bank(sender_id, 'lower_limb')
                 send_message(sender_id, {
@@ -2235,6 +2241,12 @@ def handle_text_message(sender_id, message):
                 send_question(sender_id, theme="lower_limb")
                 return
             elif is_cervical_input:
+                # 清除當前題目，避免題庫不一致
+                session = get_user_session(sender_id)
+                if 'current_question' in session:
+                    del session['current_question']
+                set_user_session(sender_id, session)
+                
                 set_user_challenge(sender_id, 'cervical')
                 set_user_question_bank(sender_id, 'cervical')
                 send_message(sender_id, {
@@ -2311,6 +2323,12 @@ def handle_admin_message(sender_id, message_text):
     try:
         # 檢查是否為題庫選擇關鍵字（管理員也需要選擇題庫）
         if message_text in ['下肢', 'lower limbs', 'lower_limbs', '下肢題庫']:
+            # 清除當前題目，避免題庫不一致
+            session = get_user_session(sender_id)
+            if 'current_question' in session:
+                del session['current_question']
+            set_user_session(sender_id, session)
+            
             set_user_question_bank(sender_id, 'lower_limb')
             set_user_challenge(sender_id, 'lower_limb')
             nickname = get_user_nickname(sender_id)
@@ -2320,6 +2338,12 @@ def handle_admin_message(sender_id, message_text):
             logger.info(f"✅ 管理員 {sender_id} ({nickname}) 選擇下肢題庫")
             return
         elif message_text in ['頸椎', 'cervical', '頸椎題庫']:
+            # 清除當前題目，避免題庫不一致
+            session = get_user_session(sender_id)
+            if 'current_question' in session:
+                del session['current_question']
+            set_user_session(sender_id, session)
+            
             set_user_question_bank(sender_id, 'cervical')
             set_user_challenge(sender_id, 'cervical')
             nickname = get_user_nickname(sender_id)
@@ -2713,13 +2737,21 @@ def send_admin_quiz_question(sender_id):
         # 確保ID類型一致性（統一轉換為字符串進行比較）
         answered_ids_str = [str(qid) for qid in answered_question_ids]
         
-        # 過濾已答過的題目
-        available_questions = [q for q in level_questions if str(q['id']) not in answered_ids_str]
+        # 獲取當前 session，檢查是否有當前題目（避免立即重複）
+        session = get_user_session(sender_id)
+        current_question_id = None
+        if session.get('current_question'):
+            current_question_id = str(session.get('current_question').get('id'))
         
-        # 如果沒有未答的題目，重置已答記錄或提供所有題目
+        # 過濾已答過的題目和當前題目
+        available_questions = [q for q in level_questions 
+                              if str(q['id']) not in answered_ids_str 
+                              and str(q['id']) != current_question_id]
+        
+        # 如果沒有未答的題目，重置已答記錄或提供所有題目（但排除當前題目）
         if not available_questions:
             logger.info(f"🔄 管理員 {sender_id} 已答完等級 {current_level} 所有題目，提供重新挑戰選項")
-            available_questions = level_questions  # 管理員可以重新答題
+            available_questions = [q for q in level_questions if str(q['id']) != current_question_id] if current_question_id else level_questions
         
         # 隨機選擇一道題目
         question = random.choice(available_questions)
@@ -2775,8 +2807,8 @@ def send_question(sender_id, theme):
         user_stats = get_user_stats(sender_id)
         current_level = user_stats.get('level', 1) if user_stats else 1
         
-        # 轉換主題名稱以匹配資料庫（lower_limb -> lower_limbs）
-        question_bank = 'lower_limbs' if theme == 'lower_limb' else theme
+        # 確保使用正確的題庫名稱（統一使用 lower_limb）
+        question_bank = 'lower_limb' if theme == 'lower_limb' else theme
         
         # 獲取指定等級和題庫類型的題目
         level_questions = get_questions_by_level(current_level, question_bank)
@@ -2792,8 +2824,16 @@ def send_question(sender_id, theme):
         # 確保ID類型一致性（統一轉換為字符串進行比較）
         answered_ids_str = [str(qid) for qid in answered_question_ids]
         
-        # 過濾已答過的題目（僅限當前等級）
-        available_questions = [q for q in level_questions if str(q['id']) not in answered_ids_str]
+        # 獲取當前 session，檢查是否有當前題目（避免立即重複）
+        session = get_user_session(sender_id)
+        current_question_id = None
+        if session.get('current_question'):
+            current_question_id = str(session.get('current_question').get('id'))
+        
+        # 過濾已答過的題目和當前題目（僅限當前等級）
+        available_questions = [q for q in level_questions 
+                              if str(q['id']) not in answered_ids_str 
+                              and str(q['id']) != current_question_id]
         
         # 如果該等級沒有未答的題目，提示用戶升級或重置
         if not available_questions:
@@ -3204,9 +3244,12 @@ def get_user_question_bank(user_id):
     return session.get('question_bank', None)  # 不設置默認值，用戶必須明確選擇
 
 def set_user_question_bank(user_id, question_bank):
-    """設置用戶選擇的題庫類型"""
+    """設置用戶選擇的題庫類型（並清除當前題目，避免題庫不一致）"""
     session = get_user_session(user_id)
     session['question_bank'] = question_bank
+    # 清除當前題目，避免題庫不一致
+    if 'current_question' in session:
+        del session['current_question']
     set_user_session(user_id, session)
 
 def get_user_challenge(user_id):
