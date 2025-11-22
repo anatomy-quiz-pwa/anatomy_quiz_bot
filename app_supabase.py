@@ -3330,8 +3330,11 @@ def handle_admin_answer(sender_id, answer):
         # 發送解說訊息（包含圖片）- 在升級檢查後發送，確保顯示最新進度
         send_explanation_with_image(sender_id, current_question, is_correct, level_up_info)
         
-        # 清除當前會話
-        clear_user_session(sender_id)
+        # 清除當前題目（但保留挑戰信息）
+        session = get_user_session(sender_id)
+        if 'current_question' in session:
+            del session['current_question']
+        set_user_session(sender_id, session)
         
     except Exception as e:
         logger.error(f"❌ 處理管理員答案失敗: {e}")
@@ -3374,8 +3377,11 @@ def handle_normal_answer(sender_id, answer, level):
         # 原本會發送額外的「✅ 答對了！📈 等級 X 進度：X/3」文字訊息
         # 現在只保留flex message，提供更簡潔的用戶體驗
         
-        # 清除當前會話
-        clear_user_session(sender_id)
+        # 清除當前題目（但保留挑戰信息）
+        session = get_user_session(sender_id)
+        if 'current_question' in session:
+            del session['current_question']
+        set_user_session(sender_id, session)
         
     except Exception as e:
         logger.error(f"❌ 處理普通答案失敗: {e}")
