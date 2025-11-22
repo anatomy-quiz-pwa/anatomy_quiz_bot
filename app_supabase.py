@@ -1107,7 +1107,7 @@ def send_score_message(user_id):
         logger.error(f"❌ 發送積分信息失敗: {e}")
         send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
 
-def create_leaderboard_flex_message(top_10, all_students, user_id, question_bank=None):
+def create_leaderboard_flex_message(top_10, all_students, user_id):
     """創建排行榜 Flex Message - 顯示前三名加用戶排名"""
     try:
         # 先嘗試從all_students中找到用戶排名
