@@ -269,20 +269,12 @@ def handle_nickname_input(user_id, text):
                         logger.info(f"🎯 暱稱設置完成，準備為用戶 {user_id} ({nickname}) 提示選擇題庫")
                         
                         try:
-                            # 檢查用戶是否為管理員
-                            admin_info = get_user_admin_permissions(user_id)
-                            
-                            if admin_info and admin_info.get('is_admin'):
-                                # 管理員用戶：自動發送管理員模式的第一道題目（管理員不需要選擇題庫）
-                                send_admin_quiz_question(user_id)
-                                logger.info(f"✅ 已為管理員用戶 {user_id} ({nickname}) 自動發送第一道題目")
-                            else:
-                                # 普通用戶：提示選擇題庫
-                                question_bank_message = {
-                                    "text": f"🎉 {nickname}，歡迎加入解剖學學習之旅！\n\n📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰\n\n💡 提示：需完成您選的主題（等級14）才能更換賽道喔！"
-                                }
-                                send_message(user_id, question_bank_message)
-                                logger.info(f"✅ 已為普通用戶 {user_id} ({nickname}) 提示選擇題庫")
+                            # 所有用戶（包括管理員）都需要選擇題庫
+                            question_bank_message = {
+                                "text": f"🎉 {nickname}，歡迎加入解剖學學習之旅！\n\n📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰\n\n💡 提示：需完成您選的主題（等級14）才能更換賽道喔！"
+                            }
+                            send_message(user_id, question_bank_message)
+                            logger.info(f"✅ 已為用戶 {user_id} ({nickname}) 提示選擇題庫")
                                     
                         except Exception as message_error:
                             logger.error(f"❌ 發送選擇題庫訊息失敗: {message_error}")
@@ -2317,20 +2309,22 @@ def handle_text_message(sender_id, message):
 def handle_admin_message(sender_id, message_text):
     """處理管理員訊息"""
     try:
-        # 檢查是否為題庫選擇關鍵字
+        # 檢查是否為題庫選擇關鍵字（管理員也需要選擇題庫）
         if message_text in ['下肢', 'lower limbs', 'lower_limbs', '下肢題庫']:
-            set_user_question_bank(sender_id, 'lower_limbs')
+            set_user_question_bank(sender_id, 'lower_limb')
+            set_user_challenge(sender_id, 'lower_limb')
             nickname = get_user_nickname(sender_id)
             send_message(sender_id, {
-                "text": f"{nickname}，您已經開始本日的『下肢』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『下肢』的題目了喔！"
+                "text": f"{nickname}，您已經開始本日的『下肢』解剖咬一口冒險之旅！輸入「開始」就可以開始挑戰『下肢』的題目了喔！"
             })
             logger.info(f"✅ 管理員 {sender_id} ({nickname}) 選擇下肢題庫")
             return
         elif message_text in ['頸椎', 'cervical', '頸椎題庫']:
             set_user_question_bank(sender_id, 'cervical')
+            set_user_challenge(sender_id, 'cervical')
             nickname = get_user_nickname(sender_id)
             send_message(sender_id, {
-                "text": f"{nickname}，您已經開始本日的『頸椎』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『頸椎』的題目了喔！"
+                "text": f"{nickname}，您已經開始本日的『頸椎』解剖咬一口冒險之旅！輸入「開始」就可以開始挑戰『頸椎』的題目了喔！"
             })
             logger.info(f"✅ 管理員 {sender_id} ({nickname}) 選擇頸椎題庫")
             return
@@ -2544,6 +2538,16 @@ def handle_admin_quiz(sender_id, message_text):
     try:
         # 管理員可以訪問所有等級的題目
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰', '出題', '題目', 'quiz', 'question']:
+            # 檢查管理員是否已選擇題庫
+            question_bank = get_user_question_bank(sender_id)
+            
+            if not question_bank or question_bank not in ['lower_limb', 'cervical', 'lower_limbs']:
+                # 管理員還沒有選擇題庫，提示選擇
+                send_message(sender_id, {
+                    "text": "📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰"
+                })
+                return
+            
             send_admin_quiz_question(sender_id)
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_admin_help_message(sender_id)
@@ -2684,6 +2688,17 @@ def send_admin_quiz_question(sender_id):
         # 獲取用戶選擇的題庫類型
         question_bank = get_user_question_bank(sender_id)
         
+        # 檢查是否已選擇題庫
+        if not question_bank or question_bank not in ['lower_limb', 'cervical', 'lower_limbs']:
+            send_message(sender_id, {
+                "text": "📚 請選擇要挑戰的題庫：\n\n• 輸入「下肢」開始下肢題庫挑戰\n• 輸入「頸椎」開始頸椎題庫挑戰"
+            })
+            return
+        
+        # 統一處理 lower_limbs 為 lower_limb
+        if question_bank == 'lower_limbs':
+            question_bank = 'lower_limb'
+        
         # 獲取指定等級和題庫類型的題目
         level_questions = get_questions_by_level(current_level, question_bank)
         
@@ -2712,14 +2727,14 @@ def send_admin_quiz_question(sender_id):
         # 記錄選題信息
         logger.info(f"📚 為管理員 {sender_id} 選擇等級 {current_level} 題目 {question['id']} (剩餘 {len(available_questions)} 道未答題目)")
         
-        # 儲存當前題目到會話中
-        session_data = {
-            'current_question': question,
-            'question_type': 'admin',
-            'question_bank': question_bank,
-            'timestamp': datetime.datetime.now().isoformat()
-        }
-        set_user_session(sender_id, session_data)
+        # 儲存當前題目到會話中（保留現有的挑戰信息）
+        session = get_user_session(sender_id)
+        session['current_question'] = question
+        session['question_type'] = 'admin'
+        session['question_bank'] = question_bank
+        session['timestamp'] = datetime.datetime.now().isoformat()
+        # 保留 challenge 信息（如果存在）
+        set_user_session(sender_id, session)
         
         # 發送題目 Flex Message
         flex_message = create_question_flex_message(question, is_admin=True, user_level=current_level)
