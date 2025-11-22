@@ -2211,29 +2211,74 @@ def handle_text_message(sender_id, message):
         message_stripped = message_text.strip()
         message_lower = message_stripped.lower()
         
-        # 檢查下肢題庫關鍵字
-        lower_limbs_keywords = ['下肢', 'lower limbs', 'lower_limbs', '下肢題庫', 'lower', '腿', '足']
-        if message_stripped in lower_limbs_keywords or message_lower in ['lower limbs', 'lower_limbs', 'lower']:
-            logger.info(f"✅ 用戶 {sender_id} 選擇下肢題庫")
-            set_user_question_bank(sender_id, 'lower_limbs')
-            nickname = get_user_nickname(sender_id)
-            send_message(sender_id, {
-                "text": f"{nickname}，您已經開始本日的『下肢』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『下肢』的題目了喔！"
-            })
-            logger.info(f"✅ 用戶 {sender_id} ({nickname}) 選擇下肢題庫")
-            return
+        # 檢查是否輸入「下肢」或「頸椎」
+        is_lower_limb_input = message_stripped == '下肢'
+        is_cervical_input = message_stripped == '頸椎'
         
-        # 檢查頸椎題庫關鍵字
-        cervical_keywords = ['頸椎', 'cervical', '頸椎題庫', '脖子', '頸部']
-        if message_stripped in cervical_keywords or message_lower == 'cervical':
-            logger.info(f"✅ 用戶 {sender_id} 選擇頸椎題庫")
-            set_user_question_bank(sender_id, 'cervical')
-            nickname = get_user_nickname(sender_id)
-            send_message(sender_id, {
-                "text": f"{nickname}，您已經開始本日的『頸椎』解剖咬一口冒險之旅！輸入開始就可以開始挑戰『頸椎』的題目了喔！"
-            })
-            logger.info(f"✅ 用戶 {sender_id} ({nickname}) 選擇頸椎題庫")
-            return
+        if is_lower_limb_input or is_cervical_input:
+            # 檢查用戶是否正在進行挑戰
+            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            
+            if is_ongoing:
+                # 用戶正在進行挑戰，檢查是否想切換
+                theme_name = '下肢' if current_theme == 'lower_limb' else '頸椎'
+                
+                if is_lower_limb_input and current_theme == 'lower_limb':
+                    # 重複選擇相同主題，繼續挑戰
+                    set_user_question_bank(sender_id, 'lower_limb')
+                    send_message(sender_id, {
+                        "text": "沒問題勇者！現在就開始連續14天的每日咬一口解剖挑戰吧！需完成您選的主題才能更換賽道喔！"
+                    })
+                    send_question(sender_id, theme="lower_limb")
+                    return
+                elif is_cervical_input and current_theme == 'cervical':
+                    # 重複選擇相同主題，繼續挑戰
+                    set_user_question_bank(sender_id, 'cervical')
+                    send_message(sender_id, {
+                        "text": "沒問題勇者！現在就開始連續14天的每日咬一口解剖挑戰吧！需完成您選的主題才能更換賽道喔！"
+                    })
+                    send_question(sender_id, theme="cervical")
+                    return
+                else:
+                    # 想切換到不同主題，但不允許
+                    send_message(sender_id, {
+                        "text": f"目前您正在進行『{theme_name}』挑戰中！需完成 14 天後才能更換賽道喔！"
+                    })
+                    return
+            
+            # 用戶沒有進行中的挑戰，可以開始新挑戰
+            if is_lower_limb_input:
+                set_user_challenge(sender_id, 'lower_limb')
+                set_user_question_bank(sender_id, 'lower_limb')
+                send_message(sender_id, {
+                    "text": "沒問題勇者！現在就開始連續14天的每日咬一口解剖挑戰吧！需完成您選的主題才能更換賽道喔！"
+                })
+                send_question(sender_id, theme="lower_limb")
+                return
+            elif is_cervical_input:
+                set_user_challenge(sender_id, 'cervical')
+                set_user_question_bank(sender_id, 'cervical')
+                send_message(sender_id, {
+                    "text": "沒問題勇者！現在就開始連續14天的每日咬一口解剖挑戰吧！需完成您選的主題才能更換賽道喔！"
+                })
+                send_question(sender_id, theme="cervical")
+                return
+        
+        # 如果沒有輸入「下肢」或「頸椎」，檢查是否為首次使用且沒有挑戰進行中
+        if message_stripped and not is_lower_limb_input and not is_cervical_input:
+            # 檢查用戶是否有進行中的挑戰
+            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            
+            # 如果沒有進行中的挑戰，且不是已知命令，才提示選擇題庫
+            if not is_ongoing:
+                known_commands = ['開始', 'start', '積分', 'score', '排行榜', 'leaderboard', 'help', '幫助', '暱稱', 'nickname']
+                if message_lower not in [cmd.lower() for cmd in known_commands] and message_text.upper() != 'PAOPASS':
+                    # 檢查是否包含暱稱關鍵字
+                    if not (message_text.startswith('我的暱稱是') or message_text.startswith('暱稱') or message_text.startswith('name is')):
+                        send_message(sender_id, {
+                            "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                        })
+                        return
         
         # 然後檢查是否為暱稱輸入
         if handle_nickname_input(sender_id, message_text):
@@ -2550,6 +2595,16 @@ def handle_normal_quiz(sender_id, message_text):
         current_level = user_stats.get('level', 1) if user_stats else 1
         
         if message_text.lower() in ['開始', 'start', '開始答題', '開始挑戰', '出題', '題目', 'quiz', 'question']:
+            # 檢查用戶是否有進行中的挑戰
+            is_ongoing, current_theme, days_completed = check_challenge_ongoing(sender_id)
+            
+            if not is_ongoing:
+                # 沒有進行中的挑戰，提示選擇題庫
+                send_message(sender_id, {
+                    "text": "請點選輸入要挑戰的題庫：下肢 或 頸椎"
+                })
+                return
+            
             # 檢查每日答題限制
             daily_limit_status = check_daily_question_limit(sender_id)
             
@@ -2562,8 +2617,8 @@ def handle_normal_quiz(sender_id, message_text):
                 send_message(sender_id, {"text": limit_message})
                 return
             
-            # 可以答題，發送題目
-            send_normal_quiz_question(sender_id, current_level)
+            # 可以答題，使用當前挑戰的主題發送題目
+            send_question(sender_id, theme=current_theme)
         elif message_text.lower() in ['幫助', 'help', '指令', '命令']:
             send_normal_help_message(sender_id, current_level)
         elif message_text.lower() in ['排行榜', 'leaderboard', '排名', '排行']:
@@ -2680,6 +2735,98 @@ def send_admin_quiz_question(sender_id):
         logger.error(f"❌ 發送管理員題目失敗: {e}")
         send_message(sender_id, {"text": "❌ 發送題目時發生錯誤，請稍後再試。"})
 
+def send_question(sender_id, theme):
+    """發送題目（基於主題）
+    
+    Args:
+        sender_id: 用戶 ID
+        theme: 'lower_limb' 或 'cervical'
+    """
+    try:
+        # 獲取用戶等級
+        user_stats = get_user_stats(sender_id)
+        current_level = user_stats.get('level', 1) if user_stats else 1
+        
+        # 轉換主題名稱以匹配資料庫（lower_limb -> lower_limbs）
+        question_bank = 'lower_limbs' if theme == 'lower_limb' else theme
+        
+        # 獲取指定等級和題庫類型的題目
+        level_questions = get_questions_by_level(current_level, question_bank)
+        
+        if not level_questions:
+            bank_name = '頸椎' if theme == 'cervical' else '下肢'
+            send_message(sender_id, {"text": f"❌ {bank_name}題庫的等級 {current_level} 目前沒有可用的題目，請稍後再試。"})
+            return
+        
+        # 獲取用戶統計信息，包含已答對的題目ID
+        answered_question_ids = user_stats.get('correct_qids', []) if user_stats else []
+        
+        # 確保ID類型一致性（統一轉換為字符串進行比較）
+        answered_ids_str = [str(qid) for qid in answered_question_ids]
+        
+        # 過濾已答過的題目（僅限當前等級）
+        available_questions = [q for q in level_questions if str(q['id']) not in answered_ids_str]
+        
+        # 如果該等級沒有未答的題目，提示用戶升級或重置
+        if not available_questions:
+            logger.info(f"🎯 用戶 {sender_id} 已完成等級 {current_level} 所有題目")
+            completion_message = f"""🎉 恭喜！您已完成等級 {current_level} 的所有題目！
+
+✨ 學習成果：
+• 等級 {current_level} 全部題目已掌握
+• 您的解剖學知識又進步了！
+
+🚀 接下來您可以：
+• 繼續挑戰更高等級的題目
+• 輸入「積分」查看學習成果
+• 輸入「排行榜」查看排名
+
+💪 繼續加油，向更高等級邁進！"""
+            send_message(sender_id, {"text": completion_message})
+            return
+        
+        import random
+        question = random.choice(available_questions)
+        
+        # 記錄選題信息
+        logger.info(f"📚 為用戶 {sender_id} 選擇等級 {current_level} 題目 {question['id']} (剩餘 {len(available_questions)} 道未答題目)")
+        
+        # 儲存當前題目到會話中
+        session_data = {
+            'current_question': question,
+            'question_type': 'normal',
+            'level': current_level,
+            'question_bank': question_bank,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        set_user_session(sender_id, session_data)
+        
+        # 發送題目 Flex Message
+        flex_message = create_question_flex_message(question, is_admin=False, user_level=current_level)
+        
+        if flex_message:
+            send_message(sender_id, flex_message)
+        else:
+            # 備用方案：發送純文字
+            question_text = f"""📚 等級 {current_level} 題目
+
+題目：{question['question']}
+類別：{question['category']}
+
+選項：
+1️⃣ {question['options'][0]}
+2️⃣ {question['options'][1]}
+3️⃣ {question['options'][2]}
+4️⃣ {question['options'][3]}
+
+請輸入答案編號 (1-4) 或字母 (A-D)"""
+            
+            send_message(sender_id, {"text": question_text})
+            
+    except Exception as e:
+        logger.error(f"❌ 發送題目時發生錯誤: {e}")
+        send_message(sender_id, {"text": "❌ 發送題目時發生錯誤，請稍後再試。"})
+
 def send_normal_quiz_question(sender_id, level):
     """發送普通用戶問答題目（當前等級）"""
     try:
@@ -2787,7 +2934,7 @@ def get_all_questions(question_bank=None):
         all_questions = []
         
         # 根據題庫類型選擇對應的 table
-        if question_bank == 'lower_limbs':
+        if question_bank == 'lower_limbs' or question_bank == 'lower_limb':
             # 從下肢題庫表獲取
             table_name = 'anatomy_questions_lower_limb'
             logger.info(f"📚 從 {table_name} 表讀取下肢題目")
@@ -3033,6 +3180,88 @@ def set_user_question_bank(user_id, question_bank):
     session = get_user_session(user_id)
     session['question_bank'] = question_bank
     set_user_session(user_id, session)
+
+def get_user_challenge(user_id):
+    """獲取用戶當前挑戰信息
+    
+    Returns:
+        dict: {
+            'theme': 'lower_limb' or 'cervical' or None,
+            'start_date': datetime object or None,
+            'days_completed': int
+        }
+    """
+    try:
+        if supabase is None:
+            return {'theme': None, 'start_date': None, 'days_completed': 0}
+        
+        user_stats = get_user_stats(user_id)
+        if not user_stats:
+            return {'theme': None, 'start_date': None, 'days_completed': 0}
+        
+        # 從 user_stats 中獲取挑戰信息（如果有的話）
+        # 暫時從 session 獲取，之後可以移到資料庫
+        session = get_user_session(user_id)
+        challenge = session.get('challenge', {})
+        
+        if challenge:
+            theme = challenge.get('theme')
+            start_date_str = challenge.get('start_date')
+            days_completed = challenge.get('days_completed', 0)
+            
+            if theme and start_date_str:
+                try:
+                    start_date = datetime.datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+                    return {
+                        'theme': theme,
+                        'start_date': start_date,
+                        'days_completed': days_completed
+                    }
+                except:
+                    pass
+        
+        return {'theme': None, 'start_date': None, 'days_completed': 0}
+    except Exception as e:
+        logger.error(f"❌ 獲取用戶挑戰信息失敗: {e}")
+        return {'theme': None, 'start_date': None, 'days_completed': 0}
+
+def set_user_challenge(user_id, theme):
+    """設置用戶挑戰主題
+    
+    Args:
+        user_id: 用戶 ID
+        theme: 'lower_limb' 或 'cervical'
+    """
+    try:
+        session = get_user_session(user_id)
+        session['challenge'] = {
+            'theme': theme,
+            'start_date': datetime.datetime.now().isoformat(),
+            'days_completed': 0
+        }
+        session['question_bank'] = theme  # 同時設置題庫
+        set_user_session(user_id, session)
+        logger.info(f"✅ 用戶 {user_id} 開始挑戰主題: {theme}")
+    except Exception as e:
+        logger.error(f"❌ 設置用戶挑戰失敗: {e}")
+
+def check_challenge_ongoing(user_id):
+    """檢查用戶是否正在進行挑戰
+    
+    Returns:
+        tuple: (is_ongoing: bool, theme: str or None, days_completed: int)
+    """
+    challenge = get_user_challenge(user_id)
+    if not challenge['theme']:
+        return False, None, 0
+    
+    # 計算已完成天數（簡化版本，基於開始日期）
+    if challenge['start_date']:
+        days_passed = (datetime.datetime.now() - challenge['start_date']).days
+        if days_passed < 14:
+            return True, challenge['theme'], challenge.get('days_completed', days_passed)
+    
+    return False, challenge['theme'], challenge.get('days_completed', 0)
 
 def clear_user_session(user_id):
     """清除用戶會話狀態"""
