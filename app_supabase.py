@@ -3025,7 +3025,7 @@ def get_all_questions(question_bank=None):
                         "explanation": item.get('explanation', ''),
                         "image_url": item.get('image_url', ''),
                         "qimage_url": item.get('qimage_url', ''),
-                        "question_bank": 'lower_limbs'
+                        "question_bank": 'lower_limb'  # 統一使用 lower_limb（單數形式）
                     }
                     all_questions.append(question)
                     
@@ -3104,7 +3104,7 @@ def get_all_questions(question_bank=None):
                             "explanation": item.get('explanation', ''),
                             "image_url": item.get('image_url', ''),
                             "qimage_url": item.get('qimage_url', ''),
-                            "question_bank": 'lower_limbs'
+                            "question_bank": 'lower_limb'  # 統一使用 lower_limb（單數形式）
                         }
                         all_questions.append(question)
             except Exception as e:
