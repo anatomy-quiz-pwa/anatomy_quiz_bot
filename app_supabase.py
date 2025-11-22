@@ -532,7 +532,7 @@ def send_line_message(user_id, message_data):
         return {"error": str(e)}
 
 def get_leaderboard_data():
-    """獲取排行榜數據，包含用戶暱稱"""
+    """獲取排行榜數據，包含用戶暱稱（不分題庫，統一計算）"""
     try:
         logger.info("📊 正在從 Supabase 獲取真實數據...")
         
@@ -1030,11 +1030,11 @@ def create_score_flex_message(user_stats, nickname):
         return None
 
 def send_leaderboard_message(user_id):
-    """發送排行榜 Flex Message"""
+    """發送排行榜 Flex Message（統一計算，不分題庫）"""
     try:
         logger.info(f"📊 正在為用戶 {user_id} 準備排行榜 Flex Message...")
         
-        # 獲取排行榜數據
+        # 獲取排行榜數據（不分題庫，統一計算）
         students_data = get_leaderboard_data()
         
         if not students_data:
@@ -1107,7 +1107,7 @@ def send_score_message(user_id):
         logger.error(f"❌ 發送積分信息失敗: {e}")
         send_message(user_id, {"text": "抱歉，獲取積分信息時發生錯誤，請稍後再試。"})
 
-def create_leaderboard_flex_message(top_10, all_students, user_id):
+def create_leaderboard_flex_message(top_10, all_students, user_id, question_bank=None):
     """創建排行榜 Flex Message - 顯示前三名加用戶排名"""
     try:
         # 先嘗試從all_students中找到用戶排名
